@@ -12,7 +12,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <RootNamespace>InventorySystem</RootNamespace>
-    <AssemblyName>OtargiInventorySystem</AssemblyName>
+    <AssemblyName>PanacheInventorySystem</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

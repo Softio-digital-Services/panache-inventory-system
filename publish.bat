@@ -1,6 +1,6 @@
 @echo off
 echo ============================================
-echo  OtargiInventorySystem - Publish Script
+echo  PanacheInventorySystem - Publish Script
 echo ============================================
 echo.
 

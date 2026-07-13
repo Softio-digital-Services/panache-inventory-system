@@ -1,6 +1,6 @@
 [Setup]
 ; App Information
-AppName=OtargiInventorySystem
+AppName=PanacheInventorySystem
 AppVersion=1.0
 AppPublisher=Softio
 AppPublisherURL=https://softio.com
@@ -8,12 +8,12 @@ AppSupportURL=https://softio.com
 AppUpdatesURL=https://softio.com
 
 ; Default installation folder
-DefaultDirName={autopf}\OtargiInventorySystem
-DefaultGroupName=OtargiInventorySystem
+DefaultDirName={autopf}\PanacheInventorySystem
+DefaultGroupName=PanacheInventorySystem
 
 ; Output settings
 OutputDir=.\InstallerOutput
-OutputBaseFilename=OtargiInventorySystem_Setup_v1.0
+OutputBaseFilename=PanacheInventorySystem_Setup_v1.0
 
 ; Compression
 Compression=lzma
@@ -30,7 +30,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; Main executable
-Source: "publish-output\OtargiInventorySystem.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish-output\PanacheInventorySystem.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Configuration file
 Source: "publish-output\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion
@@ -40,7 +40,7 @@ Source: "publish-output\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion
 Source: "publish-output\wwwroot\*"; DestDir: "{app}\wwwroot"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Catch any other files in publish-output (like sqlite dlls if any exist outside single-file)
-Source: "publish-output\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "OtargiInventorySystem.exe,appsettings.json,Assets,wwwroot,Plugins"
+Source: "publish-output\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "PanacheInventorySystem.exe,appsettings.json,Assets,wwwroot,Plugins"
 
 [Dirs]
 Name: "{app}"; Permissions: users-modify
@@ -48,10 +48,10 @@ Name: "{app}\Plugins"; Permissions: users-modify
 
 [Icons]
 ; Start Menu Icon
-Name: "{group}\OtargiInventorySystem"; Filename: "{app}\OtargiInventorySystem.exe"; IconFilename: "{app}\Assets\icon.ico"
+Name: "{group}\PanacheInventorySystem"; Filename: "{app}\PanacheInventorySystem.exe"; IconFilename: "{app}\Assets\icon.ico"
 ; Desktop Icon
-Name: "{autodesktop}\OtargiInventorySystem"; Filename: "{app}\OtargiInventorySystem.exe"; IconFilename: "{app}\Assets\icon.ico"; Tasks: desktopicon
+Name: "{autodesktop}\PanacheInventorySystem"; Filename: "{app}\PanacheInventorySystem.exe"; IconFilename: "{app}\Assets\icon.ico"; Tasks: desktopicon
 
 [Run]
 ; Launch application after installation
-Filename: "{app}\OtargiInventorySystem.exe"; Description: "{cm:LaunchProgram,OtargiInventorySystem}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\PanacheInventorySystem.exe"; Description: "{cm:LaunchProgram,PanacheInventorySystem}"; Flags: nowait postinstall skipifsilent
