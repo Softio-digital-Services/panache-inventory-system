@@ -45,7 +45,7 @@ namespace InventorySystem.Forms
 
             if (lblTitle != null) { lblTitle.Font = ThemeConfig.HeaderFont; lblTitle.ForeColor = ThemeConfig.PrimaryColor; }
             ThemeConfig.ApplyGridTheme(dgvItems);
-            ThemeConfig.ApplyPaletteButton(btnGenerate, Color.FromArgb(59, 130, 246)); // Blue
+            ThemeConfig.ApplyPaletteButton(btnGenerate, ThemeConfig.PrimaryColor); // Gold
         }
 
         private void ApplyLocalization()

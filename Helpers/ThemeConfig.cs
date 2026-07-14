@@ -51,13 +51,13 @@ namespace InventorySystem
         // COLOR PALETTE (Light / Horizon Blue)
         // ==========================================
         
-        // Primary Brand Color (Emerald Green)
-        public static Color PrimaryColor { get; } = Color.FromArgb(16, 185, 129); // Emerald 500
-        public static Color PrimaryHoverColor { get; } = Color.FromArgb(5, 150, 105); // Emerald 600
+        // Primary Brand Color (Gold)
+        public static Color PrimaryColor { get; } = Color.FromArgb(212, 175, 55); // Metallic Gold #D4AF37
+        public static Color PrimaryHoverColor { get; } = Color.FromArgb(197, 158, 63); // Darker Gold #C59E3F
 
         // Gradient Colors for Primary Buttons
-        public static Color GradientStart { get; } = Color.FromArgb(52, 211, 153); // Emerald 400
-        public static Color GradientEnd { get; } = Color.FromArgb(16, 185, 129);   // Emerald 500
+        public static Color GradientStart { get; } = Color.FromArgb(229, 193, 88); // Lighter Gold #E5C158
+        public static Color GradientEnd { get; } = Color.FromArgb(212, 175, 55);   // Metallic Gold
 
         // Secondary / Text Colors
         public static Color SecondaryColor { get; } = Color.FromArgb(100, 116, 139); // Slate Gray
@@ -69,8 +69,8 @@ namespace InventorySystem
         // Backgrounds
         public static Color BackgroundColor { get; } = Color.FromArgb(241, 245, 249); 
         public static Color SidebarColor { get; } = Color.FromArgb(248, 250, 252);     
-        public static Color HeaderColor { get; } = Color.FromArgb(16, 185, 129);      
-        public static Color ActiveBackColor { get; } = Color.FromArgb(236, 253, 245); 
+        public static Color HeaderColor { get; } = Color.FromArgb(212, 175, 55);      
+        public static Color ActiveBackColor { get; } = Color.FromArgb(254, 251, 240); 
 
         
         // Semantic Token Mapping
@@ -118,8 +118,8 @@ namespace InventorySystem
         public static Color POS_SidebarBg { get; } = Color.FromArgb(248, 249, 251);
         public static Color POS_CartItemBg { get; } = Color.FromArgb(248, 250, 252);
         public static Color POS_SeparatorColor { get; } = Color.FromArgb(235, 237, 240);
-        public static Color POS_ChipActive { get; } = Color.FromArgb(16, 185, 129);
-        public static Color POS_ChipActiveBorder { get; } = Color.FromArgb(5, 150, 105);
+        public static Color POS_ChipActive { get; } = Color.FromArgb(212, 175, 55);
+        public static Color POS_ChipActiveBorder { get; } = Color.FromArgb(197, 158, 63);
 
 
         // ==========================================
@@ -286,14 +286,14 @@ namespace InventorySystem
             btn.Tag = "standard_add";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
-            btn.BackColor = SuccessColor;
+            btn.BackColor = PrimaryColor;
             btn.Height = 35;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
             btn.UseVisualStyleBackColor = false;
-            btn.FlatAppearance.MouseOverBackColor = SuccessBorder;
-            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(20, 150, 80);
+            btn.FlatAppearance.MouseOverBackColor = PrimaryHoverColor;
+            btn.FlatAppearance.MouseDownBackColor = PrimaryHoverColor;
             
             // Suppress native text shadows completely
             btn.Text = "";
@@ -312,15 +312,15 @@ namespace InventorySystem
             btn.Paint += StandardAdd_Paint;
         }
 
-        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessBorder; b.Invalidate(); } }
-        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessColor; b.Invalidate(); } }
+        private static void StandardAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryHoverColor; b.Invalidate(); } }
+        private static void StandardAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryColor; b.Invalidate(); } }
 
         private static void StandardAdd_Paint(object s, PaintEventArgs e)
         {
             if (s is Button btn)
             {
                 _standardButtonKeys.TryGetValue(btn, out string key);
-                DrawIconButton(btn, e.Graphics, "add", key, Color.White, SuccessColor, false);
+                DrawIconButton(btn, e.Graphics, "add", key, Color.White, PrimaryColor, false);
             }
         }
 
@@ -330,14 +330,14 @@ namespace InventorySystem
             btn.Tag = "success_add";
             btn.FlatStyle = FlatStyle.Flat;
             btn.FlatAppearance.BorderSize = 0;
-            btn.BackColor = SuccessColor;
+            btn.BackColor = PrimaryColor;
             btn.Height = 35;
             btn.ForeColor = Color.Transparent;
             btn.Font = SmallBoldFont;
             btn.Cursor = Cursors.Hand;
             btn.UseVisualStyleBackColor = false;
-            btn.FlatAppearance.MouseOverBackColor = SuccessBorder;
-            btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(20, 150, 80);
+            btn.FlatAppearance.MouseOverBackColor = PrimaryHoverColor;
+            btn.FlatAppearance.MouseDownBackColor = PrimaryHoverColor;
             
             btn.Text = "";
             if (localizationKey != null)
@@ -355,15 +355,15 @@ namespace InventorySystem
             btn.Paint += SuccessAdd_Paint;
         }
 
-        private static void SuccessAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessBorder; b.Invalidate(); } }
-        private static void SuccessAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = SuccessColor; b.Invalidate(); } }
+        private static void SuccessAdd_MouseEnter(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryHoverColor; b.Invalidate(); } }
+        private static void SuccessAdd_MouseLeave(object s, EventArgs e) { if (s is Button b) { b.BackColor = PrimaryColor; b.Invalidate(); } }
 
         private static void SuccessAdd_Paint(object s, PaintEventArgs e)
         {
             if (s is Button btn)
             {
                 _standardButtonKeys.TryGetValue(btn, out string key);
-                DrawIconButton(btn, e.Graphics, "add", key, Color.White, SuccessColor, false);
+                DrawIconButton(btn, e.Graphics, "add", key, Color.White, PrimaryColor, false);
             }
         }
 
@@ -482,14 +482,14 @@ namespace InventorySystem
             bool isPaletted = btn.Tag != null && btn.Tag.ToString() == "paletted";
             bool isStandardAdd = btn.Tag != null && btn.Tag.ToString() == "standard_add";
             Color baseBgColor = isPaletted ? btn.BackColor : accentColor;
-            if (isStandardAdd) baseBgColor = SuccessColor;
+            if (isStandardAdd) baseBgColor = PrimaryColor;
 
             bool isHovered = btn.ClientRectangle.Contains(btn.PointToClient(System.Windows.Forms.Cursor.Position));
 
             Color effectiveBg = baseBgColor;
             if (isHovered && !isOutline)
             {
-                effectiveBg = isStandardAdd ? SuccessBorder : Color.FromArgb(Math.Max(0, baseBgColor.R - 20), Math.Max(0, baseBgColor.G - 20), Math.Max(0, baseBgColor.B - 20));
+                effectiveBg = isStandardAdd ? PrimaryHoverColor : Color.FromArgb(Math.Max(0, baseBgColor.R - 20), Math.Max(0, baseBgColor.G - 20), Math.Max(0, baseBgColor.B - 20));
             }
 
             Color effectiveText = isPaletted ? TextColorWhite : textColor;
@@ -915,9 +915,9 @@ namespace InventorySystem
                 {
                     _standardButtonKeys.TryGetValue(btn, out string key);
                     if (tag == "standard_add" || tag == "success_add")
-                        DrawIconButton(btn, g, "add", key, Color.White, SuccessColor, false);
+                        DrawIconButton(btn, g, "add", key, Color.White, PrimaryColor, false);
                     else if (tag == "standard_refresh")
-                        DrawIconButton(btn, g, "refresh", key, SuccessColor, SuccessColor, true);
+                        DrawIconButton(btn, g, "refresh", key, PrimaryColor, PrimaryColor, true);
                     else if (tag == "standard_delete")
                         DrawIconButton(btn, g, "delete", key, DangerColor, DangerColor, true);
                     return;
@@ -1479,7 +1479,7 @@ namespace InventorySystem
                     Color c2 = Color.FromArgb(147, 51, 234); 
 
                     // Specific colors based on icon type
-                    if (name == "refresh") { c1 = Color.FromArgb(5, 205, 153); c2 = Color.FromArgb(16, 185, 129); }
+                    if (name == "refresh") { c1 = Color.FromArgb(5, 205, 153); c2 = Color.FromArgb(212, 175, 55); }
                     else if (name.Contains("import")) { c1 = Color.FromArgb(22, 163, 74); c2 = Color.FromArgb(20, 184, 166); } 
                     else if (name.Contains("export")) { c1 = Color.FromArgb(37, 99, 235); c2 = Color.FromArgb(6, 182, 212); } 
                     else if (name.Contains("filter")) { c1 = Color.FromArgb(249, 115, 22); c2 = Color.FromArgb(236, 72, 153); }
@@ -1488,21 +1488,21 @@ namespace InventorySystem
                     else if (name.Contains("revenue") || name.Contains("sales")) { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(252, 211, 77); }
                     else if (name == "warning") { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(251, 191, 36); }
                     else if (name == "info") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(96, 165, 250); }
-                    else if (name == "check" || name == "success") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(52, 211, 153); }
+                    else if (name == "check" || name == "success") { c1 = Color.FromArgb(34, 197, 94); c2 = Color.FromArgb(74, 222, 128); }
                     else if (name == "add" || name == "plus") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(147, 51, 234); }
                     else if (name == "pos") { c1 = Color.FromArgb(5, 205, 153); c2 = Color.FromArgb(20, 184, 166); }
                     else if (name == "inventory") { c1 = Color.FromArgb(99, 102, 241); c2 = Color.FromArgb(168, 85, 247); }
                     else if (name == "customers") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(37, 99, 235); }
-                    else if (name == "suppliers") { c1 = Color.FromArgb(20, 184, 166); c2 = Color.FromArgb(5, 150, 105); }
-                    else if (name == "reports") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); }
+                    else if (name == "suppliers") { c1 = Color.FromArgb(20, 184, 166); c2 = Color.FromArgb(13, 148, 136); }
+                    else if (name == "reports") { c1 = Color.FromArgb(212, 175, 55); c2 = Color.FromArgb(197, 158, 63); }
                     else if (name == "history" || name == "expenses") { c1 = Color.FromArgb(244, 63, 94); c2 = Color.FromArgb(225, 29, 72); }
-                    else if (name == "quotations") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); }
+                    else if (name == "quotations") { c1 = Color.FromArgb(212, 175, 55); c2 = Color.FromArgb(197, 158, 63); }
                     else if (name == "currencies") { c1 = Color.FromArgb(245, 158, 11); c2 = Color.FromArgb(217, 119, 6); }
                     else if (name == "user") { c1 = Color.FromArgb(79, 70, 229); c2 = Color.FromArgb(67, 56, 202); }
                     else if (name == "barcode") { c1 = Color.FromArgb(59, 130, 246); c2 = Color.FromArgb(139, 92, 246); }
                     else if (name == "engine") { c1 = Color.FromArgb(239, 68, 68); c2 = Color.FromArgb(185, 28, 28); }
                     else if (name == "brakes") { c1 = Color.FromArgb(249, 115, 22); c2 = Color.FromArgb(194, 65, 12); }
-                    else if (name == "accessories") { c1 = Color.FromArgb(16, 185, 129); c2 = Color.FromArgb(5, 150, 105); }
+                    else if (name == "accessories") { c1 = Color.FromArgb(212, 175, 55); c2 = Color.FromArgb(197, 158, 63); }
 
                     using (var brush = new LinearGradientBrush(new Rectangle(8, 8, 48, 48), c1, c2, 45f))
                     {

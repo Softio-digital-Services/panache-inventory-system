@@ -157,7 +157,7 @@ namespace InventorySystem.Forms
             Button btnAddShipping = new InventorySystem.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200 };
 
             ThemeConfig.ApplyPaletteButton(btnManageDrafts, Color.FromArgb(99, 102, 241)); // Indigo
-            ThemeConfig.ApplyPaletteButton(btnAddShipping, Color.FromArgb(16, 185, 129)); // Emerald Green
+            ThemeConfig.ApplyPaletteButton(btnAddShipping, ThemeConfig.PrimaryColor); // Gold
 
             btnManageDrafts.Click += (s, ev) =>
             {
@@ -561,7 +561,7 @@ namespace InventorySystem.Forms
             ThemeConfig.ApplyPaletteButton(btnReturn, Color.FromArgb(239, 68, 68)); // Red for Return
             ThemeConfig.ApplyPaletteButton(btnDraft, Color.FromArgb(139, 92, 246)); // Purple for Draft
             ThemeConfig.ApplyPaletteButton(btnQuote, Color.FromArgb(59, 130, 246)); // Blue for Quote
-            ThemeConfig.ApplyPaletteButton(btnBill, Color.FromArgb(16, 185, 129)); // Green for Bill
+            ThemeConfig.ApplyPaletteButton(btnBill, ThemeConfig.PrimaryColor); // Gold for Bill
 
             Font forceFont = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold);
             btnReturn.Font = forceFont;

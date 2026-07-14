@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -100,7 +100,7 @@ namespace InventorySystem.Helpers.Plugins
             TryRegister(new InventorySystem.Plugins.CustomersPlugin());
             TryRegister(new InventorySystem.Plugins.SuppliersPlugin());
             TryRegister(new InventorySystem.Plugins.QuotationsPlugin());
-            TryRegister(new InventorySystem.Plugins.PurchaseOrdersPlugin());
+            // TryRegister(new InventorySystem.Plugins.PurchaseOrdersPlugin());
             TryRegister(new InventorySystem.Plugins.MonthlyExpensesPlugin());
             TryRegister(new InventorySystem.Plugins.BarcodeLabelsPlugin());
         }

@@ -903,7 +903,7 @@ namespace InventorySystem.Forms
             {
                 pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 14))
-                using (var pen = new Pen(ThemeConfig.SuccessColor, 1.5f) { DashStyle = DashStyle.Dash })
+                using (var pen = new Pen(ThemeConfig.PrimaryColor, 1.5f) { DashStyle = DashStyle.Dash })
                     pe.Graphics.DrawPath(pen, path);
             };
 

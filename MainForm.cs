@@ -179,9 +179,9 @@ namespace InventorySystem
             Panel pnlLogoContainer = new Panel { 
                 Name = "pnlLogoContainer", 
                 Dock = DockStyle.Top, 
-                Height = 160, // Increased height for more gaps
+                Height = 105, // Container height adjusted to allow bottom gap
                 BackColor = Color.Transparent,
-                Padding = new Padding(0, 35, 0, 25) // 35px top margin from header, 25px bottom margin from menu
+                Padding = new Padding(0, 10, 0, 25) // 10px top margin and 25px bottom gap to Dashboard button
             };
             pnlNav.Controls.Add(pnlLogoContainer);
             pnlLogoContainer.BringToFront();

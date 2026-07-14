@@ -208,7 +208,7 @@ namespace InventorySystem.Forms
             btnCustomerDetails.FlatAppearance.BorderSize = 0;
             btnCustomerDetails.Cursor = Cursors.Hand;
             this.btnCustomerDetails.Click += btnCustomerDetails_Click;
-            this.btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, ThemeConfig.WarningColor, false);
+            this.btnCustomerDetails.Paint += (s, e) => ThemeConfig.DrawIconButton(btnCustomerDetails, e.Graphics, "view", "Cust_Details", ThemeConfig.TextColorLight, Color.FromArgb(139, 92, 246), false);
 
             // Delete Selected Button
             this.btnDeleteBulk.Size = new System.Drawing.Size(130, 35);

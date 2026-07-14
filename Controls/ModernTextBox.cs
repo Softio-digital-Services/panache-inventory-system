@@ -328,7 +328,10 @@ namespace InventorySystem.Controls
                 if (searchIcon != null)
                 {
                     int x = isAr ? pnl.Width - 32 : 12;
-                    e.Graphics.DrawImage(searchIcon, new Rectangle(x, (pnl.Height - 20) / 2, 20, 20));
+                    using (Image tinted = ThemeConfig.TintImage(searchIcon, ThemeConfig.PrimaryColor))
+                    {
+                        e.Graphics.DrawImage(tinted, new Rectangle(x, (pnl.Height - 20) / 2, 20, 20));
+                    }
                 }
             }
 

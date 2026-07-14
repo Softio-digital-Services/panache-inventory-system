@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Data.Sqlite;
 using System.Windows.Forms;
 using System.Drawing;
@@ -110,7 +110,7 @@ namespace InventorySystem
             
             // Add Logo
             PictureBox pbLogo = new PictureBox();
-            pbLogo.Size = new Size(120, 120);
+            pbLogo.Size = new Size(145, 79);
             pbLogo.SizeMode = PictureBoxSizeMode.Zoom;
             pbLogo.Anchor = AnchorStyles.Top; 
             try 
@@ -123,9 +123,9 @@ namespace InventorySystem
 
             // Center Logo on Resize
             panelLoginCard.Resize += (s, e) => {
-                pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
+                pbLogo.Location = new Point((panelLoginCard.Width - 145) / 2, 30);
             };
-            pbLogo.Location = new Point((panelLoginCard.Width - 120) / 2, 15);
+            pbLogo.Location = new Point((panelLoginCard.Width - 145) / 2, 30);
 
             labelTitle.Top = 145;
             labelSubtitle.Top = 195;

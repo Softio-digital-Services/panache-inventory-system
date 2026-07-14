@@ -185,7 +185,7 @@ namespace InventorySystem.Forms
             
             // Create Cards
             _cardInventory = CreateStatCard(LocalizationManager.GetString("Dash_TotalInventory"), "inventory_dashboard", ThemeConfig.PrimaryColor); 
-            _cardRevenue = CreateStatCard(LocalizationManager.GetString("Dash_TotalRevenue"), "revenue", ThemeConfig.SuccessColor); 
+            _cardRevenue = CreateStatCard(LocalizationManager.GetString("Dash_TotalRevenue"), "revenue", ThemeConfig.PrimaryColor); 
             _cardOrders = CreateStatCard(LocalizationManager.GetString("Dash_TotalOrders"), "orders", ThemeConfig.WarningColor); 
             _cardLowStock = CreateStatCard(LocalizationManager.GetString("Dash_LowStock"), "bell_dashboard", ThemeConfig.DangerColor); 
 
@@ -384,9 +384,9 @@ namespace InventorySystem.Forms
                     Series seriesSpline = new Series(L("Dash_SalesTrends"));
                     seriesSpline.ChartArea = "Default";
                     seriesSpline.ChartType = SeriesChartType.SplineArea;
-                    seriesSpline.Color = Color.FromArgb(40, ThemeConfig.SuccessColor); 
+                    seriesSpline.Color = Color.FromArgb(40, ThemeConfig.PrimaryColor); 
                     seriesSpline.BorderWidth = 4;
-                    seriesSpline.BorderColor = ThemeConfig.SuccessColor;
+                    seriesSpline.BorderColor = ThemeConfig.PrimaryColor;
                     
                     _chartTrends.Series.Add(seriesSpline);
 
