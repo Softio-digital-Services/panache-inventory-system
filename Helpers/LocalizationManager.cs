@@ -57,6 +57,14 @@ namespace InventorySystem.Helpers
                 LoadArabicResources();
             }
 
+            // Persist the selected language choice
+            try
+            {
+                string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "language.txt");
+                File.WriteAllText(configPath, cultureCode);
+            }
+            catch { }
+
             LanguageChanged?.Invoke(null, EventArgs.Empty);
         }
 

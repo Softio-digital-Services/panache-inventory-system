@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
@@ -64,7 +64,7 @@ namespace InventorySystem.Services
                     decimal cost = (decimal)row["cost_price"];
 
                     // Update parts: stock and optionally update purchase_price
-                    string sqlPart = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
+                    string sqlPart = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')";
                     DatabaseHelper.ExecuteNonQuery(sqlPart,
                         new SqliteParameter("@qty", qty),
                         new SqliteParameter("@pid", partId));

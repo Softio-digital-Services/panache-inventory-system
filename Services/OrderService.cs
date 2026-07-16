@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using InventorySystem.Helpers;
@@ -91,7 +91,7 @@ namespace InventorySystem.Services
                 );
 
                 // Update Stock
-                string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid";
+                string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')";
                 DatabaseHelper.ExecuteNonQuery(sqlStock,
                     new SqliteParameter("@qty", item.Quantity),
                     new SqliteParameter("@pid", item.PartId)
@@ -186,11 +186,23 @@ namespace InventorySystem.Services
                 // 2. Perform Stock Validation
                 foreach (var item in items)
                 {
-                    int currentStock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id = {item.PartId}");
-                    if (currentStock < item.Quantity)
+                    var partInfo = DatabaseHelper.ExecuteDataTable($"SELECT quantity_in_stock, is_stock_tracked, item_type FROM parts WHERE id = {item.PartId}");
+                    if (partInfo.Rows.Count > 0)
                     {
-                        string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {item.PartId}");
-                        throw new Exception($"Insufficient stock for {partName}. Available: {currentStock}, Required: {item.Quantity}");
+                        var row = partInfo.Rows[0];
+                        bool isTracked = Convert.ToInt32(row["is_stock_tracked"] == DBNull.Value ? 1 : row["is_stock_tracked"]) == 1;
+                        string itemType = row["item_type"]?.ToString();
+                        bool isService = string.Equals(itemType, "Service", StringComparison.OrdinalIgnoreCase);
+
+                        if (isTracked && !isService)
+                        {
+                            int currentStock = Convert.ToInt32(row["quantity_in_stock"]);
+                            if (currentStock < item.Quantity)
+                            {
+                                string partName = DatabaseHelper.ExecuteScalar<string>($"SELECT part_name FROM parts WHERE id = {item.PartId}") ?? "Unknown Item";
+                                throw new Exception($"Insufficient stock for {partName}. Available: {currentStock}, Required: {item.Quantity}");
+                            }
+                        }
                     }
                 }
 
@@ -201,7 +213,7 @@ namespace InventorySystem.Services
                 // 4. Update Stock
                 foreach (var item in items)
                 {
-                    DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid", 
+                    DatabaseHelper.ExecuteNonQuery("UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')", 
                         new SqliteParameter("@qty", item.Quantity), 
                         new SqliteParameter("@pid", item.PartId));
                 }

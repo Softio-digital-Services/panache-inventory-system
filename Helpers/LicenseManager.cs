@@ -9,7 +9,7 @@ namespace InventorySystem.Helpers
     /// </summary>
     public static class LicenseManager
     {
-        private const string ProductCode = "PSIMS"; // Panache Store Inventory Management System
+        private const string ProductCode = "PANAC"; // Panache Store Inventory Management System
         private const int TrialDays = 30;
 
         /// <summary>

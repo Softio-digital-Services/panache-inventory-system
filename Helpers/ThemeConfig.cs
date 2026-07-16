@@ -727,6 +727,11 @@ namespace InventorySystem
 
         public static void ApplyHeaderIconStyle(Control c)
         {
+            ApplyHeaderIconStyle(c, 0.7f);
+        }
+
+        public static void ApplyHeaderIconStyle(Control c, float scaleMultiplier)
+        {
             c.Cursor = Cursors.Hand;
             c.BackColor = Color.Transparent;
             
@@ -751,7 +756,7 @@ namespace InventorySystem
                     
                     if (icon != null)
                     {
-                        float ratio = Math.Min((float)pb.Width / icon.Width, (float)pb.Height / icon.Height) * 0.7f;
+                        float ratio = Math.Min((float)pb.Width / icon.Width, (float)pb.Height / icon.Height) * scaleMultiplier;
                         int nw = (int)(icon.Width * ratio), nh = (int)(icon.Height * ratio);
                         e.Graphics.DrawImage(icon, (pb.Width - nw) / 2, (pb.Height - nh) / 2, nw, nh);
                     }

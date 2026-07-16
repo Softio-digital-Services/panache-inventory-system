@@ -23,11 +23,18 @@ namespace InventorySystem
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Set initial language to Arabic for testing
-            InventorySystem.Helpers.LocalizationManager.SetLanguage("en-US");
-
-            // Set initial language to English
-            //InventorySystem.Helpers.LocalizationManager.SetLanguage("ar");
+            // Load initial language from persisted settings, defaulting to en-US
+            string savedLanguage = "en-US";
+            try
+            {
+                string configPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "language.txt");
+                if (System.IO.File.Exists(configPath))
+                {
+                    savedLanguage = System.IO.File.ReadAllText(configPath).Trim();
+                }
+            }
+            catch { }
+            InventorySystem.Helpers.LocalizationManager.SetLanguage(savedLanguage);
 
             // Expose background task for server hosting without blocking UI thread
             _ = Task.Run(() => StartApiServer());

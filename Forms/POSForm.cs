@@ -1241,7 +1241,8 @@ namespace InventorySystem.Forms
         // ---------------------------------------------------------------------
         private Panel CreateProductCard(PartData part)
         {
-            bool outOfStock = part.QuantityInStock <= 0;
+            bool isService = string.Equals(part.ItemType, "Service", StringComparison.OrdinalIgnoreCase);
+            bool outOfStock = !isService && part.QuantityInStock <= 0;
             // cartQty is read live in Paint/layout so the border updates instantly
             int GetLiveQty() => GetCartQty(part.Id);
 
@@ -1591,7 +1592,7 @@ namespace InventorySystem.Forms
                 };
                 card.Controls.Add(lblBadge);
             }
-            else if (part.QuantityInStock <= part.MinimumStockLevel && part.MinimumStockLevel > 0)
+            else if (!isService && part.QuantityInStock <= part.MinimumStockLevel && part.MinimumStockLevel > 0)
             {
                 // "Low stock" hint shown as a small tinted label inside footer (above price)
                 Label lblStock = new Label
@@ -1639,7 +1640,7 @@ namespace InventorySystem.Forms
             // ------------------------------------------------------------------
             Action addToCart = () => { 
                 if (!outOfStock) {
-                    AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock, GetInputQty()); 
+                    AddToCart(part.Id, part.PartName, part.SellingPrice, part.QuantityInStock, GetInputQty(), isService); 
                     txtQty.Text = "1"; 
                 }
             };
@@ -1872,13 +1873,25 @@ namespace InventorySystem.Forms
                 {
                     int addQ = GetRowInputQty();
                     int stock = 0;
-                    try { stock = DatabaseHelper.ExecuteScalar<int>($"SELECT quantity_in_stock FROM parts WHERE id={capId}"); } catch { stock = 999; }
+                    bool isService = false;
+                    try 
+                    { 
+                        DataTable partDt = DatabaseHelper.ExecuteDataTable($"SELECT quantity_in_stock, item_type FROM parts WHERE id={capId}");
+                        if (partDt.Rows.Count > 0)
+                        {
+                            stock = Convert.ToInt32(partDt.Rows[0]["quantity_in_stock"]);
+                            string itemType = partDt.Rows[0]["item_type"] != DBNull.Value ? partDt.Rows[0]["item_type"].ToString() : "Product";
+                            isService = string.Equals(itemType, "Service", StringComparison.OrdinalIgnoreCase);
+                        }
+                    } 
+                    catch { stock = 999; }
+
                     foreach (DataRow dr in cartTable.Rows)
                     {
                         if (dr.RowState != DataRowState.Deleted && (int)dr["PartID"] == capId)
                         {
                             int curQty = (int)dr["Quantity"];
-                            if (curQty + addQ > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
+                            if (!isService && curQty + addQ > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
                             dr["Quantity"] = curQty + addQ;
                             break;
                         }
@@ -1956,7 +1969,8 @@ namespace InventorySystem.Forms
 
         private void SetCartQty(PartData part, int newQty)
         {
-            if (newQty > part.QuantityInStock) newQty = part.QuantityInStock;
+            bool isService = string.Equals(part.ItemType, "Service", StringComparison.OrdinalIgnoreCase);
+            if (!isService && newQty > part.QuantityInStock) newQty = part.QuantityInStock;
 
             foreach (DataRow r in cartTable.Rows)
             {
@@ -2123,22 +2137,22 @@ namespace InventorySystem.Forms
         // ---------------------------------------------------------------------
         // ADD TO CART  (preserved logic + RefreshCartDisplay)
         // ---------------------------------------------------------------------
-        private void AddToCart(int id, string name, decimal price, int stock, int qtyToAdd = 1)
+        private void AddToCart(int id, string name, decimal price, int stock, int qtyToAdd = 1, bool isService = false)
         {
-            if (stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
+            if (!isService && stock <= 0) { MessageHelper.ShowWarning(LocalizationManager.GetString("Error_OutOfStock")); return; }
             foreach (DataRow r in cartTable.Rows)
             {
                 if (r.RowState == DataRowState.Deleted) continue;
                 if ((int)r["PartID"] == id)
                 {
                     int q = (int)r["Quantity"];
-                    if (q + qtyToAdd > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
+                    if (!isService && q + qtyToAdd > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
                     r["Quantity"] = q + qtyToAdd;
                     RefreshCartDisplay();
                     return;
                 }
             }
-            if (qtyToAdd > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
+            if (!isService && qtyToAdd > stock) { MessageHelper.ShowWarning(LocalizationManager.GetString("POS_NotEnoughStock", "Not enough stock.")); return; }
             cartTable.Rows.Add(id, name, qtyToAdd, 0, price);
             RefreshCartDisplay();
         }
@@ -2316,11 +2330,13 @@ namespace InventorySystem.Forms
                     string barcode = _scanBuffer.Trim();
                     _scanBuffer = "";
 
-                    DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}') AND date_deleted IS NULL");
+                    DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock,item_type FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}') AND date_deleted IS NULL");
                     if (dt.Rows.Count > 0)
                     {
                         DataRow r = dt.Rows[0];
-                        AddToCart(Convert.ToInt32(r["id"]), r["part_name"].ToString(), Convert.ToDecimal(r["selling_price"]), Convert.ToInt32(r["quantity_in_stock"]));
+                        string itemType = r["item_type"] != DBNull.Value ? r["item_type"].ToString() : "Product";
+                        bool isService = string.Equals(itemType, "Service", StringComparison.OrdinalIgnoreCase);
+                        AddToCart(Convert.ToInt32(r["id"]), r["part_name"].ToString(), Convert.ToDecimal(r["selling_price"]), Convert.ToInt32(r["quantity_in_stock"]), 1, isService);
                     }
                     else
                     {

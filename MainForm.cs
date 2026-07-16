@@ -22,7 +22,11 @@ namespace InventorySystem
         // Header Controls
         private PictureBox pbNotification;
         private PictureBox pbUserAvatar;
+        private PictureBox pbLanguage;
+        private ToolTip _languageToolTip;
         private ContextMenuStrip menuNotifications;
+        private Label lblVersion;
+        private Label lblDeveloper;
 
         
         private Services.DashboardService _dashboardService;
@@ -141,6 +145,7 @@ namespace InventorySystem
             UpdateNavText("btnPO", "Nav_PurchaseOrders");
             UpdateNavText("btnExpenses", "Nav_Expenses");
             UpdateNavText("btnUsers", "Nav_Users");
+            UpdateNavText("btnLabels", "Nav_Barcode");
 
             button3.Text = "  " + L("Nav_Logout");
             if(itemAddUser != null) itemAddUser.Text = L("Nav_AddUser");
@@ -148,6 +153,17 @@ namespace InventorySystem
             if(itemLogout != null) itemLogout.Text = L("Nav_Logout");
             if(itemLogout != null) itemLogout.Text = L("Nav_Logout");
             if(btnLock != null) btnLock.Text = ""; // Icon is set via btnLock.Image below
+
+            if (lblVersion != null)
+                lblVersion.Text = L("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services";
+            if (lblDeveloper != null)
+                lblDeveloper.Text = isAr ? "تطوير سوفتيو" : "Developed by Softio";
+
+            if (pbLanguage != null)
+            {
+                if (_languageToolTip == null) _languageToolTip = new ToolTip();
+                _languageToolTip.SetToolTip(pbLanguage, isAr ? "Switch language to English" : "تغيير اللغة إلى العربية");
+            }
 
             var pnlHeaderIcons = this.Controls.Find("rightPanel", true).FirstOrDefault() as Panel;
             if (pnlHeaderIcons != null) {
@@ -334,7 +350,7 @@ namespace InventorySystem
                 Padding = new Padding(15, 0, 15, 0)
             };
 
-            Label lblVersion = new Label {
+            lblVersion = new Label {
                 Text = LocalizationManager.GetString("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services",
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f),
@@ -344,7 +360,7 @@ namespace InventorySystem
             };
             pnlFooter.Controls.Add(lblVersion);
 
-            Label lblDeveloper = new Label {
+            lblDeveloper = new Label {
                 Text = LocalizationManager.IsArabic ? "تطوير سوفتيو" : "Developed by Softio",
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
@@ -367,7 +383,7 @@ namespace InventorySystem
         {
             // Use Dock=Right so the panel always stretches correctly at any screen width.
             // We position icons from the right edge using fixed offsets.
-            const int iconAreaWidth = 500;
+            const int iconAreaWidth = 550;
             Panel rightPanel = new Panel { Name = "rightPanel", Width = iconAreaWidth, BackColor = Color.Transparent, Dock = DockStyle.Right };
             int w = iconAreaWidth;
             AddHeaderButton(rightPanel, w - 45, "Close", "btnWinClose", () => Application.Exit());
@@ -413,10 +429,19 @@ namespace InventorySystem
 
             // About Us
             PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbAbout);
+            ThemeConfig.ApplyHeaderIconStyle(pbAbout, 0.55f);
             ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.IsArabic ? "عن البرنامج" : "About Us");
             pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbAbout);
+
+            // Language Switcher
+            pbLanguage = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 535, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("language"), Color.White) };
+            ThemeConfig.ApplyHeaderIconStyle(pbLanguage);
+            pbLanguage.Click += (s, e) => {
+                string nextLang = LocalizationManager.IsArabic ? "en-US" : "ar";
+                LocalizationManager.SetLanguage(nextLang);
+            };
+            rightPanel.Controls.Add(pbLanguage);
 
             panel1.Controls.Add(rightPanel);
         }

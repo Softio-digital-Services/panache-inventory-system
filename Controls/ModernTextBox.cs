@@ -272,6 +272,17 @@ namespace InventorySystem.Controls
             pnlContainer?.Invalidate(); // Redraw border
         }
 
+        protected override void OnRightToLeftChanged(EventArgs e)
+        {
+            base.OnRightToLeftChanged(e);
+            if (txtInput != null)
+            {
+                txtInput.RightToLeft = this.RightToLeft;
+            }
+            ResizeControls();
+            pnlContainer?.Invalidate();
+        }
+
         private void PnlContainer_Paint(object sender, PaintEventArgs e)
         {
             var pnl = sender as Panel;

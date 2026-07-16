@@ -1589,4 +1589,31 @@ Or click the link above to copy it</value>
   <data name="Msg_QuotationSaved" xml:space="preserve">
     <value>Quotation saved successfully!</value>
   </data>
+  <data name="Parts_Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Parts_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Parts_AllItems" xml:space="preserve">
+    <value>All Items</value>
+  </data>
+  <data name="Parts_SearchCategories" xml:space="preserve">
+    <value>Search Categories...</value>
+  </data>
+  <data name="Parts_Page" xml:space="preserve">
+    <value>Page</value>
+  </data>
+  <data name="Parts_Of" xml:space="preserve">
+    <value>of</value>
+  </data>
+  <data name="Parts_Prev" xml:space="preserve">
+    <value>Prev</value>
+  </data>
+  <data name="Parts_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Parts_AddToCart" xml:space="preserve">
+    <value>Add to {0}</value>
+  </data>
 </root>

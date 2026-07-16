@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using InventorySystem.Helpers;
@@ -43,7 +43,7 @@ namespace InventorySystem.Services
                         new SqliteParameter("@refund", item.RefundAmount));
 
                     // Update stock
-                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
+                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')";
                     DatabaseHelper.ExecuteNonQuery(sqlStock,
                         new SqliteParameter("@qty", item.Quantity),
                         new SqliteParameter("@pid", item.PartId));
@@ -131,7 +131,7 @@ namespace InventorySystem.Services
                         new SqliteParameter("@refund", item.RefundAmount));
 
                     // Update stock
-                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid";
+                    string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock + @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')";
                     DatabaseHelper.ExecuteNonQuery(sqlStock,
                         new SqliteParameter("@qty", item.Quantity),
                         new SqliteParameter("@pid", item.PartId));

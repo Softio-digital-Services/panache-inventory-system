@@ -689,4 +689,31 @@
   <data name="Msg_QuotationSaved" xml:space="preserve">
     <value>تم حفظ عرض السعر بنجاح!</value>
   </data>
+  <data name="Parts_Categories" xml:space="preserve">
+    <value>الفئات</value>
+  </data>
+  <data name="Parts_New" xml:space="preserve">
+    <value>جديد</value>
+  </data>
+  <data name="Parts_AllItems" xml:space="preserve">
+    <value>كل العناصر</value>
+  </data>
+  <data name="Parts_SearchCategories" xml:space="preserve">
+    <value>البحث عن الفئات...</value>
+  </data>
+  <data name="Parts_Page" xml:space="preserve">
+    <value>صفحة</value>
+  </data>
+  <data name="Parts_Of" xml:space="preserve">
+    <value>من</value>
+  </data>
+  <data name="Parts_Prev" xml:space="preserve">
+    <value>السابق</value>
+  </data>
+  <data name="Parts_Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Parts_AddToCart" xml:space="preserve">
+    <value>إضافة إلى {0}</value>
+  </data>
 </root>

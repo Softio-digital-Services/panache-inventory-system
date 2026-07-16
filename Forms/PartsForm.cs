@@ -253,6 +253,7 @@ namespace InventorySystem.Forms
             // Sidebar title
             Label lblCatTitle = new Label
             {
+                Name = "lblCatTitle",
                 Text = LocalizationManager.GetString("Parts_Categories") == "Parts_Categories" ? "Categories" : LocalizationManager.GetString("Parts_Categories"),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
@@ -339,6 +340,7 @@ namespace InventorySystem.Forms
             Panel pnlAddCatWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = Color.Transparent };
             var btnSidebarAddCat = new InventorySystem.Controls.ModernButton
             {
+                Name = "btnSidebarAddCat",
                 Dock = DockStyle.Fill,
                 Height = 38
             };
@@ -411,7 +413,9 @@ namespace InventorySystem.Forms
             // Combined right-side control panel (FlowLayoutPanel for easier alignment)
             FlowLayoutPanel pnlRightControls = new FlowLayoutPanel
             {
-                Size = new Size(110, 30), Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                Size = new Size(110, 30),
+                Location = new Point(pnlContentHeader.Width - 110 - 8, 4),
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 BackColor = Color.Transparent, FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false
             };
@@ -453,8 +457,6 @@ namespace InventorySystem.Forms
             pnlRightControls.Controls.Add(btnToggleGrid);
             pnlRightControls.Controls.Add(btnContentFilter);
 
-            pnlContentHeader.Resize += (s, e) =>
-                pnlRightControls.Location = new Point(pnlContentHeader.Width - pnlRightControls.Width - 8, 4);
             pnlContentHeader.Controls.Add(pnlRightControls);
 
             // ── Card view ──────────────────────────────────────────────────
@@ -605,7 +607,7 @@ namespace InventorySystem.Forms
             pnlCategoryList.Controls.Clear();
 
             int totalItems = CategoryData.GetTotalItemCount();
-            pnlCategoryList.Controls.Add(BuildCategoryRow(null, "All Items", totalItems));
+            pnlCategoryList.Controls.Add(BuildCategoryRow(null, LocalizationManager.GetString("Parts_AllItems", "All Items"), totalItems));
 
             try
             {
@@ -862,7 +864,7 @@ namespace InventorySystem.Forms
                 if (totalPages == 0) totalPages = 1;
                 if (_currentPage > totalPages) _currentPage = totalPages;
 
-                if (lblPageInfo != null) lblPageInfo.Text = $"Page {_currentPage} of {totalPages}";
+                if (lblPageInfo != null) lblPageInfo.Text = $"{LocalizationManager.GetString("Parts_Page", "Page")} {_currentPage} {LocalizationManager.GetString("Parts_Of", "of")} {totalPages}";
                 if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
                 if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
 
@@ -871,7 +873,7 @@ namespace InventorySystem.Forms
                 DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory, _pageSize, offset));
 
                 // Update count label
-                string catLabel = _activeCategory ?? "All Items";
+                string catLabel = _activeCategory ?? LocalizationManager.GetString("Parts_AllItems", "All Items");
                 if (lblItemCount != null)
                     lblItemCount.Text = $"{catLabel} ({totalCount})";
 
@@ -908,8 +910,8 @@ namespace InventorySystem.Forms
             };
 
             string addText = _activeCategory == null
-                ? "New"
-                : $"Add to {_activeCategory}";
+                ? LocalizationManager.GetString("Parts_New", "New")
+                : string.Format(LocalizationManager.GetString("Parts_AddToCart", "Add to {0}"), _activeCategory);
 
             // Use a proper standard add button centered in the card
             var btnAdd = new InventorySystem.Controls.ModernButton
@@ -1160,7 +1162,7 @@ namespace InventorySystem.Forms
                 if (totalPages == 0) totalPages = 1;
                 if (_currentPage > totalPages) _currentPage = totalPages;
 
-                if (lblPageInfo != null) lblPageInfo.Text = $"Page {_currentPage} of {totalPages}";
+                if (lblPageInfo != null) lblPageInfo.Text = $"{LocalizationManager.GetString("Parts_Page", "Page")} {_currentPage} {LocalizationManager.GetString("Parts_Of", "of")} {totalPages}";
                 if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
                 if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
 
@@ -1171,7 +1173,7 @@ namespace InventorySystem.Forms
                 dgvParts.DataSource = dt;
 
                 if (lblItemCount != null)
-                    lblItemCount.Text = $"{(category ?? "All Items")} ({totalCount})";
+                    lblItemCount.Text = $"{(category ?? LocalizationManager.GetString("Parts_AllItems", "All Items"))} ({totalCount})";
 
                 foreach (DataGridViewRow r in dgvParts.Rows)
                 {
@@ -1195,13 +1197,23 @@ namespace InventorySystem.Forms
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
             if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
 
-            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, "New");
+            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, L("Parts_New"));
             // if (btnFilter != null)  btnFilter.Invalidate();
             if (btnImport != null)  btnImport.Invalidate();
             if (btnExport != null)  btnExport.Invalidate();
 
             var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
             if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
+
+            var ctrlCatTitle = this.Controls.Find("lblCatTitle", true);
+            if (ctrlCatTitle.Length > 0) ctrlCatTitle[0].Text = L("Parts_Categories");
+
+            var ctrlAddCat = this.Controls.Find("btnSidebarAddCat", true).FirstOrDefault() as Button;
+            if (ctrlAddCat != null) ThemeConfig.ApplyStandardAddButton(ctrlAddCat, L("Parts_AddCategory"));
+
+            if (txtCategorySearch != null) txtCategorySearch.PlaceholderText = L("Parts_SearchCategories");
+            if (btnPrevPage != null) btnPrevPage.Text = L("Parts_Prev");
+            if (btnNextPage != null) btnNextPage.Text = L("Parts_Next");
 
             InventorySystem.Helpers.LocalizationManager.TranslateControl(this);
 
@@ -1219,6 +1231,11 @@ namespace InventorySystem.Forms
                 if (dgvParts.Columns.Contains("colPrice"))          dgvParts.Columns["colPrice"].HeaderText          = L("Parts_GridPrice");
                 if (dgvParts.Columns.Contains("colStatus"))         dgvParts.Columns["colStatus"].HeaderText         = L("Parts_GridStatus");
                 if (dgvParts.Columns.Contains("colActions"))        dgvParts.Columns["colActions"].HeaderText        = L("Parts_GridActions");
+            }
+
+            if (this.IsHandleCreated)
+            {
+                RefreshAll();
             }
         }
 
