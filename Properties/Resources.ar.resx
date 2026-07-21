@@ -727,4 +727,13 @@
   <data name="btnConnectToggle" xml:space="preserve"><value>اتصال</value></data>
   <data name="gbTest" xml:space="preserve"><value>قراءة الميزان المباشرة ومحاكي الاختبار</value></data>
   <data name="btnSimulate" xml:space="preserve"><value>محاكاة قراءة الميزان</value></data>
+  <data name="cmbPort" xml:space="preserve"><value>منفذ COM:</value></data>
+  <data name="cmbBaud" xml:space="preserve"><value>معدل البود:</value></data>
+  <data name="cmbParity" xml:space="preserve"><value>التكافؤ:</value></data>
+  <data name="cmbDataBits" xml:space="preserve"><value>بتات البيانات:</value></data>
+  <data name="cmbStopBits" xml:space="preserve"><value>بتات التوقف:</value></data>
+  <data name="cmbUnit" xml:space="preserve"><value>وحدة الوزن الافتراضية:</value></data>
+  <data name="txtSimulateWeight" xml:space="preserve"><value>وزن الاختبار:</value></data>
+  <data name="Scale_SaveSettings" xml:space="preserve"><value>حفظ الإعدادات</value></data>
+  <data name="Scale_Close" xml:space="preserve"><value>إغلاق</value></data>
 </root>

@@ -1616,4 +1616,24 @@ Or click the link above to copy it</value>
   <data name="Parts_AddToCart" xml:space="preserve">
     <value>Add to {0}</value>
   </data>
+  <!-- Scale Integration Keys -->
+  <data name="gbScale" xml:space="preserve"><value>TM-A17 Weighing Scale &amp; Price Calculator</value></data>
+  <data name="btnConfigScale" xml:space="preserve"><value>Scale Settings</value></data>
+  <data name="btnReadScale" xml:space="preserve"><value>Read Weight</value></data>
+  <data name="btnApplyScalePrice" xml:space="preserve"><value>Apply to Price 1</value></data>
+  <data name="btnApplyScaleWeight" xml:space="preserve"><value>Apply Weight to Stock</value></data>
+  <data name="gbPort" xml:space="preserve"><value>TM-A17 Serial COM Port Settings</value></data>
+  <data name="cmbPort" xml:space="preserve"><value>COM Port:</value></data>
+  <data name="btnRefreshPorts" xml:space="preserve"><value>Refresh</value></data>
+  <data name="btnConnectToggle" xml:space="preserve"><value>Connect</value></data>
+  <data name="cmbBaud" xml:space="preserve"><value>Baud Rate:</value></data>
+  <data name="cmbParity" xml:space="preserve"><value>Parity:</value></data>
+  <data name="cmbDataBits" xml:space="preserve"><value>Data Bits:</value></data>
+  <data name="cmbStopBits" xml:space="preserve"><value>Stop Bits:</value></data>
+  <data name="cmbUnit" xml:space="preserve"><value>Default Weight Unit:</value></data>
+  <data name="gbTest" xml:space="preserve"><value>Live Scale Readout &amp; Test Simulator</value></data>
+  <data name="txtSimulateWeight" xml:space="preserve"><value>Test Weight:</value></data>
+  <data name="btnSimulate" xml:space="preserve"><value>Simulate Scale Reading</value></data>
+  <data name="Scale_SaveSettings" xml:space="preserve"><value>Save Settings</value></data>
+  <data name="Scale_Close" xml:space="preserve"><value>Close</value></data>
 </root>

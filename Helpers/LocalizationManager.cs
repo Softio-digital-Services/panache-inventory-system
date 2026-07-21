@@ -122,10 +122,16 @@ namespace InventorySystem.Helpers
                 System.Diagnostics.Debug.WriteLine("Failed to load Arabic resources: " + ex.Message);
             }
         }
-        // Get a localized string: use Arabic set if available for Arabic, otherwise fallback to default ResourceManager
         public static string GetString(string key)
         {
             if (string.IsNullOrEmpty(key)) return "";
+            CultureInfo culture = IsArabic ? CultureInfo.GetCultureInfo("ar") : CultureInfo.GetCultureInfo("en-US");
+            try
+            {
+                string res = Properties.Resources.ResourceManager.GetString(key, culture);
+                if (!string.IsNullOrEmpty(res)) return res;
+            }
+            catch { }
 
             if (IsArabic && _arabicResourcesLoaded && _arabicDictionary != null)
             {
@@ -133,19 +139,19 @@ namespace InventorySystem.Helpers
                     return value;
             }
 
-            try
-            {
-                return Properties.Resources.ResourceManager.GetString(key) ?? key;
-            }
-            catch
-            {
-                return key;
-            }
+            return key;
         }
 
         public static string GetString(string key, string fallback)
         {
             if (string.IsNullOrEmpty(key)) return fallback;
+            CultureInfo culture = IsArabic ? CultureInfo.GetCultureInfo("ar") : CultureInfo.GetCultureInfo("en-US");
+            try
+            {
+                string res = Properties.Resources.ResourceManager.GetString(key, culture);
+                if (!string.IsNullOrEmpty(res)) return res;
+            }
+            catch { }
 
             if (IsArabic && _arabicResourcesLoaded && _arabicDictionary != null)
             {
@@ -153,94 +159,130 @@ namespace InventorySystem.Helpers
                     return value;
             }
 
-            try
-            {
-                string res = Properties.Resources.ResourceManager.GetString(key);
-                return string.IsNullOrEmpty(res) ? fallback : res;
-            }
-            catch
-            {
-                return fallback;
-            }
+            return fallback;
         }
 
         private class ValueBox<T> { public T Value { get; set; } public ValueBox(T val) { Value = val; } }
 
         private static ConditionalWeakTable<Control, string> _originalTexts = new ConditionalWeakTable<Control, string>();
+        private static ConditionalWeakTable<Control, string> _originalLabelTexts = new ConditionalWeakTable<Control, string>();
         private static ConditionalWeakTable<Control, ValueBox<Point>> _originalLocations = new ConditionalWeakTable<Control, ValueBox<Point>>();
         private static ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>> _originalFlowDirections = new ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>>();
 
         public static void TranslateControl(Control parent)
         {
             if (parent == null) return;
+            bool isAr = IsArabic;
+            CultureInfo targetCulture = isAr ? CultureInfo.GetCultureInfo("ar") : CultureInfo.GetCultureInfo("en-US");
+            CultureInfo enCulture = CultureInfo.GetCultureInfo("en-US");
 
             foreach (Control c in parent.Controls)
             {
                 if (c.HasChildren) TranslateControl(c);
 
+                string key = !string.IsNullOrEmpty(c.Name) ? c.Name : null;
+
+                // 1. Handle standard controls (Button, Label, CheckBox, RadioButton, GroupBox)
                 if (c is Button || c is Label || c is CheckBox || c is RadioButton || c is GroupBox)
                 {
-                    // Skip setting native text for custom-painted standard buttons
                     bool isStandardButton = c is Button && c.Tag != null && c.Tag.ToString().StartsWith("standard_");
-                    
                     if (!isStandardButton)
                     {
-                        if (!_originalTexts.TryGetValue(c, out string origText))
+                        // Cache original text ONLY when in English to guarantee we never cache an Arabic string
+                        if (!isAr && !_originalTexts.TryGetValue(c, out _))
                         {
-                            origText = c.Text;
-                            _originalTexts.Add(c, origText);
+                            _originalTexts.Add(c, c.Text);
                         }
 
-                        string key = !string.IsNullOrEmpty(c.Name) ? c.Name : null;
-                        if (IsArabic)
+                        if (!string.IsNullOrEmpty(key))
                         {
-                            if (!string.IsNullOrEmpty(key))
+                            string translated = null;
+                            try { translated = Properties.Resources.ResourceManager.GetString(key, targetCulture); } catch { }
+
+                            if (!string.IsNullOrEmpty(translated))
                             {
-                                string translated = GetString(key);
-                                if (translated != key && !string.IsNullOrEmpty(translated))
-                                {
-                                    c.Text = translated;
-                                }
+                                c.Text = translated;
+                            }
+                            else if (!isAr)
+                            {
+                                string enText = null;
+                                try { enText = Properties.Resources.ResourceManager.GetString(key, enCulture); } catch { }
+
+                                if (!string.IsNullOrEmpty(enText))
+                                    c.Text = enText;
+                                else if (_originalTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                                    c.Text = orig;
                             }
                         }
-                        else
+                        else if (!isAr && _originalTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
                         {
-                            if (!string.IsNullOrEmpty(key))
-                            {
-                                string translated = GetString(key);
-                                if (translated != key && !string.IsNullOrEmpty(translated))
-                                {
-                                    c.Text = translated;
-                                }
-                                else if (!string.IsNullOrEmpty(origText))
-                                {
-                                    c.Text = origText;
-                                }
-                            }
-                            else if (!string.IsNullOrEmpty(origText))
-                            {
-                                c.Text = origText;
-                            }
+                            c.Text = orig;
                         }
                     }
                 }
 
+                // 2. Handle Custom Modern User Controls with LabelText property (ModernComboBox, ModernTextBox, ModernNumericUpDown)
+                var propLabelText = c.GetType().GetProperty("LabelText");
+                if (propLabelText != null && propLabelText.CanWrite && propLabelText.CanRead)
+                {
+                    string currentLabel = propLabelText.GetValue(c) as string;
+                    if (!isAr && !_originalLabelTexts.TryGetValue(c, out _))
+                    {
+                        _originalLabelTexts.Add(c, currentLabel);
+                    }
+
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        string translated = null;
+                        try { translated = Properties.Resources.ResourceManager.GetString(key, targetCulture); } catch { }
+
+                        if (!string.IsNullOrEmpty(translated))
+                        {
+                            propLabelText.SetValue(c, translated);
+                        }
+                        else if (!isAr)
+                        {
+                            string enText = null;
+                            try { enText = Properties.Resources.ResourceManager.GetString(key, enCulture); } catch { }
+
+                            if (!string.IsNullOrEmpty(enText))
+                                propLabelText.SetValue(c, enText);
+                            else if (_originalLabelTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                                propLabelText.SetValue(c, orig);
+                        }
+                    }
+                    else if (!isAr && _originalLabelTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                    {
+                        propLabelText.SetValue(c, orig);
+                    }
+                }
+
+                // 3. Handle TabControl TabPages
                 if (c is TabControl tabCtrl)
                 {
                     foreach (TabPage page in tabCtrl.TabPages)
                     {
-                        string pageTrans = GetString(page.Name);
-                        if (pageTrans != page.Name && !string.IsNullOrEmpty(pageTrans)) page.Text = pageTrans;
-                        TranslateControl(page); // Recurse into pages
+                        if (!string.IsNullOrEmpty(page.Name))
+                        {
+                            string pageTrans = null;
+                            try { pageTrans = Properties.Resources.ResourceManager.GetString(page.Name, targetCulture); } catch { }
+                            if (!string.IsNullOrEmpty(pageTrans)) page.Text = pageTrans;
+                        }
+                        TranslateControl(page);
                     }
                 }
 
+                // 4. Handle DataGridView Columns
                 if (c is DataGridView dgv)
                 {
                     foreach (DataGridViewColumn col in dgv.Columns)
                     {
-                        string colTrans = GetString(col.Name);
-                        if (colTrans != col.Name && !string.IsNullOrEmpty(colTrans)) col.HeaderText = colTrans;
+                        if (!string.IsNullOrEmpty(col.Name))
+                        {
+                            string colTrans = null;
+                            try { colTrans = Properties.Resources.ResourceManager.GetString(col.Name, targetCulture); } catch { }
+                            if (!string.IsNullOrEmpty(colTrans)) col.HeaderText = colTrans;
+                        }
                     }
                 }
             }
