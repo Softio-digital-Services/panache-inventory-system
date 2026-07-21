@@ -502,6 +502,7 @@ namespace InventorySystem.Forms
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode",  HeaderText = "Barcode",  DataPropertyName = "barcode",              FillWeight = 10, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName",     HeaderText = "Product",  DataPropertyName = "part_name",            FillWeight = 18, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = "Category", DataPropertyName = "category_name",        FillWeight = 12, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colUom",      HeaderText = "UOM",      DataPropertyName = "unit_of_measure",      FillWeight = 7,  ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = "Location", DataPropertyName = "location",             FillWeight = 10, ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf",    HeaderText = "Shelf",    DataPropertyName = "shelf",                FillWeight = 8,  ReadOnly = true });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock",    HeaderText = "Stock",    DataPropertyName = "quantity_in_stock",    FillWeight = 8,  ReadOnly = true });

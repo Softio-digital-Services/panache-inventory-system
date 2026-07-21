@@ -23,7 +23,7 @@ namespace InventorySystem.Forms
         private ModernTextBox txtLocation;
         private ModernTextBox txtShelf;
         private ModernComboBox cmbCategory;
-        private ModernTextBox txtUom;
+        private ModernComboBox cmbUom;
         private ModernTextBox txtBatch;
         private FlatDateTimePicker dtpExpiry;
 
@@ -48,9 +48,22 @@ namespace InventorySystem.Forms
         private int? _editPartId = null;
         private string _currentImagePath = null;
         
+        private GroupBox gbScale;
+        private Label lblScaleStatus;
+        private Label lblUnitPriceTitle;
+        private Label lblWeightReadout;
+        private Label lblCalculatedPrice;
+        private ModernNumericUpDown numUnitPricePerKg;
+        private ModernButton btnConfigScale;
+        private ModernButton btnApplyScalePrice;
+        private ModernButton btnApplyScaleWeight;
+        private ModernButton btnReadScale;
+        private decimal _currentScaleWeight = 0m;
+        private string _currentScaleUnit = null;
+
         public AddProductServiceForm()
         {
-            this.ClientSize = new Size(1050, 800);
+            this.ClientSize = new Size(1050, 850);
             this.TitleText = LocalizationManager.GetString("AddPart_TitleNew", "Product / Service");
             
             InitializeUI();
@@ -72,15 +85,32 @@ namespace InventorySystem.Forms
             rbProduct.CheckedChanged += (s, e) => { if (rbProduct.Checked) { chkTrackStock.Enabled = true; chkTrackStock.Checked = true; } };
             rbService.CheckedChanged += (s, e) => { if (rbService.Checked) { chkTrackStock.Checked = false; chkTrackStock.Enabled = false; } };
             chkTrackStock.CheckedChanged += (s, e) => { numStock.Enabled = chkTrackStock.Checked; numLowLevel.Enabled = chkTrackStock.Checked; };
+
+            // Wire Scale events
+            ScaleService.Instance.WeightReceived += Scale_WeightReceived;
+            ScaleService.Instance.StatusChanged += Scale_StatusChanged;
+            this.FormClosing += (s, e) => {
+                ScaleService.Instance.WeightReceived -= Scale_WeightReceived;
+                ScaleService.Instance.StatusChanged -= Scale_StatusChanged;
+            };
+
+            cmbUom.InnerComboBox.SelectedIndexChanged += (s, e) => {
+                if (string.IsNullOrWhiteSpace(_currentScaleUnit) && cmbUom.SelectedItem != null)
+                {
+                    _currentScaleUnit = cmbUom.SelectedItem.ToString();
+                    UpdateScaleUnitDisplay();
+                }
+            };
         }
 
         private void InitializeUI()
         {
             this.ContentPanel.AutoScroll = true;
-            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 3, Padding = new Padding(15, 15, 15, 15), AutoSize = true };
+            TableLayoutPanel tlpMain = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 4, Padding = new Padding(15, 15, 15, 15), AutoSize = true };
             tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
             tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             
+            tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tlpMain.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -162,14 +192,35 @@ namespace InventorySystem.Forms
             btnScanBarcode = new ModernButton { Text = "Scan", Width = 65, Height = 35, Margin = new Padding(10,25,0,0) };
             ThemeConfig.ApplyPrimaryButton(btnScanBarcode);
             flpBarcode.Controls.AddRange(new Control[] { txtBarcode, btnScanBarcode });
-            btnScanBarcode.Click += (s, e) => { MessageHelper.ShowInfo("Ready to scan..."); txtBarcode.Focus(); };
+            btnScanBarcode.Click += (s, e) => {
+                string barcode = txtBarcode.Text.Trim();
+                if (ScaleBarcodeParser.IsScaleBarcode(barcode)) {
+                    var parsed = ScaleBarcodeParser.Parse(barcode);
+                    if (parsed.IsSuccess) {
+                        if (parsed.BarcodeType == ScaleBarcodeType.WeightBased) {
+                            _currentScaleWeight = parsed.WeightKg;
+                            lblWeightReadout.Text = $"Weight: {parsed.WeightKg:N3} kg";
+                            CalculateScalePrice();
+                            MessageHelper.ShowInfo($"TM-A17 Scale Barcode Detected!\nPLU: {parsed.ProductCode}\nWeight: {parsed.WeightKg:N3} kg\nCalc Price: {lblCalculatedPrice.Text}");
+                        } else if (parsed.BarcodeType == ScaleBarcodeType.PriceBased) {
+                            numPrices[0].Value = parsed.TotalPrice;
+                            CalculateMargins(null, null);
+                            MessageHelper.ShowInfo($"TM-A17 Scale Barcode Detected!\nPLU: {parsed.ProductCode}\nTotal Price: ${parsed.TotalPrice:N2}");
+                        }
+                        if (string.IsNullOrWhiteSpace(txtSku.Text)) txtSku.Text = "PLU-" + parsed.ProductCode;
+                    }
+                } else {
+                    MessageHelper.ShowInfo("Ready to scan...");
+                    txtBarcode.Focus();
+                }
+            };
             
             txtBatch = new ModernTextBox { LabelText = "Batch No.", Width = halfW, Margin = new Padding(0,0,10,10) };
             txtLocation = new ModernTextBox { LabelText = "Location", Width = halfW, Margin = new Padding(0,0,10,10) };
             txtShelf = new ModernTextBox { LabelText = "Shelf", Width = halfW, Margin = new Padding(0,0,10,10) };
-            txtUom = new ModernTextBox { LabelText = "Unit of Measure", Width = halfW, Margin = new Padding(0,0,10,10) };
+            cmbUom = new ModernComboBox { LabelText = "Unit of Measure", Width = halfW, Margin = new Padding(0,0,10,10) };
             
-            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf, txtUom });
+            flpMiddle.Controls.AddRange(new Control[] { txtName, txtDescription, flpSku, flpBarcode, txtBatch, txtLocation, txtShelf, cmbUom });
             tlpMain.Controls.Add(flpMiddle, 1, 0);
 
             // -- Right Pane Row 1: Stock & Supplier --
@@ -215,7 +266,140 @@ namespace InventorySystem.Forms
             gbPrices.Controls.Add(tlpPrices);
             tlpMain.Controls.Add(gbPrices, 1, 2);
 
+            // -- Scale Integration Section --
+            gbScale = new GroupBox { Text = "TM-A17 Weighing Scale & Price Calculator", Dock = DockStyle.Top, Height = 155, Margin = new Padding(10, 5, 20, 25), Padding = new Padding(10, 20, 10, 10) };
+
+            FlowLayoutPanel flpScaleMain = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = false };
+            FlowLayoutPanel flpRow1 = new FlowLayoutPanel { Width = 660, Height = 55, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0, 0, 0, 5) };
+            FlowLayoutPanel flpRow2 = new FlowLayoutPanel { Width = 660, Height = 55, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0) };
+
+            lblScaleStatus = new Label {
+                Text = ScaleService.Instance.IsConnected ? "Status: Connected" : "Status: Disconnected",
+                ForeColor = ScaleService.Instance.IsConnected ? Color.Green : Color.Red,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                AutoSize = true,
+                Margin = new Padding(0, 14, 15, 0)
+            };
+
+            btnConfigScale = new ModernButton { Text = "Scale Settings", Width = 110, Height = 35, Margin = new Padding(0, 5, 10, 0) };
+            ThemeConfig.ApplySecondaryButton(btnConfigScale);
+            btnConfigScale.Click += (s, e) => {
+                if (new ScaleSettingsForm().ShowDialog() == DialogResult.OK)
+                {
+                    _currentScaleUnit = ScaleService.Instance.Config.DefaultUnit;
+                    UpdateScaleUnitDisplay();
+                }
+            };
+
+            btnReadScale = new ModernButton { Text = "Read Weight", Width = 100, Height = 35, Margin = new Padding(0, 5, 15, 0) };
+            ThemeConfig.ApplySecondaryButton(btnReadScale);
+            btnReadScale.Click += (s, e) => {
+                string unit = !string.IsNullOrWhiteSpace(_currentScaleUnit) ? _currentScaleUnit : (string.IsNullOrWhiteSpace(cmbUom.Text) ? "kg" : cmbUom.Text.Trim());
+                if (ScaleService.Instance.IsConnected) ScaleService.Instance.RequestWeight();
+                else ScaleService.Instance.SimulateWeight(0.500m, unit);
+            };
+
+            lblUnitPriceTitle = new Label {
+                Text = $"Unit Price (/{ScaleService.Instance.Config.DefaultUnit}):",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = ThemeConfig.TextColorDark,
+                AutoSize = true,
+                Margin = new Padding(0, 14, 5, 0)
+            };
+
+            numUnitPricePerKg = new ModernNumericUpDown { ShowLabel = false, Width = 120, DecimalPlaces = 2, Maximum = 1000000, Margin = new Padding(0, 5, 10, 0) };
+            numUnitPricePerKg.ValueChanged += (s, e) => CalculateScalePrice();
+
+            flpRow1.Controls.AddRange(new Control[] { lblScaleStatus, btnConfigScale, btnReadScale, lblUnitPriceTitle, numUnitPricePerKg });
+
+            lblWeightReadout = new Label {
+                Text = "Weight: 0.000 kg",
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = Color.DarkBlue,
+                AutoSize = true,
+                Margin = new Padding(0, 10, 15, 0)
+            };
+
+            lblCalculatedPrice = new Label {
+                Text = "Calc Price: $0.00",
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = Color.DarkGreen,
+                AutoSize = true,
+                Margin = new Padding(0, 10, 20, 0)
+            };
+
+            btnApplyScalePrice = new ModernButton { Text = "Apply to Price 1", Width = 130, Height = 35, Margin = new Padding(0, 2, 10, 0) };
+            ThemeConfig.ApplyPrimaryButton(btnApplyScalePrice);
+            btnApplyScalePrice.Click += (s, e) => {
+                if (lblCalculatedPrice.Tag != null && decimal.TryParse(lblCalculatedPrice.Tag.ToString(), out decimal calcP)) {
+                    numPrices[0].Value = calcP;
+                    CalculateMargins(null, null);
+                }
+            };
+
+            btnApplyScaleWeight = new ModernButton { Text = "Apply Weight to Stock", Width = 150, Height = 35, Margin = new Padding(0, 2, 0, 0) };
+            ThemeConfig.ApplySecondaryButton(btnApplyScaleWeight);
+            btnApplyScaleWeight.Click += (s, e) => {
+                numStock.Value = (int)Math.Max(1, Math.Round(_currentScaleWeight));
+            };
+
+            flpRow2.Controls.AddRange(new Control[] { lblWeightReadout, lblCalculatedPrice, btnApplyScalePrice, btnApplyScaleWeight });
+
+            flpScaleMain.Controls.Add(flpRow1);
+            flpScaleMain.Controls.Add(flpRow2);
+            gbScale.Controls.Add(flpScaleMain);
+
+            tlpMain.Controls.Add(gbScale, 1, 3);
+            tlpMain.SetRowSpan(flpLeft, 4);
+
             this.ContentPanel.Controls.Add(tlpMain);
+            UpdateScaleUnitDisplay();
+        }
+
+        private void Scale_WeightReceived(decimal weight, string unit, bool isStable)
+        {
+            if (this.InvokeRequired) {
+                this.BeginInvoke(new Action(() => Scale_WeightReceived(weight, unit, isStable)));
+                return;
+            }
+            _currentScaleWeight = weight;
+            if (!string.IsNullOrWhiteSpace(unit)) _currentScaleUnit = unit;
+            UpdateScaleUnitDisplay(isStable);
+        }
+
+        private void Scale_StatusChanged(bool isConnected, string statusText)
+        {
+            if (this.InvokeRequired) {
+                this.BeginInvoke(new Action(() => Scale_StatusChanged(isConnected, statusText)));
+                return;
+            }
+            lblScaleStatus.Text = $"Status: {(isConnected ? "Connected" : "Disconnected")}";
+            lblScaleStatus.ForeColor = isConnected ? Color.Green : Color.Red;
+            UpdateScaleUnitDisplay();
+        }
+
+        private void UpdateScaleUnitDisplay(bool isStable = true)
+        {
+            string unit = !string.IsNullOrWhiteSpace(_currentScaleUnit) 
+                ? _currentScaleUnit 
+                : ScaleService.Instance.Config.DefaultUnit;
+            if (string.IsNullOrWhiteSpace(unit)) unit = "kg";
+
+            if (lblUnitPriceTitle != null) lblUnitPriceTitle.Text = $"Unit Price (/{unit}):";
+            if (lblWeightReadout != null) lblWeightReadout.Text = $"Weight: {_currentScaleWeight:N3} {unit} {(isStable ? "" : "(Moving)")}";
+            
+            // Sync unit in UOM dropdown if empty
+            if (cmbUom != null && string.IsNullOrWhiteSpace(cmbUom.Text)) cmbUom.Text = unit;
+            
+            CalculateScalePrice();
+        }
+
+        private void CalculateScalePrice()
+        {
+            decimal unitPrice = numUnitPricePerKg.Value;
+            decimal calcPrice = Math.Round(_currentScaleWeight * unitPrice, 2);
+            lblCalculatedPrice.Text = $"Calc Price: ${calcPrice:N2}";
+            lblCalculatedPrice.Tag = calcPrice;
         }
 
         private void LoadDropdowns()
@@ -241,6 +425,10 @@ namespace InventorySystem.Forms
                 cmbTaxRate.Items.Add(new { Text = "Reduced (5%)", Value = 5m });
                 cmbTaxRate.DisplayMember = "Text"; cmbTaxRate.ValueMember = "Value";
                 cmbTaxRate.SelectedIndex = 0;
+
+                // Units of Measure
+                cmbUom.Items.Clear();
+                cmbUom.Items.AddRange(new object[] { "g", "kg", "pcs", "pack", "box", "meter", "liter" });
             } catch (Exception ex) { MessageHelper.ShowError("Error loading data: " + ex.Message); }
         }
 
@@ -255,7 +443,7 @@ namespace InventorySystem.Forms
             txtSku.Text = part.PartNumber;
             txtBarcode.Text = part.Barcode;
             cmbCategory.Text = part.CategoryName;
-            txtUom.Text = part.UnitOfMeasure;
+            cmbUom.Text = part.UnitOfMeasure;
             txtBatch.Text = part.BatchNumber;
             txtLocation.Text = part.Location;
             txtShelf.Text = part.Shelf;
@@ -346,7 +534,7 @@ namespace InventorySystem.Forms
                 Barcode = txtBarcode.Text.Trim(),
                 PartNumber = txtSku.Text.Trim(),
                 CategoryName = cmbCategory.Text,
-                UnitOfMeasure = txtUom.Text.Trim(),
+                UnitOfMeasure = cmbUom.Text.Trim(),
                 BatchNumber = txtBatch.Text.Trim(),
                 Location = txtLocation.Text.Trim(),
                 Shelf = txtShelf.Text.Trim(),

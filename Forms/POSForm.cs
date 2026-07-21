@@ -2330,6 +2330,39 @@ namespace InventorySystem.Forms
                     string barcode = _scanBuffer.Trim();
                     _scanBuffer = "";
 
+                    // Check if barcode is TM-A17 Scale Printed Barcode (EAN-13 prefix 20..29)
+                    if (ScaleBarcodeParser.IsScaleBarcode(barcode))
+                    {
+                        var parsed = ScaleBarcodeParser.Parse(barcode);
+                        if (parsed.IsSuccess)
+                        {
+                            DataTable dtScale = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock,item_type FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}' OR part_number LIKE '%{parsed.ProductCode}%' OR barcode LIKE '%{parsed.ProductCode}%') AND date_deleted IS NULL");
+                            if (dtScale.Rows.Count > 0)
+                            {
+                                DataRow r = dtScale.Rows[0];
+                                string itemType = r["item_type"] != DBNull.Value ? r["item_type"].ToString() : "Product";
+                                bool isService = string.Equals(itemType, "Service", StringComparison.OrdinalIgnoreCase);
+                                decimal unitPrice = Convert.ToDecimal(r["selling_price"]);
+                                int id = Convert.ToInt32(r["id"]);
+                                string name = r["part_name"].ToString();
+                                int stock = Convert.ToInt32(r["quantity_in_stock"]);
+
+                                if (parsed.BarcodeType == ScaleBarcodeType.WeightBased)
+                                {
+                                    decimal weight = parsed.WeightKg;
+                                    decimal finalPrice = Math.Round(unitPrice * weight, 2);
+                                    int qty = (int)Math.Max(1, Math.Round(weight));
+                                    AddToCart(id, $"{name} ({weight:N3}kg)", finalPrice, stock, qty, isService);
+                                }
+                                else if (parsed.BarcodeType == ScaleBarcodeType.PriceBased)
+                                {
+                                    AddToCart(id, name, parsed.TotalPrice, stock, 1, isService);
+                                }
+                                return true;
+                            }
+                        }
+                    }
+
                     DataTable dt = DatabaseHelper.ExecuteDataTable($"SELECT id,part_name,selling_price,quantity_in_stock,item_type FROM parts WHERE (barcode='{barcode}' OR part_number='{barcode}') AND date_deleted IS NULL");
                     if (dt.Rows.Count > 0)
                     {
