@@ -21,6 +21,8 @@ namespace InventorySystem.Forms
         private Label lblLiveWeight;
         private Label lblStatus;
         private ModernTextBox txtSimulateWeight;
+        private GroupBox gbPort;
+        private GroupBox gbTest;
 
         public ScaleSettingsForm()
         {
@@ -40,11 +42,25 @@ namespace InventorySystem.Forms
             ScaleService.Instance.WeightReceived += Instance_WeightReceived;
             ScaleService.Instance.StatusChanged += Instance_StatusChanged;
 
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+
             this.FormClosing += (s, e) =>
             {
                 ScaleService.Instance.WeightReceived -= Instance_WeightReceived;
                 ScaleService.Instance.StatusChanged -= Instance_StatusChanged;
             };
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            LocalizationManager.TranslateControl(this);
+
+            if (gbPort != null) gbPort.Text = LocalizationManager.GetString("gbPort", "TM-A17 Serial COM Port Settings");
+            if (gbTest != null) gbTest.Text = LocalizationManager.GetString("gbTest", "Live Scale Readout & Test Simulator");
+            if (PrimaryButton != null) PrimaryButton.Text = LocalizationManager.GetString("Scale_SaveSettings", "Save Settings");
+            if (SecondaryButton != null) SecondaryButton.Text = LocalizationManager.GetString("Scale_Close", "Close");
         }
 
         private void InitializeUI()
@@ -59,44 +75,46 @@ namespace InventorySystem.Forms
             };
 
             // Settings Group Box
-            GroupBox gbPort = new GroupBox
+            gbPort = new GroupBox
             {
+                Name = "gbPort",
                 Text = "TM-A17 Serial COM Port Settings",
                 Width = 550,
                 Height = 275,
                 Margin = new Padding(0, 0, 0, 15)
             };
 
-            cmbPort = new ModernComboBox { LabelText = "COM Port:", Location = new Point(20, 25), Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
-            btnRefreshPorts = new ModernButton { Text = "Refresh", Location = new Point(275, 48), Width = 90, Height = 35 };
+            cmbPort = new ModernComboBox { Name = "cmbPort", LabelText = "COM Port:", Location = new Point(20, 25), Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
+            btnRefreshPorts = new ModernButton { Name = "btnRefreshPorts", Text = "Refresh", Location = new Point(275, 48), Width = 90, Height = 35 };
             ThemeConfig.ApplySecondaryButton(btnRefreshPorts);
             btnRefreshPorts.Click += (s, e) => PopulatePorts();
 
-            btnConnectToggle = new ModernButton { Text = ScaleService.Instance.IsConnected ? "Disconnect" : "Connect", Location = new Point(375, 48), Width = 145, Height = 35 };
+            btnConnectToggle = new ModernButton { Name = "btnConnectToggle", Text = ScaleService.Instance.IsConnected ? "Disconnect" : "Connect", Location = new Point(375, 48), Width = 145, Height = 35 };
             ThemeConfig.ApplyPrimaryButton(btnConnectToggle);
             btnConnectToggle.Click += btnConnectToggle_Click;
 
-            cmbBaud = new ModernComboBox { LabelText = "Baud Rate:", Location = new Point(20, 105), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbBaud = new ModernComboBox { Name = "cmbBaud", LabelText = "Baud Rate:", Location = new Point(20, 105), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbBaud.Items.AddRange(new object[] { 4800, 9600, 19200, 38400, 57600, 115200 });
 
-            cmbParity = new ModernComboBox { LabelText = "Parity:", Location = new Point(190, 105), Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbParity = new ModernComboBox { Name = "cmbParity", LabelText = "Parity:", Location = new Point(190, 105), Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbParity.Items.AddRange(new object[] { "None", "Odd", "Even", "Mark", "Space" });
 
-            cmbDataBits = new ModernComboBox { LabelText = "Data Bits:", Location = new Point(370, 105), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbDataBits = new ModernComboBox { Name = "cmbDataBits", LabelText = "Data Bits:", Location = new Point(370, 105), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbDataBits.Items.AddRange(new object[] { 7, 8 });
 
-            cmbStopBits = new ModernComboBox { LabelText = "Stop Bits:", Location = new Point(20, 185), Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbStopBits = new ModernComboBox { Name = "cmbStopBits", LabelText = "Stop Bits:", Location = new Point(20, 185), Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbStopBits.Items.AddRange(new object[] { "One", "Two", "OnePointFive" });
 
-            cmbUnit = new ModernComboBox { LabelText = "Default Weight Unit:", Location = new Point(280, 185), Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbUnit = new ModernComboBox { Name = "cmbUnit", LabelText = "Default Weight Unit:", Location = new Point(280, 185), Width = 240, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbUnit.Items.AddRange(new object[] { "kg", "g", "lb", "oz" });
 
             gbPort.Controls.AddRange(new Control[] { cmbPort, btnRefreshPorts, btnConnectToggle, cmbBaud, cmbParity, cmbDataBits, cmbStopBits, cmbUnit });
             flpMain.Controls.Add(gbPort);
 
             // Real-time scale readout panel
-            GroupBox gbTest = new GroupBox
+            gbTest = new GroupBox
             {
+                Name = "gbTest",
                 Text = "Live Scale Readout & Test Simulator",
                 Width = 550,
                 Height = 150,
@@ -105,6 +123,7 @@ namespace InventorySystem.Forms
 
             lblLiveWeight = new Label
             {
+                Name = "lblLiveWeight",
                 Text = $"{ScaleService.Instance.LastWeight:N3} {ScaleService.Instance.LastUnit}",
                 Font = new Font("Segoe UI", 20F, FontStyle.Bold),
                 ForeColor = Color.DarkBlue,
@@ -114,6 +133,7 @@ namespace InventorySystem.Forms
 
             lblStatus = new Label
             {
+                Name = "lblStatus",
                 Text = ScaleService.Instance.IsConnected ? "● Connected" : "● Disconnected",
                 ForeColor = ScaleService.Instance.IsConnected ? Color.Green : Color.Red,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -121,10 +141,10 @@ namespace InventorySystem.Forms
                 AutoSize = true
             };
 
-            txtSimulateWeight = new ModernTextBox { LabelText = "Test Weight:", Location = new Point(20, 75), Width = 230 };
+            txtSimulateWeight = new ModernTextBox { Name = "txtSimulateWeight", LabelText = "Test Weight:", Location = new Point(20, 75), Width = 230 };
             txtSimulateWeight.Text = "0.500";
 
-            btnSimulate = new ModernButton { Text = "Simulate Scale Reading", Location = new Point(275, 98), Width = 245, Height = 35 };
+            btnSimulate = new ModernButton { Name = "btnSimulate", Text = "Simulate Scale Reading", Location = new Point(275, 98), Width = 245, Height = 35 };
             ThemeConfig.ApplySecondaryButton(btnSimulate);
             btnSimulate.Click += (s, e) =>
             {

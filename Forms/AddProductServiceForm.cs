@@ -101,6 +101,16 @@ namespace InventorySystem.Forms
                     UpdateScaleUnitDisplay();
                 }
             };
+
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            LocalizationManager.TranslateControl(this);
+            UpdateScaleUnitDisplay();
         }
 
         private void InitializeUI()
@@ -267,13 +277,14 @@ namespace InventorySystem.Forms
             tlpMain.Controls.Add(gbPrices, 1, 2);
 
             // -- Scale Integration Section --
-            gbScale = new GroupBox { Text = "TM-A17 Weighing Scale & Price Calculator", Dock = DockStyle.Top, Height = 155, Margin = new Padding(10, 5, 20, 25), Padding = new Padding(10, 20, 10, 10) };
+            gbScale = new GroupBox { Name = "gbScale", Text = "TM-A17 Weighing Scale & Price Calculator", Dock = DockStyle.Top, Height = 155, Margin = new Padding(10, 5, 20, 25), Padding = new Padding(10, 20, 10, 10) };
 
             FlowLayoutPanel flpScaleMain = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = false };
             FlowLayoutPanel flpRow1 = new FlowLayoutPanel { Width = 660, Height = 55, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0, 0, 0, 5) };
             FlowLayoutPanel flpRow2 = new FlowLayoutPanel { Width = 660, Height = 55, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0) };
 
             lblScaleStatus = new Label {
+                Name = "lblScaleStatus",
                 Text = ScaleService.Instance.IsConnected ? "Status: Connected" : "Status: Disconnected",
                 ForeColor = ScaleService.Instance.IsConnected ? Color.Green : Color.Red,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
@@ -281,7 +292,7 @@ namespace InventorySystem.Forms
                 Margin = new Padding(0, 14, 15, 0)
             };
 
-            btnConfigScale = new ModernButton { Text = "Scale Settings", Width = 110, Height = 35, Margin = new Padding(0, 5, 10, 0) };
+            btnConfigScale = new ModernButton { Name = "btnConfigScale", Text = "Scale Settings", Width = 110, Height = 35, Margin = new Padding(0, 5, 10, 0) };
             ThemeConfig.ApplySecondaryButton(btnConfigScale);
             btnConfigScale.Click += (s, e) => {
                 if (new ScaleSettingsForm().ShowDialog() == DialogResult.OK)
@@ -291,7 +302,7 @@ namespace InventorySystem.Forms
                 }
             };
 
-            btnReadScale = new ModernButton { Text = "Read Weight", Width = 100, Height = 35, Margin = new Padding(0, 5, 15, 0) };
+            btnReadScale = new ModernButton { Name = "btnReadScale", Text = "Read Weight", Width = 100, Height = 35, Margin = new Padding(0, 5, 15, 0) };
             ThemeConfig.ApplySecondaryButton(btnReadScale);
             btnReadScale.Click += (s, e) => {
                 string unit = !string.IsNullOrWhiteSpace(_currentScaleUnit) ? _currentScaleUnit : (string.IsNullOrWhiteSpace(cmbUom.Text) ? "kg" : cmbUom.Text.Trim());
@@ -300,6 +311,7 @@ namespace InventorySystem.Forms
             };
 
             lblUnitPriceTitle = new Label {
+                Name = "lblUnitPriceTitle",
                 Text = $"Unit Price (/{ScaleService.Instance.Config.DefaultUnit}):",
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
@@ -313,6 +325,7 @@ namespace InventorySystem.Forms
             flpRow1.Controls.AddRange(new Control[] { lblScaleStatus, btnConfigScale, btnReadScale, lblUnitPriceTitle, numUnitPricePerKg });
 
             lblWeightReadout = new Label {
+                Name = "lblWeightReadout",
                 Text = "Weight: 0.000 kg",
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.DarkBlue,
@@ -321,6 +334,7 @@ namespace InventorySystem.Forms
             };
 
             lblCalculatedPrice = new Label {
+                Name = "lblCalculatedPrice",
                 Text = "Calc Price: $0.00",
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.DarkGreen,
@@ -328,7 +342,7 @@ namespace InventorySystem.Forms
                 Margin = new Padding(0, 10, 20, 0)
             };
 
-            btnApplyScalePrice = new ModernButton { Text = "Apply to Price 1", Width = 130, Height = 35, Margin = new Padding(0, 2, 10, 0) };
+            btnApplyScalePrice = new ModernButton { Name = "btnApplyScalePrice", Text = "Apply to Price 1", Width = 130, Height = 35, Margin = new Padding(0, 2, 10, 0) };
             ThemeConfig.ApplyPrimaryButton(btnApplyScalePrice);
             btnApplyScalePrice.Click += (s, e) => {
                 if (lblCalculatedPrice.Tag != null && decimal.TryParse(lblCalculatedPrice.Tag.ToString(), out decimal calcP)) {
@@ -337,7 +351,7 @@ namespace InventorySystem.Forms
                 }
             };
 
-            btnApplyScaleWeight = new ModernButton { Text = "Apply Weight to Stock", Width = 150, Height = 35, Margin = new Padding(0, 2, 0, 0) };
+            btnApplyScaleWeight = new ModernButton { Name = "btnApplyScaleWeight", Text = "Apply Weight to Stock", Width = 150, Height = 35, Margin = new Padding(0, 2, 0, 0) };
             ThemeConfig.ApplySecondaryButton(btnApplyScaleWeight);
             btnApplyScaleWeight.Click += (s, e) => {
                 numStock.Value = (int)Math.Max(1, Math.Round(_currentScaleWeight));

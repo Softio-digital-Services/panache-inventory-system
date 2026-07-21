@@ -164,6 +164,12 @@ namespace InventorySystem.Helpers
             }
         }
 
+        private class ValueBox<T> { public T Value { get; set; } public ValueBox(T val) { Value = val; } }
+
+        private static ConditionalWeakTable<Control, string> _originalTexts = new ConditionalWeakTable<Control, string>();
+        private static ConditionalWeakTable<Control, ValueBox<Point>> _originalLocations = new ConditionalWeakTable<Control, ValueBox<Point>>();
+        private static ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>> _originalFlowDirections = new ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>>();
+
         public static void TranslateControl(Control parent)
         {
             if (parent == null) return;
@@ -172,17 +178,49 @@ namespace InventorySystem.Helpers
             {
                 if (c.HasChildren) TranslateControl(c);
 
-                if (c is Button || c is Label || c is CheckBox || c is RadioButton)
+                if (c is Button || c is Label || c is CheckBox || c is RadioButton || c is GroupBox)
                 {
                     // Skip setting native text for custom-painted standard buttons
                     bool isStandardButton = c is Button && c.Tag != null && c.Tag.ToString().StartsWith("standard_");
                     
                     if (!isStandardButton)
                     {
-                        string translated = GetString(c.Name);
-                        if (translated != c.Name && !string.IsNullOrEmpty(translated))
+                        if (!_originalTexts.TryGetValue(c, out string origText))
                         {
-                            c.Text = translated;
+                            origText = c.Text;
+                            _originalTexts.Add(c, origText);
+                        }
+
+                        string key = !string.IsNullOrEmpty(c.Name) ? c.Name : null;
+                        if (IsArabic)
+                        {
+                            if (!string.IsNullOrEmpty(key))
+                            {
+                                string translated = GetString(key);
+                                if (translated != key && !string.IsNullOrEmpty(translated))
+                                {
+                                    c.Text = translated;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(key))
+                            {
+                                string translated = GetString(key);
+                                if (translated != key && !string.IsNullOrEmpty(translated))
+                                {
+                                    c.Text = translated;
+                                }
+                                else if (!string.IsNullOrEmpty(origText))
+                                {
+                                    c.Text = origText;
+                                }
+                            }
+                            else if (!string.IsNullOrEmpty(origText))
+                            {
+                                c.Text = origText;
+                            }
                         }
                     }
                 }
@@ -274,6 +312,26 @@ namespace InventorySystem.Helpers
 
             control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
 
+            // Mirror FlowLayoutPanel direction for RTL
+            if (control is FlowLayoutPanel flp)
+            {
+                if (!_originalFlowDirections.TryGetValue(flp, out ValueBox<FlowDirection> box))
+                {
+                    box = new ValueBox<FlowDirection>(flp.FlowDirection);
+                    _originalFlowDirections.Add(flp, box);
+                }
+                FlowDirection origFlow = box.Value;
+                if (isAr)
+                {
+                    if (origFlow == FlowDirection.LeftToRight) flp.FlowDirection = FlowDirection.RightToLeft;
+                    else if (origFlow == FlowDirection.RightToLeft) flp.FlowDirection = FlowDirection.LeftToRight;
+                }
+                else
+                {
+                    flp.FlowDirection = origFlow;
+                }
+            }
+
             // Skip manual location/anchor mirroring for internal components of ModernTextBox and StatCard
             // as they handle their own internal layout logic.
             bool isInternalHandled = (control.Parent != null && (control.Parent.GetType().Name == "ModernTextBox" || control.Parent.GetType().Name == "StatCard" || control.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.GetType().Name == "ModernComboBox")) ||
@@ -298,9 +356,6 @@ namespace InventorySystem.Helpers
                 }
             }
             
-
-
-
 
             // Handle Chart Mirroring
             if (control.GetType().FullName == "System.Windows.Forms.DataVisualization.Charting.Chart")
@@ -327,29 +382,39 @@ namespace InventorySystem.Helpers
             if (!isInternalHandled)
             {
                 // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
-                if (isAr && control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
+                if (control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
                 {
-                    if (!HasRtlState(control, "rtl_loc_swapped"))
+                    if (!_originalLocations.TryGetValue(control, out ValueBox<Point> locBox))
                     {
-                        control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
-                        AddRtlState(control, "rtl_loc_swapped");
+                        locBox = new ValueBox<Point>(control.Location);
+                        _originalLocations.Add(control, locBox);
                     }
-                }
-                else if (!isAr && control.Parent != null)
-                {
-                    if (HasRtlState(control, "rtl_loc_swapped"))
+                    Point origLoc = locBox.Value;
+
+                    if (isAr)
                     {
-                        control.Location = new Point(control.Parent.ClientSize.Width - control.Location.X - control.Width, control.Location.Y);
-                        RemoveRtlState(control, "rtl_loc_swapped");
+                        int pWidth = control.Parent.ClientSize.Width;
+                        if (pWidth > 0 && !HasRtlState(control, "rtl_loc_swapped"))
+                        {
+                            control.Location = new Point(pWidth - origLoc.X - control.Width, origLoc.Y);
+                            AddRtlState(control, "rtl_loc_swapped");
+                        }
+                    }
+                    else
+                    {
+                        if (HasRtlState(control, "rtl_loc_swapped"))
+                        {
+                            control.Location = origLoc;
+                            RemoveRtlState(control, "rtl_loc_swapped");
+                        }
                     }
                 }
 
                 // Swap Anchors (Only for controls that are not Docked, as setting Anchor resets Dock to None)
-                // Skip for TLP/FLP children as these containers handle mirroring via RightToLeft property
                 bool isAnchorSwapped = HasRtlState(control, "rtl_anchor_swapped");
                 bool isLayoutChild = control.Parent != null && (control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel);
 
-                if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None)
+                if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
                 {
                     if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
                     {
@@ -362,7 +427,7 @@ namespace InventorySystem.Helpers
                         AddRtlState(control, "rtl_anchor_swapped");
                     }
                 }
-                else if (!isAr && isAnchorSwapped && control.Dock == DockStyle.None)
+                else if (!isAr && isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
                 {
                     if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
                     {
@@ -375,8 +440,6 @@ namespace InventorySystem.Helpers
                     RemoveRtlState(control, "rtl_anchor_swapped");
                 }
             }
-
-
 
             foreach (Control child in control.Controls)
                 ApplyRTL(child);

@@ -716,4 +716,15 @@
   <data name="Parts_AddToCart" xml:space="preserve">
     <value>إضافة إلى {0}</value>
   </data>
+  <!-- Scale Translations -->
+  <data name="gbScale" xml:space="preserve"><value>ميزان TM-A17 وحاسبة السعر</value></data>
+  <data name="btnConfigScale" xml:space="preserve"><value>إعدادات الميزان</value></data>
+  <data name="btnReadScale" xml:space="preserve"><value>قراءة الوزن</value></data>
+  <data name="btnApplyScalePrice" xml:space="preserve"><value>تطبيق على السعر 1</value></data>
+  <data name="btnApplyScaleWeight" xml:space="preserve"><value>تطبيق الوزن على المخزون</value></data>
+  <data name="gbPort" xml:space="preserve"><value>إعدادات منفذ COM لميزان TM-A17</value></data>
+  <data name="btnRefreshPorts" xml:space="preserve"><value>تحديث</value></data>
+  <data name="btnConnectToggle" xml:space="preserve"><value>اتصال</value></data>
+  <data name="gbTest" xml:space="preserve"><value>قراءة الميزان المباشرة ومحاكي الاختبار</value></data>
+  <data name="btnSimulate" xml:space="preserve"><value>محاكاة قراءة الميزان</value></data>
 </root>
