@@ -157,12 +157,12 @@ namespace InventorySystem
             if (lblVersion != null)
                 lblVersion.Text = L("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services";
             if (lblDeveloper != null)
-                lblDeveloper.Text = isAr ? "تطوير سوفتيو" : "Developed by Softio";
+                lblDeveloper.Text = LocalizationManager.GetString("Msg_DevelopedBy", "Developed by Softio");
 
             if (pbLanguage != null)
             {
                 if (_languageToolTip == null) _languageToolTip = new ToolTip();
-                _languageToolTip.SetToolTip(pbLanguage, isAr ? "Switch language to English" : "تغيير اللغة إلى العربية");
+                _languageToolTip.SetToolTip(pbLanguage, LocalizationManager.GetString("Nav_LanguageToolTip", "Switch language"));
             }
 
             var pnlHeaderIcons = this.Controls.Find("rightPanel", true).FirstOrDefault() as Panel;
@@ -361,7 +361,7 @@ namespace InventorySystem
             pnlFooter.Controls.Add(lblVersion);
 
             lblDeveloper = new Label {
-                Text = LocalizationManager.IsArabic ? "تطوير سوفتيو" : "Developed by Softio",
+                Text = LocalizationManager.GetString("Msg_DevelopedBy", "Developed by Softio"),
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
                 ForeColor = ThemeConfig.PrimaryColor,
@@ -412,13 +412,13 @@ namespace InventorySystem
             // Calculator
             PictureBox pbCalc = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCalc);
-            pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.IsArabic ? "\u062d\u0627\u0633\u0628\u0629" : "Calculator", 380, 580);
+            pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.GetString("Plugins_CalcTitle", "Calculator"), 380, 580);
             rightPanel.Controls.Add(pbCalc);
 
             // Backup
             PictureBox pbBackup = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbBackup);
-            pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup & Restore", 520, 500);
+            pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.GetString("Plugins_BackupRestore", "Backup & Restore"), 520, 500);
             rightPanel.Controls.Add(pbBackup);
 
             // Currencies
@@ -430,7 +430,7 @@ namespace InventorySystem
             // About Us
             PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbAbout, 0.55f);
-            ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.IsArabic ? "عن البرنامج" : "About Us");
+            ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.GetString("Nav_AboutUs", "About Us"));
             pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbAbout);
 

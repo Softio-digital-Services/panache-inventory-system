@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using InventorySystem.Helpers;
 using InventorySystem.Services;
@@ -29,7 +29,7 @@ namespace InventorySystem.Forms
             string code = txtCode.Text.Trim().ToUpper();
             if (string.IsNullOrEmpty(code))
             {
-                MessageHelper.ShowWarning("Please enter currency code first");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("AddCurr_EnterCodeFirst", "Please enter currency code first"));
                 return;
             }
 
@@ -45,13 +45,13 @@ namespace InventorySystem.Forms
                 }
                 else
                 {
-                    MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "\u062a\u0639\u0630\u0651\u0631 \u062c\u0644\u0628 \u0627\u0644\u0633\u0639\u0631. \u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644\u0647 \u064a\u062f\u0648\u064a\u0627\u064b." : "Could not fetch rate. Please enter manually.");
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("AddCurr_FetchRateError", "Could not fetch rate. Please enter manually."));
                 }
             }
             finally
             {
                 btnFetch.Enabled = true;
-                btnFetch.Text = LocalizationManager.IsArabic ? "\u062c\u0644\u0628" : "Fetch";
+                btnFetch.Text = LocalizationManager.GetString("AddCurr_Fetch", "Fetch");
             }
         }
 
@@ -60,11 +60,11 @@ namespace InventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            txtCode.LabelText = (isArabic ? LocalizationManager.GetString("Curr_ColCode") : "Currency Code") + " (e.g. EUR)";
-            txtName.LabelText = (isArabic ? LocalizationManager.GetString("Curr_ColName") : "Currency Name") + " (e.g. Euro)";
-            txtSymbol.LabelText = ("Symbol") + " (e.g. \u20ac)";
-            numRate.LabelText = (isArabic ? LocalizationManager.GetString("Curr_ColRate") : "Exchange Rate") + " (1 USD = ?)";
-            btnFetch.Text = LocalizationManager.IsArabic ? "\u062c\u0644\u062b" : "Fetch";
+            txtCode.LabelText = LocalizationManager.GetString("AddCurr_CodeLabel", "Currency Code (e.g. EUR)");
+            txtName.LabelText = LocalizationManager.GetString("AddCurr_NameLabel", "Currency Name (e.g. Euro)");
+            txtSymbol.LabelText = LocalizationManager.GetString("AddCurr_SymbolLabel", "Symbol (e.g. €)");
+            numRate.LabelText = LocalizationManager.GetString("AddCurr_RateLabel", "Exchange Rate (1 USD = ?)");
+            btnFetch.Text = LocalizationManager.GetString("AddCurr_Fetch", "Fetch");
             btnFetch.Image = ThemeConfig.GetNuricon("sync");
             btnFetch.TextImageRelation = TextImageRelation.ImageBeforeText;
             btnFetch.ImageAlign = ContentAlignment.MiddleLeft;
@@ -84,7 +84,7 @@ namespace InventorySystem.Forms
 
             if (code.Length > 10)
             {
-                MessageHelper.ShowWarning("Code too long");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("AddCurr_CodeTooLong", "Code too long"));
                 return;
             }
 

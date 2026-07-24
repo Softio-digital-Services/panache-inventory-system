@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -23,7 +23,7 @@ namespace InventorySystem.Plugins
         public string LicenseFeatureKey => "";
 
         public string TabId    => "btnCalculator";
-        public string TabTitle => LocalizationManager.IsArabic ? "\u062d\u0627\u0633\u0628\u0629" : "Calculator";
+        public string TabTitle => LocalizationManager.GetString("Plugins_CalcTitle", "Calculator");
         public string TabIcon  => "calculator";
         public int    TabOrder => 110;
 

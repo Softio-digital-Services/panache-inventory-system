@@ -19,7 +19,7 @@ namespace InventorySystem.Plugins
         public string LicenseFeatureKey => "Plugin_Customers";
 
         public string TabId => "btnCustomers";
-        public string TabTitle => LocalizationManager.IsArabic ? "العملاء" : "Customers";
+        public string TabTitle => LocalizationManager.GetString("Nav_Customers", "Customers");
         public string TabIcon => "customers";
         public int TabOrder => 30; // After POS
 

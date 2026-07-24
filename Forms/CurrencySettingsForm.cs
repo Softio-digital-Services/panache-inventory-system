@@ -110,7 +110,7 @@ namespace InventorySystem.Forms
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol", HeaderText = LocalizationManager.GetString("Curr_ColSymbol"), DataPropertyName = "symbol", Width = 70, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd", HeaderText = LocalizationManager.GetString("Curr_ColRate"), DataPropertyName = "rate_vs_usd", Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = LocalizationManager.GetString("Curr_ColUpdate"), DataPropertyName = "last_updated", Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
-            dgvRates.Columns.Add(new DataGridViewImageColumn { Name = "colAction", HeaderText = "Action", Width = 60 });
+            dgvRates.Columns.Add(new DataGridViewImageColumn { Name = "colAction", HeaderText = LocalizationManager.GetString("Parts_GridActions", "Action"), Width = 60 });
 
             dgvRates.CellPainting += DgvRates_CellPainting;
             dgvRates.CellMouseClick += DgvRates_CellMouseClick;
@@ -184,7 +184,7 @@ namespace InventorySystem.Forms
         {
             if (sender is Button btn) btn.Enabled = false;
             lblStatus.ForeColor = ThemeConfig.SecondaryColor;
-            lblStatus.Text     = LocalizationManager.IsArabic ? "جاري الاتصال بخدمة الأسعار..." : "Connecting to exchange rate service...";
+            lblStatus.Text     = LocalizationManager.GetString("CurrSettings_Connecting", "Connecting to exchange rate service...");
 
             var rates = await CurrencyService.FetchLiveRatesAsync();
 
@@ -198,7 +198,7 @@ namespace InventorySystem.Forms
             else
             {
                 lblStatus.ForeColor = ThemeConfig.DangerColor;
-                lblStatus.Text      = LocalizationManager.IsArabic ? "تعذر الاتصال. يتم استخدام الأسعار المخزنة." : "Could not reach server. Using cached rates.";
+                lblStatus.Text      = LocalizationManager.GetString("CurrSettings_FetchError", "Could not reach server. Using cached rates.");
             }
 
             if (sender is Button btn2) btn2.Enabled = true;

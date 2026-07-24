@@ -19,6 +19,7 @@ namespace InventorySystem.Forms
         private FlatDateTimePicker dtDueDate;
         private ModernNumericUpDown numReminderDays;
         private CheckBox chkEnableReminder;
+        private Label lblDueDate;
         
         public string CustomerName => rdoCompany.Checked ? txtName.Text.Trim() : $"{txtFirstName.Text.Trim()} {txtLastName.Text.Trim()}".Trim();
         public string Phone => txtPhone.Text.Trim();
@@ -96,11 +97,8 @@ namespace InventorySystem.Forms
             if(txtCreditLimit != null) txtCreditLimit.LabelText = LocalizationManager.GetString("AddCust_CreditLimit", "Credit Limit");
             if(txtAddress != null) txtAddress.LabelText = L("Popup_Address");
             
-            var lblDue = this.Controls.Find("lblDueDate", true);
-            if(lblDue.Length > 0) lblDue[0].Text = LocalizationManager.GetString("AddCust_DueDate", "Payment Due Date");
-            
-            var lblRem = this.Controls.Find("lblRemDays", true);
-            if(lblRem.Length > 0) lblRem[0].Text = LocalizationManager.GetString("AddCust_ReminderDays", "Reminder (Days Before)");
+            if (lblDueDate != null) lblDueDate.Text = LocalizationManager.GetString("AddCust_DueDate", "Payment Due Date");
+            if (numReminderDays != null) numReminderDays.LabelText = LocalizationManager.GetString("AddCust_ReminderDays", "Reminder (Days Before)");
             
             if(chkEnableReminder != null) chkEnableReminder.Text = LocalizationManager.GetString("AddCust_EnableReminder", "Enable Reminder");
 
@@ -235,7 +233,7 @@ namespace InventorySystem.Forms
 
             chkEnableReminder = new CheckBox { Text = "Enable Payment Reminder", AutoSize = true, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 0, 15) };
             
-            Label lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
+            lblDueDate = new Label { Name = "lblDueDate", Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Enabled = false, Height = 35 };
             
             numReminderDays = new ModernNumericUpDown { LabelText = "Reminder (Days Before)", Dock = DockStyle.Fill, Minimum = 0, Maximum = 365, Enabled = false, Increment = 1 };

@@ -48,6 +48,18 @@ namespace InventorySystem.Forms
         private int? _editPartId = null;
         private string _currentImagePath = null;
         
+        private GroupBox gbType;
+        private GroupBox gbSettings;
+        private Label lblExp;
+        private GroupBox gbStock;
+        private GroupBox gbSupp;
+        private GroupBox gbPrices;
+        private Label lblLevel;
+        private Label lblPrice;
+        private Label lblGross;
+        private Label lblProfit;
+        private Label[] lblPriceRows = new Label[4];
+        
         private GroupBox gbScale;
         private Label lblScaleStatus;
         private Label lblUnitPriceTitle;
@@ -109,7 +121,69 @@ namespace InventorySystem.Forms
         private void ApplyLocalization()
         {
             LocalizationManager.ApplyRTL(this);
-            LocalizationManager.TranslateControl(this);
+            Func<string, string, string> L = LocalizationManager.GetString;
+
+            this.TitleText = _editPartId.HasValue ? L("AddPart_TitleEdit", "Edit Product / Service") : L("AddPart_TitleNew", "Product / Service");
+
+            if (btnUpload != null) btnUpload.Text = L("AddPart_UploadImage", "Upload Image");
+            if (gbType != null) gbType.Text = L("AddPart_Type", "Type");
+            if (rbProduct != null) rbProduct.Text = L("AddPart_Product", "Product");
+            if (rbService != null) rbService.Text = L("AddPart_Service", "Service");
+            if (gbSettings != null) gbSettings.Text = L("AddPart_Settings", "Settings");
+            if (chkSales != null) chkSales.Text = L("AddPart_SalesItem", "Sales item");
+            if (chkPurchase != null) chkPurchase.Text = L("AddPart_PurchaseItem", "Purchase item");
+            if (chkInactive != null) chkInactive.Text = L("AddPart_Inactive", "Inactive");
+            if (cmbTaxRate != null) cmbTaxRate.LabelText = L("AddPart_TaxRates", "Tax Rates:");
+            if (cmbCategory != null) cmbCategory.LabelText = L("AddPart_Category", "Category");
+            if (lblExp != null) lblExp.Text = L("AddPart_ExpiryDate", "Expiry Date");
+            
+            if (txtName != null) txtName.LabelText = L("AddPart_Name", "Name");
+            if (txtDescription != null) txtDescription.LabelText = L("AddPart_Description", "Description");
+            if (txtSku != null) txtSku.LabelText = L("AddPart_SKU", "SKU");
+            if (btnAutoSku != null) btnAutoSku.Text = L("AddPart_Auto", "Auto");
+            if (txtBarcode != null) txtBarcode.LabelText = L("AddPart_Barcode", "Barcode");
+            if (btnScanBarcode != null) btnScanBarcode.Text = L("AddPart_Scan", "Scan");
+            if (txtBatch != null) txtBatch.LabelText = L("AddPart_BatchNo", "Batch No.");
+            if (txtLocation != null) txtLocation.LabelText = L("AddPart_Location", "Location");
+            if (txtShelf != null) txtShelf.LabelText = L("AddPart_Shelf", "Shelf");
+            if (cmbUom != null) cmbUom.LabelText = L("AddPart_UnitOfMeasure", "Unit of Measure");
+
+            if (gbStock != null) gbStock.Text = L("AddPart_StockControl", "Stock control");
+            if (chkTrackStock != null) chkTrackStock.Text = L("AddPart_ControlThisItem", "Control this item");
+            if (numStock != null) numStock.LabelText = L("AddPart_Stock", "Stock");
+            if (numLowLevel != null) numLowLevel.LabelText = L("AddPart_LowLevel", "Low level");
+
+            if (gbSupp != null) gbSupp.Text = L("AddPart_SupplierCost", "Supplier Cost");
+            if (cmbSupplier != null) cmbSupplier.LabelText = L("AddPart_Supplier", "Supplier");
+            if (numCost != null) numCost.LabelText = L("AddPart_Cost", "Cost");
+
+            if (gbPrices != null) gbPrices.Text = L("AddPart_Prices", "Prices");
+            if (lblLevel != null) lblLevel.Text = L("AddPart_Level", "Level");
+            if (lblPrice != null) lblPrice.Text = L("AddPart_Price", "Price");
+            if (lblGross != null) lblGross.Text = L("AddPart_Gross", "Gross %");
+            if (lblProfit != null) lblProfit.Text = L("AddPart_Profit", "Profit");
+            
+            for (int i = 0; i < 4; i++)
+            {
+                if (lblPriceRows[i] != null)
+                {
+                    lblPriceRows[i].Text = L("AddPart_Price" + (i + 1), "Price " + (i + 1));
+                }
+            }
+
+            if (gbScale != null) gbScale.Text = L("Scale_Title", "TM-A17 Weighing Scale & Price Calculator");
+            if (btnConfigScale != null) btnConfigScale.Text = L("Scale_SettingsBtn", "Scale Settings");
+            if (btnReadScale != null) btnReadScale.Text = L("Scale_ReadWeight", "Read Weight");
+            if (btnApplyScalePrice != null) btnApplyScalePrice.Text = L("Scale_ApplyPrice1", "Apply to Price 1");
+            if (btnApplyScaleWeight != null) btnApplyScaleWeight.Text = L("Scale_ApplyStock", "Apply Weight to Stock");
+
+            SetFooterButtons(
+                _editPartId.HasValue ? L("AddPart_UpdateBtn", "Update") : L("AddPart_Save", "Save"),
+                L("Popup_Cancel", "Cancel"),
+                btnSave_Click,
+                btnCancel_Click
+            );
+
             UpdateScaleUnitDisplay();
         }
 
@@ -139,14 +213,14 @@ namespace InventorySystem.Forms
             flpLeft.Controls.Add(pnlLeft);
 
             // Type
-            GroupBox gbType = new GroupBox { Text = "Type", Width = 280, Height = 60, Margin = new Padding(0,0,0,15) };
+            gbType = new GroupBox { Text = "Type", Width = 280, Height = 60, Margin = new Padding(0,0,0,15) };
             rbProduct = new RadioButton { Text = "Product", Checked = true, Location = new Point(15, 25), AutoSize = true };
             rbService = new RadioButton { Text = "Service", Location = new Point(120, 25), AutoSize = true };
             gbType.Controls.Add(rbProduct); gbType.Controls.Add(rbService);
             flpLeft.Controls.Add(gbType);
-
+ 
             // Settings
-            GroupBox gbSettings = new GroupBox { Text = "Settings", Width = 280, Height = 100, Margin = new Padding(0,0,0,15) };
+            gbSettings = new GroupBox { Text = "Settings", Width = 280, Height = 100, Margin = new Padding(0,0,0,15) };
             chkSales = new CheckBox { Text = "Sales item", Checked = true, Location = new Point(15, 25), AutoSize = true };
             chkPurchase = new CheckBox { Text = "Purchase item", Location = new Point(15, 50), AutoSize = true };
             chkInactive = new CheckBox { Text = "Inactive", Location = new Point(15, 75), AutoSize = true };
@@ -163,7 +237,7 @@ namespace InventorySystem.Forms
 
             // Expiry Date
             FlowLayoutPanel flpExp = new FlowLayoutPanel { Width = 280, Height = 67, Margin = new Padding(0,0,0,10), FlowDirection = FlowDirection.TopDown };
-            Label lblExp = new Label { Text = "Expiry Date", AutoSize = true, Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
+            lblExp = new Label { Text = "Expiry Date", AutoSize = true, Font = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = ThemeConfig.TextColorDark };
             dtpExpiry = new FlatDateTimePicker { Width = 270, Format = DateTimePickerFormat.Short, ShowCheckBox = true, Checked = false };
             flpExp.Controls.Add(lblExp); flpExp.Controls.Add(dtpExpiry);
             flpLeft.Controls.Add(flpExp);
@@ -236,35 +310,41 @@ namespace InventorySystem.Forms
             // -- Right Pane Row 1: Stock & Supplier --
             FlowLayoutPanel flpStockSupp = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Margin = new Padding(10,0,0,0), AutoSize = true };
             
-            GroupBox gbStock = new GroupBox { Text = "Stock control", Width = halfW, Height = 120, Margin = new Padding(0,0,10,10) };
+            gbStock = new GroupBox { Text = "Stock control", Width = halfW, Height = 120, Margin = new Padding(0,0,10,10) };
             chkTrackStock = new CheckBox { Text = "Control this item", Checked = true, Location = new Point(10, 20), AutoSize = true };
             numStock = new ModernNumericUpDown { LabelText = "Stock", Width = (halfW / 2) - 15, Location = new Point(10, 45) };
             numLowLevel = new ModernNumericUpDown { LabelText = "Low level", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45) };
             gbStock.Controls.AddRange(new Control[] { chkTrackStock, numStock, numLowLevel });
             
-            GroupBox gbSupp = new GroupBox { Text = "Supplier Cost", Width = halfW, Height = 120, Margin = new Padding(0,0,10,10) };
+            gbSupp = new GroupBox { Text = "Supplier Cost", Width = halfW, Height = 120, Margin = new Padding(0,0,10,10) };
             cmbSupplier = new ModernComboBox { LabelText = "Supplier", Width = (halfW / 2) - 15, Location = new Point(10, 45), DropDownStyle = ComboBoxStyle.DropDownList };
             numCost = new ModernNumericUpDown { LabelText = "Cost", Width = (halfW / 2) - 15, Location = new Point((halfW / 2) + 5, 45), DecimalPlaces = 2, Maximum = 1000000 };
             gbSupp.Controls.AddRange(new Control[] { cmbSupplier, numCost });
-
+ 
             flpStockSupp.Controls.AddRange(new Control[] { gbStock, gbSupp });
             tlpMain.Controls.Add(flpStockSupp, 1, 1);
 
             // -- Prices Grid --
-            GroupBox gbPrices = new GroupBox { Text = "Prices", Dock = DockStyle.Top, Margin = new Padding(10,0,20,20), AutoSize = true };
+            gbPrices = new GroupBox { Text = "Prices", Dock = DockStyle.Top, Margin = new Padding(10,0,20,20), AutoSize = true };
             TableLayoutPanel tlpPrices = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 4, RowCount = 5, Padding = new Padding(10), AutoSize = true };
             tlpPrices.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
             tlpPrices.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpPrices.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             tlpPrices.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             
-            tlpPrices.Controls.Add(new Label { Text = "Level", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) }, 0, 0);
-            tlpPrices.Controls.Add(new Label { Text = "Price", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) }, 1, 0);
-            tlpPrices.Controls.Add(new Label { Text = "Gross %", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) }, 2, 0);
-            tlpPrices.Controls.Add(new Label { Text = "Profit", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) }, 3, 0);
-
+            lblLevel = new Label { Text = "Level", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            lblPrice = new Label { Text = "Price", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            lblGross = new Label { Text = "Gross %", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            lblProfit = new Label { Text = "Profit", AutoSize = true, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+            
+            tlpPrices.Controls.Add(lblLevel, 0, 0);
+            tlpPrices.Controls.Add(lblPrice, 1, 0);
+            tlpPrices.Controls.Add(lblGross, 2, 0);
+            tlpPrices.Controls.Add(lblProfit, 3, 0);
+ 
             for (int i=0; i<4; i++) {
-                tlpPrices.Controls.Add(new Label { Text = "Price " + (i+1), Anchor = AnchorStyles.Left }, 0, i+1);
+                lblPriceRows[i] = new Label { Text = "Price " + (i+1), Anchor = AnchorStyles.Left };
+                tlpPrices.Controls.Add(lblPriceRows[i], 0, i+1);
                 numPrices[i] = new ModernNumericUpDown { Width = 150, DecimalPlaces = 2, Maximum = 1000000, Margin = new Padding(2), Dock=DockStyle.Fill, ShowLabel=false };
                 txtGrosses[i] = new ModernTextBox { Width = 150, ReadOnly = true, ShowLabel = false, Margin = new Padding(2), Dock=DockStyle.Fill };
                 txtProfits[i] = new ModernTextBox { Width = 150, ReadOnly = true, ShowLabel = false, Margin = new Padding(2), Dock=DockStyle.Fill };

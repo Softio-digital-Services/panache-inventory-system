@@ -16,10 +16,8 @@ namespace InventorySystem.Helpers
     {
         public static event EventHandler LanguageChanged;
 
-        // Manually loaded Arabic resource set (bypasses satellite assemblies)
-        private static ResourceSet _arabicResources;
-        private static Dictionary<string, string> _arabicDictionary;
-        private static bool _arabicResourcesLoaded = false;
+        private static readonly ResourceManager _enManager = new ResourceManager("InventorySystem.Properties.Resources", typeof(LocalizationManager).Assembly);
+        private static readonly ResourceManager _arManager = new ResourceManager("InventorySystem.Properties.Resources_ar", typeof(LocalizationManager).Assembly);
 
         // Track RTL state without stomping on Control.Tag
 
@@ -51,12 +49,6 @@ namespace InventorySystem.Helpers
             Thread.CurrentThread.CurrentCulture = customCulture;
             CultureInfo.DefaultThreadCurrentCulture = customCulture;
 
-            // Load Arabic resources on first Arabic activation
-            if (IsArabic && !_arabicResourcesLoaded)
-            {
-                LoadArabicResources();
-            }
-
             // Persist the selected language choice
             try
             {
@@ -68,76 +60,21 @@ namespace InventorySystem.Helpers
             LanguageChanged?.Invoke(null, EventArgs.Empty);
         }
 
-        private static void LoadArabicResources()
-        {
-            try
-            {
-                // Load from embedded resource stream
-                var assembly = Assembly.GetExecutingAssembly();
-                // The resource is embedded as "InventorySystem.Properties.Resources.ar.resx"
-                using (var stream = assembly.GetManifestResourceStream("InventorySystem.Properties.Resources.ar"))
-                {
-                    if (stream != null)
-                    {
-                        _arabicResources = new ResourceSet(stream);
-                        _arabicResourcesLoaded = true;
-                        return;
-                    }
-                }
-
-                // Fallback: Try loading from file path
-                string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string resxPath = Path.Combine(exeDir, "Properties", "Resources.ar.resx");
-                if (!File.Exists(resxPath))
-                {
-                    resxPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "Properties", "Resources.ar.resx");
-                }
-
-                if (File.Exists(resxPath))
-                {
-                    _arabicDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                    try
-                    {
-                        // Use XDocument to avoid ResXResourceReader encoding issues
-                        var doc = System.Xml.Linq.XDocument.Load(resxPath);
-                        foreach (var data in doc.Root.Elements("data"))
-                        {
-                            string name = data.Attribute("name")?.Value;
-                            string val = data.Element("value")?.Value;
-                            if (!string.IsNullOrEmpty(name) && val != null)
-                            {
-                                _arabicDictionary[name] = val;
-                            }
-                        }
-                        _arabicResourcesLoaded = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine("XDocument load failed: " + ex.Message);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Failed to load Arabic resources: " + ex.Message);
-            }
-        }
         public static string GetString(string key)
         {
             if (string.IsNullOrEmpty(key)) return "";
-            CultureInfo culture = IsArabic ? CultureInfo.GetCultureInfo("ar") : CultureInfo.GetCultureInfo("en-US");
             try
             {
-                string res = Properties.Resources.ResourceManager.GetString(key, culture);
-                if (!string.IsNullOrEmpty(res)) return res;
+                if (IsArabic)
+                {
+                    string res = _arManager.GetString(key);
+                    if (!string.IsNullOrEmpty(res)) return res;
+                }
+
+                string enRes = _enManager.GetString(key);
+                if (!string.IsNullOrEmpty(enRes)) return enRes;
             }
             catch { }
-
-            if (IsArabic && _arabicResourcesLoaded && _arabicDictionary != null)
-            {
-                if (_arabicDictionary.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value))
-                    return value;
-            }
 
             return key;
         }
@@ -145,19 +82,18 @@ namespace InventorySystem.Helpers
         public static string GetString(string key, string fallback)
         {
             if (string.IsNullOrEmpty(key)) return fallback;
-            CultureInfo culture = IsArabic ? CultureInfo.GetCultureInfo("ar") : CultureInfo.GetCultureInfo("en-US");
             try
             {
-                string res = Properties.Resources.ResourceManager.GetString(key, culture);
-                if (!string.IsNullOrEmpty(res)) return res;
+                if (IsArabic)
+                {
+                    string res = _arManager.GetString(key);
+                    if (!string.IsNullOrEmpty(res)) return res;
+                }
+
+                string enRes = _enManager.GetString(key);
+                if (!string.IsNullOrEmpty(enRes)) return enRes;
             }
             catch { }
-
-            if (IsArabic && _arabicResourcesLoaded && _arabicDictionary != null)
-            {
-                if (_arabicDictionary.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value))
-                    return value;
-            }
 
             return fallback;
         }
@@ -168,13 +104,12 @@ namespace InventorySystem.Helpers
         private static ConditionalWeakTable<Control, string> _originalLabelTexts = new ConditionalWeakTable<Control, string>();
         private static ConditionalWeakTable<Control, ValueBox<Point>> _originalLocations = new ConditionalWeakTable<Control, ValueBox<Point>>();
         private static ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>> _originalFlowDirections = new ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>>();
+        private static ConditionalWeakTable<DataGridViewColumn, string> _originalColumnHeaders = new ConditionalWeakTable<DataGridViewColumn, string>();
 
         public static void TranslateControl(Control parent)
         {
             if (parent == null) return;
             bool isAr = IsArabic;
-            CultureInfo targetCulture = isAr ? CultureInfo.GetCultureInfo("ar") : CultureInfo.GetCultureInfo("en-US");
-            CultureInfo enCulture = CultureInfo.GetCultureInfo("en-US");
 
             foreach (Control c in parent.Controls)
             {
@@ -188,8 +123,8 @@ namespace InventorySystem.Helpers
                     bool isStandardButton = c is Button && c.Tag != null && c.Tag.ToString().StartsWith("standard_");
                     if (!isStandardButton)
                     {
-                        // Cache original text ONLY when in English to guarantee we never cache an Arabic string
-                        if (!isAr && !_originalTexts.TryGetValue(c, out _))
+                        // Cache original text on first encounter (which is the designer/English text)
+                        if (!_originalTexts.TryGetValue(c, out _))
                         {
                             _originalTexts.Add(c, c.Text);
                         }
@@ -197,26 +132,29 @@ namespace InventorySystem.Helpers
                         if (!string.IsNullOrEmpty(key))
                         {
                             string translated = null;
-                            try { translated = Properties.Resources.ResourceManager.GetString(key, targetCulture); } catch { }
+                            try 
+                            { 
+                                if (isAr)
+                                    translated = _arManager.GetString(key) ?? _enManager.GetString(key);
+                                else
+                                    translated = _enManager.GetString(key);
+                            } 
+                            catch { }
 
                             if (!string.IsNullOrEmpty(translated))
                             {
                                 c.Text = translated;
                             }
-                            else if (!isAr)
+                            else
                             {
-                                string enText = null;
-                                try { enText = Properties.Resources.ResourceManager.GetString(key, enCulture); } catch { }
-
-                                if (!string.IsNullOrEmpty(enText))
-                                    c.Text = enText;
-                                else if (_originalTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                                if (_originalTexts.TryGetValue(c, out string orig) && orig != null)
                                     c.Text = orig;
                             }
                         }
-                        else if (!isAr && _originalTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                        else
                         {
-                            c.Text = orig;
+                            if (_originalTexts.TryGetValue(c, out string orig) && orig != null)
+                                c.Text = orig;
                         }
                     }
                 }
@@ -226,7 +164,7 @@ namespace InventorySystem.Helpers
                 if (propLabelText != null && propLabelText.CanWrite && propLabelText.CanRead)
                 {
                     string currentLabel = propLabelText.GetValue(c) as string;
-                    if (!isAr && !_originalLabelTexts.TryGetValue(c, out _))
+                    if (!_originalLabelTexts.TryGetValue(c, out _))
                     {
                         _originalLabelTexts.Add(c, currentLabel);
                     }
@@ -234,26 +172,29 @@ namespace InventorySystem.Helpers
                     if (!string.IsNullOrEmpty(key))
                     {
                         string translated = null;
-                        try { translated = Properties.Resources.ResourceManager.GetString(key, targetCulture); } catch { }
+                        try 
+                        { 
+                            if (isAr)
+                                translated = _arManager.GetString(key) ?? _enManager.GetString(key);
+                            else
+                                translated = _enManager.GetString(key);
+                        } 
+                        catch { }
 
                         if (!string.IsNullOrEmpty(translated))
                         {
                             propLabelText.SetValue(c, translated);
                         }
-                        else if (!isAr)
+                        else
                         {
-                            string enText = null;
-                            try { enText = Properties.Resources.ResourceManager.GetString(key, enCulture); } catch { }
-
-                            if (!string.IsNullOrEmpty(enText))
-                                propLabelText.SetValue(c, enText);
-                            else if (_originalLabelTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                            if (_originalLabelTexts.TryGetValue(c, out string orig) && orig != null)
                                 propLabelText.SetValue(c, orig);
                         }
                     }
-                    else if (!isAr && _originalLabelTexts.TryGetValue(c, out string orig) && !string.IsNullOrEmpty(orig))
+                    else
                     {
-                        propLabelText.SetValue(c, orig);
+                        if (_originalLabelTexts.TryGetValue(c, out string orig) && orig != null)
+                            propLabelText.SetValue(c, orig);
                     }
                 }
 
@@ -262,11 +203,37 @@ namespace InventorySystem.Helpers
                 {
                     foreach (TabPage page in tabCtrl.TabPages)
                     {
+                        if (!_originalTexts.TryGetValue(page, out _))
+                        {
+                            _originalTexts.Add(page, page.Text);
+                        }
+
                         if (!string.IsNullOrEmpty(page.Name))
                         {
                             string pageTrans = null;
-                            try { pageTrans = Properties.Resources.ResourceManager.GetString(page.Name, targetCulture); } catch { }
-                            if (!string.IsNullOrEmpty(pageTrans)) page.Text = pageTrans;
+                            try 
+                            { 
+                                if (isAr)
+                                    pageTrans = _arManager.GetString(page.Name) ?? _enManager.GetString(page.Name);
+                                else
+                                    pageTrans = _enManager.GetString(page.Name);
+                            } 
+                            catch { }
+
+                            if (!string.IsNullOrEmpty(pageTrans))
+                            {
+                                page.Text = pageTrans;
+                            }
+                            else
+                            {
+                                if (_originalTexts.TryGetValue(page, out string orig) && orig != null)
+                                    page.Text = orig;
+                            }
+                        }
+                        else
+                        {
+                            if (_originalTexts.TryGetValue(page, out string orig) && orig != null)
+                                page.Text = orig;
                         }
                         TranslateControl(page);
                     }
@@ -277,11 +244,37 @@ namespace InventorySystem.Helpers
                 {
                     foreach (DataGridViewColumn col in dgv.Columns)
                     {
+                        if (!_originalColumnHeaders.TryGetValue(col, out _))
+                        {
+                            _originalColumnHeaders.Add(col, col.HeaderText);
+                        }
+
                         if (!string.IsNullOrEmpty(col.Name))
                         {
                             string colTrans = null;
-                            try { colTrans = Properties.Resources.ResourceManager.GetString(col.Name, targetCulture); } catch { }
-                            if (!string.IsNullOrEmpty(colTrans)) col.HeaderText = colTrans;
+                            try 
+                            { 
+                                if (isAr)
+                                    colTrans = _arManager.GetString(col.Name) ?? _enManager.GetString(col.Name);
+                                else
+                                    colTrans = _enManager.GetString(col.Name);
+                            } 
+                            catch { }
+
+                            if (!string.IsNullOrEmpty(colTrans))
+                            {
+                                col.HeaderText = colTrans;
+                            }
+                            else
+                            {
+                                if (_originalColumnHeaders.TryGetValue(col, out string orig) && orig != null)
+                                    col.HeaderText = orig;
+                            }
+                        }
+                        else
+                        {
+                            if (_originalColumnHeaders.TryGetValue(col, out string orig) && orig != null)
+                                col.HeaderText = orig;
                         }
                     }
                 }

@@ -21,7 +21,7 @@ namespace InventorySystem.Forms
             _orderId = orderId;
             _orderService = new OrderService();
 
-            this.TitleText = (LocalizationManager.IsArabic ? "معاينة عرض السعر" : "Quotation Preview") + " - #" + orderId;
+            this.TitleText = LocalizationManager.GetString("QuotePreview_Title", "Quotation Preview") + " - #" + orderId;
             this.Size = new Size(950, 950); // Increased width to ensure A4 fits
 
             this.ContentPanel.Padding = new Padding(20, 20, 20, 20); // Add safety margin
@@ -124,7 +124,7 @@ namespace InventorySystem.Forms
 
                     Label lblQuoteTitle = new Label
                     {
-                        Text = LocalizationManager.IsArabic ? "عرض سعر" : "QUOTATION",
+                        Text = LocalizationManager.GetString("QuotePreview_Quote", "QUOTATION"),
                         Font = new Font("Segoe UI", 20, FontStyle.Bold),
                         ForeColor = Color.DimGray,
                         Location = new Point(page.Width - 350, hy + 5),
@@ -284,7 +284,7 @@ namespace InventorySystem.Forms
 
                     Label lblTermsHead = new Label
                     {
-                        Text = LocalizationManager.IsArabic ? "الشروط والأحكام" : "TERMS AND CONDITIONS",
+                        Text = LocalizationManager.GetString("QuotePreview_TermsHead", "TERMS AND CONDITIONS"),
                         Font = new Font("Segoe UI", 9, FontStyle.Bold),
                         ForeColor = ThemeConfig.PrimaryColor,
                         Location = new Point(0, 0),
@@ -292,9 +292,7 @@ namespace InventorySystem.Forms
                     };
                     pnlSummaryWrap.Controls.Add(lblTermsHead);
 
-                    string termsText = LocalizationManager.IsArabic ?
-                        "• الصلاحية: 15 يوماً من تاريخ الإصدار.\n• يستحق الدفع قبل التسليم.\n• القبول يعتبر تأكيداً للفوترة.\n\nتم القبول بواسطة: __________________________" :
-                        "• Validity: 15 days from issue.\n• Payment due prior to delivery.\n• Acceptance indicates billing confirmation.\n\nAccepted By: __________________________";
+                    string termsText = LocalizationManager.GetString("QuotePreview_TermsBody", "• Validity: 15 days from issue.\n• Payment due prior to delivery.\n• Acceptance indicates billing confirmation.\n\nAccepted By: __________________________");
 
                     Label lblTerms = new Label
                     {
@@ -315,18 +313,9 @@ namespace InventorySystem.Forms
                     List<string> lbls = new List<string>();
                     List<string> vls = new List<string>();
 
-                    if (LocalizationManager.IsArabic)
-                    {
-                        lbls.Add("المجموع الفرعي"); vls.Add(CurrencyService.Format(total));
-                        if (taxAmount > 0) { lbls.Add("الضريبة / رسوم"); vls.Add(CurrencyService.Format(taxAmount)); }
-                        lbls.Add("المجموع الكلي"); vls.Add(CurrencyService.Format(grandTotal));
-                    }
-                    else
-                    {
-                        lbls.Add("Subtotal"); vls.Add(CurrencyService.Format(total));
-                        if (taxAmount > 0) { lbls.Add("Tax / Extras"); vls.Add(CurrencyService.Format(taxAmount)); }
-                        lbls.Add("GRAND TOTAL"); vls.Add(CurrencyService.Format(grandTotal));
-                    }
+                    lbls.Add(LocalizationManager.GetString("POS_Subtotal", "Subtotal")); vls.Add(CurrencyService.Format(total));
+                    if (taxAmount > 0) { lbls.Add(LocalizationManager.GetString("QuotePreview_Tax", "Tax / Extras")); vls.Add(CurrencyService.Format(taxAmount)); }
+                    lbls.Add(LocalizationManager.GetString("POS_GrandTotal", "GRAND TOTAL")); vls.Add(CurrencyService.Format(grandTotal));
 
                     for (int i = 0; i < lbls.Count; i++)
                     {
@@ -347,7 +336,7 @@ namespace InventorySystem.Forms
 
                     Label lblFinal = new Label
                     {
-                        Text = LocalizationManager.IsArabic ? "شكراً لتعاملكم معنا! يرجى التواصل معنا في حال وجود أي استفسارات." : "Thank you for your business! Please contact us if you have any questions.",
+                        Text = LocalizationManager.GetString("QuotePreview_FinalMsg", "Thank you for your business! Please contact us if you have any questions."),
                         Font = new Font("Segoe UI", 10, FontStyle.Bold | FontStyle.Italic),
                         Location = new Point(0, 1050),
                         Size = new Size(page.Width, 30),

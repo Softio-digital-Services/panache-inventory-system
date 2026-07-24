@@ -23,7 +23,7 @@ namespace InventorySystem.Plugins
         public string LicenseFeatureKey => "";
 
         public string TabId    => "btnBackup";
-        public string TabTitle => LocalizationManager.IsArabic ? "\u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Backup";
+        public string TabTitle => LocalizationManager.GetString("Plugins_BackupTitle", "Backup");
         public string TabIcon  => "backup";
         public int    TabOrder => 120;
 
@@ -93,34 +93,34 @@ namespace InventorySystem.Plugins
 
             // Action buttons
             AddActionButton(card, ref y,
-                ar ? "\u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629 \u0627\u0644\u0622\u0646" : "Create Backup Now",
+                LocalizationManager.GetString("Plugins_BackupNow", "Create Backup Now"),
                 "backup", ThemeConfig.PrimaryColor, DoBackup);
 
             y += 10;
 
             AddActionButton(card, ref y,
-                ar ? "\u0627\u0633\u062a\u0639\u0627\u062f\u0629 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629" : "Restore from Backup",
+                LocalizationManager.GetString("Plugins_Restore", "Restore from Backup"),
                 "restore_from_backup", ThemeConfig.WarningBorder, DoRestore);
 
             y += 10;
 
             AddActionButton(card, ref y,
-                ar ? "فتح مجلد النسخ" : "Open Backup Folder",
+                LocalizationManager.GetString("Plugins_OpenFolder", "Open Backup Folder"),
                 "open_backup_folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
 
             y += 10;
             AddActionButton(card, ref y,
-                ar ? "مسح ذاكرة التخزين المؤقت للصور" : "Clear Image Cache",
+                LocalizationManager.GetString("Plugins_ClearCache", "Clear Image Cache"),
                 "refresh", ThemeConfig.SecondaryColor, () => {
                     InventorySystem.Helpers.CacheManager.ClearImageCache();
-                    MessageHelper.ShowSuccess(ar ? "تم مسح الذاكرة بنجاح!" : "Image cache cleared successfully!");
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_ClearCacheSuccess", "Image cache cleared successfully!"));
                 });
 
             if (isAdmin)
             {
                 y += 10;
                 AddActionButton(card, ref y,
-                    ar ? "إعادة ضبط قاعدة البيانات (حذف الكل)" : "Reset Database (Wipe All Data)",
+                    LocalizationManager.GetString("Plugins_ResetDb", "Reset Database (Wipe All Data)"),
                     "delete", Color.FromArgb(231, 76, 60), DoResetDatabase);
             }
 
@@ -133,9 +133,7 @@ namespace InventorySystem.Plugins
                 Font      = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Text      = ar
-                    ? "\u062a\u0648\u0635\u064a\u0629: \u0642\u0645 \u0628\u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629 \u064a\u0648\u0645\u064a\u064b\u0627 \u0644\u062d\u0645\u0627\u064a\u0629 \u0628\u064a\u0627\u0646\u0627\u062a\u0643."
-                    : "Tip: Create a daily backup to protect your data from accidental loss."
+                Text      = LocalizationManager.GetString("Plugins_BackupTip", "Tip: Create a daily backup to protect your data from accidental loss.")
             };
             card.Controls.Add(note);
         }
@@ -181,9 +179,7 @@ namespace InventorySystem.Plugins
                 string dbFile = FindDatabaseFile();
                 if (dbFile == null)
                 {
-                    MessageHelper.ShowError(LocalizationManager.IsArabic
-                        ? "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0645\u0644\u0641 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a."
-                        : "Database file not found.");
+                    MessageHelper.ShowError(LocalizationManager.GetString("Error_DbNotFound", "Database file not found."));
                     return;
                 }
 
@@ -194,9 +190,7 @@ namespace InventorySystem.Plugins
                 File.WriteAllText(Path.Combine(backupDir, "last_backup.txt"), DateTime.Now.ToString("o"));
                 _lblLastBackup.Text = GetLastBackupText();
 
-                MessageHelper.ShowSuccess(LocalizationManager.IsArabic
-                    ? $"\u062a\u0645\u062a \u0627\u0644\u0646\u0633\u062e\u0629 \u0628\u0646\u062c\u0627\u062d!\n{destFile}"
-                    : $"Backup created successfully!\n{destFile}");
+                MessageHelper.ShowSuccess(string.Format(LocalizationManager.GetString("Plugins_BackupSuccessMsg", "Backup created successfully!\n{0}"), destFile));
             }
             catch (Exception ex)
             {
@@ -208,15 +202,13 @@ namespace InventorySystem.Plugins
         {
             using (OpenFileDialog dlg = new OpenFileDialog())
             {
-                dlg.Title  = LocalizationManager.IsArabic ? "\u0627\u062e\u062a\u0631 \u0645\u0644\u0641 \u0627\u0644\u0646\u0633\u062e\u0629" : "Select Backup File";
+                dlg.Title  = LocalizationManager.GetString("Plugins_SelectBackupFile", "Select Backup File");
                 dlg.Filter = "Database files (*.mdf;*.db;*.sqlite)|*.mdf;*.db;*.sqlite|All files (*.*)|*.*";
                 dlg.InitialDirectory = GetBackupDirectory();
 
                 if (dlg.ShowDialog() != DialogResult.OK) return;
 
-                bool confirm = MessageHelper.ConfirmAction(LocalizationManager.IsArabic
-                    ? "\u0633\u064a\u062a\u0645 \u0627\u0633\u062a\u0628\u062f\u0627\u0644 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f\u061f"
-                    : "This will replace the current database. Are you sure?");
+                bool confirm = MessageHelper.ConfirmAction(LocalizationManager.GetString("Plugins_RestoreConfirm", "This will replace the current database. Are you sure?"));
 
                 if (!confirm) return;
 
@@ -232,9 +224,7 @@ namespace InventorySystem.Plugins
 
                     File.Copy(dlg.FileName, dbFile, overwrite: true);
 
-                    MessageHelper.ShowSuccess(LocalizationManager.IsArabic
-                        ? "\u062a\u0645\u062a \u0627\u0633\u062a\u0639\u0627\u062f\u0629 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u064a\u0631\u062c\u0649 \u0625\u0639\u0627\u062f\u0629 \u062a\u0634\u063a\u064a\u0644 \u0627\u0644\u062a\u0637\u0628\u064a\u0642."
-                        : "Database restored successfully. Please restart the application.");
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_RestoreSuccess", "Database restored successfully. Please restart the application."));
                 }
                 catch (Exception ex)
                 {
@@ -254,21 +244,17 @@ namespace InventorySystem.Plugins
         {
             bool ar = LocalizationManager.IsArabic;
             
-            bool confirm1 = MessageHelper.ConfirmAction(ar
-                ? "تحذير: سيتم حذف جميع البيانات (المخزون، المبيعات، العملاء)! هل أنت متأكد؟"
-                : "WARNING: This will permanently delete ALL data (inventory, sales, customers)! Are you sure?");
+            bool confirm1 = MessageHelper.ConfirmAction(LocalizationManager.GetString("Plugins_ResetDbWarning1", "WARNING: This will permanently delete ALL data (inventory, sales, customers)! Are you sure?"));
                 
             if (!confirm1) return;
 
-            bool confirm2 = MessageHelper.ConfirmAction(ar
-                ? "تأكيد نهائي: لا يمكن التراجع عن هذه العملية. هل تريد مسح قاعدة البيانات حقاً؟"
-                : "FINAL WARNING: This cannot be undone. Are you absolutely sure you want to wipe the database?");
+            bool confirm2 = MessageHelper.ConfirmAction(LocalizationManager.GetString("Plugins_ResetDbWarning2", "FINAL WARNING: This cannot be undone. Are you absolutely sure you want to wipe the database?"));
 
             if (!confirm2) return;
 
             if (!PromptForAdminPassword())
             {
-                MessageHelper.ShowError(ar ? "فشلت عملية التحقق من كلمة المرور." : "Password verification failed.");
+                MessageHelper.ShowError(LocalizationManager.GetString("Plugins_PasswordVerifyFailed", "Password verification failed."));
                 return;
             }
 
@@ -287,9 +273,7 @@ namespace InventorySystem.Plugins
                 // Re-initialize
                 InventorySystem.Helpers.DatabaseInitializer.Initialize();
 
-                MessageHelper.ShowSuccess(ar
-                    ? "تم إعادة ضبط قاعدة البيانات بنجاح. يرجى إعادة تشغيل التطبيق."
-                    : "Database reset successfully. Please restart the application.");
+                MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_ResetDbSuccess", "Database reset successfully. Please restart the application."));
             }
             catch (Exception ex)
             {
@@ -301,15 +285,14 @@ namespace InventorySystem.Plugins
         {
             using (var prompt = new InventorySystem.Forms.BaseModalForm())
             {
-                bool ar = LocalizationManager.IsArabic;
-                prompt.TitleText = ar ? "التحقق من المسؤول" : "Admin Verification Required";
+                prompt.TitleText = LocalizationManager.GetString("Plugins_AdminVerifyTitle", "Admin Verification Required");
                 prompt.EnforceMinWidth = false;
                 prompt.Width = 450;
 
                 var textLabel = new Label 
                 { 
                     AutoSize = true,
-                    Text = ar ? "الرجاء إدخال كلمة مرور المسؤول للمتابعة:" : "Please enter your admin password to continue:",
+                    Text = LocalizationManager.GetString("Plugins_AdminVerifyText", "Please enter your admin password to continue:"),
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.TextColorDark,
                     Location = new Point(20, 20)
@@ -317,7 +300,7 @@ namespace InventorySystem.Plugins
                 
                 var txtPassword = new InventorySystem.Controls.ModernTextBox 
                 { 
-                    LabelText = ar ? "كلمة المرور" : "Password",
+                    LabelText = LocalizationManager.GetString("Login_Password", "Password"),
                     IsPassword = true,
                     Width = 350,
                     Location = new Point(20, 60)
@@ -329,8 +312,8 @@ namespace InventorySystem.Plugins
                 bool result = false;
                 
                 prompt.SetFooterButtons(
-                    ar ? "تأكيد" : "Verify",
-                    ar ? "إلغاء" : "Cancel",
+                    LocalizationManager.GetString("Btn_Verify", "Verify"),
+                    LocalizationManager.GetString("Btn_Cancel", "Cancel"),
                     (s, e) => {
                         string input = txtPassword.Text.Trim();
                         if (string.IsNullOrEmpty(input)) return;
@@ -390,11 +373,11 @@ namespace InventorySystem.Plugins
             string ts = Path.Combine(GetBackupDirectory(), "last_backup.txt");
             bool ar = LocalizationManager.IsArabic;
             if (!File.Exists(ts))
-                return ar ? "\u0644\u0645 \u064a\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0628\u0639\u062f" : "No backup created yet";
+                return LocalizationManager.GetString("Plugins_NoBackup", "No backup created yet");
             try
             {
                 DateTime dt = DateTime.Parse(File.ReadAllText(ts));
-                return (ar ? "\u0622\u062e\u0631 \u0646\u0633\u062e\u0629: " : "Last backup: ") + dt.ToString("dd MMM yyyy  HH:mm");
+                return string.Format(LocalizationManager.GetString("Plugins_LastBackup", "Last backup: {0}"), dt.ToString("dd MMM yyyy  HH:mm"));
             }
             catch { return "--"; }
         }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--     Microsoft ResX Schema         Version 2.0        The primary goals of this format is to allow a simple XML format     that is mostly human readable. The generation and parsing of the     various data types are done through the TypeConverter classes     associated with the data types.        Example:        ... ado.net/XML headers & schema ...    <resheader name="resmimetype">text/microsoft-resx</resheader>    <resheader name="version">2.0</resheader>    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">        <value>[base64 mime encoded serialized .NET Framework object]</value>    </data>    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>        <comment>This is a comment</comment>    </data>                    There are any number of "resheader" rows that contain simple     name/value pairs.        Each data row contains a name, and value. The row also contains a     type or mimetype. Type corresponds to a .NET class that support     text/value conversion through the TypeConverter architecture.     Classes that don't support this are serialized and stored with the     mimetype set.        The mimetype is used for serialized objects, and tells the     ResXResourceReader how to depersist the object. This is currently not     extensible. For a given mimetype the value must be set accordingly:        Note - application/x-microsoft.net.object.binary.base64 is the format     that the ResXResourceWriter will generate, however the reader can     read any of the formats listed below.        mimetype: application/x-microsoft.net.object.binary.base64    value   : The object must be serialized with             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter            : and then encoded with base64 encoding.        mimetype: application/x-microsoft.net.object.soap.base64    value   : The object must be serialized with             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter            : and then encoded with base64 encoding.    mimetype: application/x-microsoft.net.object.bytearray.base64    value   : The object must be serialized into a byte array             : using a System.ComponentModel.TypeConverter            : and then encoded with base64 encoding.    -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
@@ -579,21 +579,6 @@
   <data name="Add_ReqLastName" xml:space="preserve">
     <value>Last Name is required.</value>
   </data>
-  <data name="Popup_Phone" xml:space="preserve">
-    <value>Phone Number</value>
-  </data>
-  <data name="Popup_Address" xml:space="preserve">
-    <value>Address</value>
-  </data>
-  <data name="Popup_Company" xml:space="preserve">
-    <value>Company</value>
-  </data>
-  <data name="Popup_Individual" xml:space="preserve">
-    <value>Individual</value>
-  </data>
-  <data name="Popup_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
   <data name="Popup_ReqPhone" xml:space="preserve">
     <value>Phone Number is required and must be valid.</value>
   </data>
@@ -703,16 +688,16 @@
     <value>Barcode</value>
   </data>
   <data name="AddPart_Product" xml:space="preserve">
-    <value>Product Name</value>
+    <value>Product</value>
   </data>
   <data name="AddPart_SKU" xml:space="preserve">
     <value>SKU</value>
   </data>
   <data name="AddPart_Location" xml:space="preserve">
-    <value>Location (Aisle)</value>
+    <value>Location</value>
   </data>
   <data name="AddPart_Shelf" xml:space="preserve">
-    <value>Shelf / bin</value>
+    <value>Shelf</value>
   </data>
   <data name="AddPart_Stock" xml:space="preserve">
     <value>Stock</value>
@@ -721,7 +706,7 @@
     <value>Min Stock</value>
   </data>
   <data name="AddPart_Price" xml:space="preserve">
-    <value>Price ({0} {1})</value>
+    <value>Price</value>
   </data>
   <data name="AddPart_Category" xml:space="preserve">
     <value>Category</value>
@@ -767,54 +752,6 @@
   </data>
   <data name="Status_Inactive" xml:space="preserve">
     <value>Inactive</value>
-  </data>
-  <data name="AddCust_TitleNew" xml:space="preserve">
-    <value>Add New Customer</value>
-  </data>
-  <data name="AddCust_TitleEdit" xml:space="preserve">
-    <value>Edit Customer</value>
-  </data>
-  <data name="AddCust_Section" xml:space="preserve">
-    <value>Customer Details</value>
-  </data>
-  <data name="AddCust_Email" xml:space="preserve">
-    <value>Email Address</value>
-  </data>
-  <data name="AddCust_Type" xml:space="preserve">
-    <value>Customer Type</value>
-  </data>
-  <data name="AddCust_UpdateBtn" xml:space="preserve">
-    <value>Update Customer</value>
-  </data>
-  <data name="AddCust_Save" xml:space="preserve">
-    <value>Save Customer</value>
-  </data>
-  <data name="AddSup_TitleNew" xml:space="preserve">
-    <value>Add New Supplier</value>
-  </data>
-  <data name="AddSup_TitleEdit" xml:space="preserve">
-    <value>Edit Supplier</value>
-  </data>
-  <data name="AddSup_Section" xml:space="preserve">
-    <value>Supplier Details</value>
-  </data>
-  <data name="AddSup_CompanyName" xml:space="preserve">
-    <value>Company Name</value>
-  </data>
-  <data name="AddSup_Email" xml:space="preserve">
-    <value>Email / Contact Person</value>
-  </data>
-  <data name="AddSup_Type" xml:space="preserve">
-    <value>Supplier Type</value>
-  </data>
-  <data name="AddSup_UpdateBtn" xml:space="preserve">
-    <value>Update Supplier</value>
-  </data>
-  <data name="AddSup_Save" xml:space="preserve">
-    <value>Save Supplier</value>
-  </data>
-  <data name="AddSup_ReqName" xml:space="preserve">
-    <value>Supplier Name is required.</value>
   </data>
   <data name="AddCat_Title" xml:space="preserve">
     <value>Add New Category</value>
@@ -945,9 +882,6 @@
   <data name="POS_ScanPlaceholder" xml:space="preserve">
     <value>Scan item...</value>
   </data>
-  <data name="Dash_Sold" xml:space="preserve">
-    <value>Sold</value>
-  </data>
   <data name="lblTitle" xml:space="preserve">
     <value>Performance Dashboard</value>
   </data>
@@ -1050,12 +984,12 @@
   </data>
   <data name="AddSup_DueDate" xml:space="preserve">    <value>Payment Due Date</value>  </data>
   <data name="AddSup_ReminderDays" xml:space="preserve">    <value>Reminder (Days Before)</value>  </data>
-  <data name="AddSup_EnableReminder" xml:space="preserve">    <value>Enable Payment Reminder</value>  </data>
+  <data name="AddSup_EnableReminder" xml:space="preserve">    <value>Enable Reminder</value>  </data>
   <data name="colDueDate" xml:space="preserve">    <value>Due Date</value>  </data>
   <data name="reminder_days" xml:space="preserve">    <value>Rem. Days</value>  </data>
   <data name="AddCust_DueDate" xml:space="preserve">    <value>Payment Due Date</value>  </data>
   <data name="AddCust_ReminderDays" xml:space="preserve">    <value>Reminder (Days Before)</value>  </data>
-  <data name="AddCust_EnableReminder" xml:space="preserve">    <value>Enable Payment Reminder</value>  </data>
+  <data name="AddCust_EnableReminder" xml:space="preserve">    <value>Enable Reminder</value>  </data>
   <data name="Notif_LowStock" xml:space="preserve">    <value>Low Stock Alert</value>  </data>
   <data name="Notif_Payment" xml:space="preserve">    <value>Payment Reminder</value>  </data>
   <data name="Label_Customer" xml:space="preserve">    <value>Customer</value>  </data>
@@ -1294,9 +1228,6 @@
   <data name="Title_ItemReturn" xml:space="preserve">
     <value>Return Items (No Receipt)</value>
   </data>
-  <data name="Return_Qty" xml:space="preserve">
-    <value>Return Qty</value>
-  </data>
   <data name="Dash_ScanHint" xml:space="preserve">
     <value>Open Camera on your device -&gt; Point towards QR code -&gt; Click the link
 Or click the link above to copy it</value>
@@ -1504,9 +1435,6 @@ Or click the link above to copy it</value>
   <data name="Popup_OK" xml:space="preserve">
     <value>OK</value>
   </data>
-  <data name="Popup_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
   <data name="Popup_Yes" xml:space="preserve">
     <value>Yes</value>
   </data>
@@ -1514,21 +1442,6 @@ Or click the link above to copy it</value>
     <value>No</value>
   </data>
   <!-- Return Forms -->
-  <data name="Title_ItemReturn" xml:space="preserve">
-    <value>Item Return</value>
-  </data>
-  <data name="Return_Title" xml:space="preserve">
-    <value>Item Return</value>
-  </data>
-  <data name="Return_Action" xml:space="preserve">
-    <value>Return Items</value>
-  </data>
-  <data name="Return_Qty" xml:space="preserve">
-    <value>Return Qty</value>
-  </data>
-  <data name="Return_ReadyToScan" xml:space="preserve">
-    <value>Ready to scan barcode...</value>
-  </data>
   <data name="Msg_ReturnReason" xml:space="preserve">
     <value>Return Reason</value>
   </data>
@@ -1617,23 +1530,606 @@ Or click the link above to copy it</value>
     <value>Add to {0}</value>
   </data>
   <!-- Scale Integration Keys -->
-  <data name="gbScale" xml:space="preserve"><value>TM-A17 Weighing Scale &amp; Price Calculator</value></data>
-  <data name="btnConfigScale" xml:space="preserve"><value>Scale Settings</value></data>
-  <data name="btnReadScale" xml:space="preserve"><value>Read Weight</value></data>
-  <data name="btnApplyScalePrice" xml:space="preserve"><value>Apply to Price 1</value></data>
-  <data name="btnApplyScaleWeight" xml:space="preserve"><value>Apply Weight to Stock</value></data>
-  <data name="gbPort" xml:space="preserve"><value>TM-A17 Serial COM Port Settings</value></data>
-  <data name="cmbPort" xml:space="preserve"><value>COM Port:</value></data>
-  <data name="btnRefreshPorts" xml:space="preserve"><value>Refresh</value></data>
-  <data name="btnConnectToggle" xml:space="preserve"><value>Connect</value></data>
-  <data name="cmbBaud" xml:space="preserve"><value>Baud Rate:</value></data>
-  <data name="cmbParity" xml:space="preserve"><value>Parity:</value></data>
-  <data name="cmbDataBits" xml:space="preserve"><value>Data Bits:</value></data>
-  <data name="cmbStopBits" xml:space="preserve"><value>Stop Bits:</value></data>
-  <data name="cmbUnit" xml:space="preserve"><value>Default Weight Unit:</value></data>
-  <data name="gbTest" xml:space="preserve"><value>Live Scale Readout &amp; Test Simulator</value></data>
-  <data name="txtSimulateWeight" xml:space="preserve"><value>Test Weight:</value></data>
-  <data name="btnSimulate" xml:space="preserve"><value>Simulate Scale Reading</value></data>
-  <data name="Scale_SaveSettings" xml:space="preserve"><value>Save Settings</value></data>
-  <data name="Scale_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="gbScale" xml:space="preserve">
+    <value>TM-A17 Weighing Scale &amp; Price Calculator</value>
+  </data>
+  <data name="btnConfigScale" xml:space="preserve">
+    <value>Scale Settings</value>
+  </data>
+  <data name="btnReadScale" xml:space="preserve">
+    <value>Read Weight</value>
+  </data>
+  <data name="btnApplyScalePrice" xml:space="preserve">
+    <value>Apply to Price 1</value>
+  </data>
+  <data name="btnApplyScaleWeight" xml:space="preserve">
+    <value>Apply Weight to Stock</value>
+  </data>
+  <data name="gbPort" xml:space="preserve">
+    <value>TM-A17 Serial COM Port Settings</value>
+  </data>
+  <data name="cmbPort" xml:space="preserve">
+    <value>COM Port:</value>
+  </data>
+  <data name="btnRefreshPorts" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="btnConnectToggle" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="cmbBaud" xml:space="preserve">
+    <value>Baud Rate:</value>
+  </data>
+  <data name="cmbParity" xml:space="preserve">
+    <value>Parity:</value>
+  </data>
+  <data name="cmbDataBits" xml:space="preserve">
+    <value>Data Bits:</value>
+  </data>
+  <data name="cmbStopBits" xml:space="preserve">
+    <value>Stop Bits:</value>
+  </data>
+  <data name="cmbUnit" xml:space="preserve">
+    <value>Default Weight Unit:</value>
+  </data>
+  <data name="gbTest" xml:space="preserve">
+    <value>Live Scale Readout &amp; Test Simulator</value>
+  </data>
+  <data name="txtSimulateWeight" xml:space="preserve">
+    <value>Test Weight:</value>
+  </data>
+  <data name="btnSimulate" xml:space="preserve">
+    <value>Simulate Scale Reading</value>
+  </data>
+  <data name="Scale_SaveSettings" xml:space="preserve">
+    <value>Save Settings</value>
+  </data>
+  <data name="Scale_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="AddCust_FirstName" xml:space="preserve">
+    <value>First Name *</value>
+  </data>
+  <data name="AddCust_LastName" xml:space="preserve">
+    <value>Last Name *</value>
+  </data>
+  <data name="AddSup_Reminder" xml:space="preserve">
+    <value>Reminder (days before)</value>
+  </data>
+  <data name="Bar_Print" xml:space="preserve">
+    <value>Print Preview</value>
+  </data>
+  <data name="Bar_Title" xml:space="preserve">
+    <value>Generate Barcode Labels</value>
+  </data>
+  <data name="Error_AppCrash" xml:space="preserve">
+    <value>Application Error</value>
+  </data>
+  <data name="Error_BackupFailed" xml:space="preserve">
+    <value>Backup failed: </value>
+  </data>
+  <data name="Error_DbNotFound" xml:space="preserve">
+    <value>Database file not found.</value>
+  </data>
+  <data name="Error_InvalidFileFormat" xml:space="preserve">
+    <value>Invalid file format. Required columns: PartNumber, PartName, Category, Quantity, MinimumStock, UnitPrice, Location, Status</value>
+  </data>
+  <data name="Exp_Search" xml:space="preserve">
+    <value>Search expenses...</value>
+  </data>
+  <data name="Msg_Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Msg_CategoryAdded" xml:space="preserve">
+    <value>Category added successfully! It will now appear in the dropdown.</value>
+  </data>
+  <data name="Msg_ConfirmCaption" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="Msg_ConfirmConvert" xml:space="preserve">
+    <value>Confirm Conversion</value>
+  </data>
+  <data name="Msg_ConfirmConvertQuotation" xml:space="preserve">
+    <value>Convert this quotation to a final sales order? This will deduct stock.</value>
+  </data>
+  <data name="Msg_ConfirmDeleteCustomers" xml:space="preserve">
+    <value>Are you sure you want to delete the selected customers?</value>
+  </data>
+  <data name="Msg_ConfirmDeleteQuotation" xml:space="preserve">
+    <value>Are you sure you want to delete this quotation?</value>
+  </data>
+  <data name="Msg_ConfirmDeleteSingle" xml:space="preserve">
+    <value>Are you sure you want to delete this item?</value>
+  </data>
+  <data name="Msg_ContactSupport" xml:space="preserve">
+    <value>Contact us at: softioservices@gmail.com</value>
+  </data>
+  <data name="Msg_CriticalError" xml:space="preserve">
+    <value>Critical Error: {0}</value>
+  </data>
+  <data name="Msg_DatabaseError" xml:space="preserve">
+    <value>Database error during: </value>
+  </data>
+  <data name="Msg_DeleteCustomer" xml:space="preserve">
+    <value>Delete Customer</value>
+  </data>
+  <data name="Msg_DeleteQuotation" xml:space="preserve">
+    <value>Delete Quotation</value>
+  </data>
+  <data name="Msg_DeleteSupplier" xml:space="preserve">
+    <value>Delete Supplier</value>
+  </data>
+  <data name="Msg_Expired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="Msg_Licensed" xml:space="preserve">
+    <value>Licensed Version</value>
+  </data>
+  <data name="Msg_LicExpiringSoon" xml:space="preserve">
+    <value>License Expiring Soon</value>
+  </data>
+  <data name="Msg_LicExpiringSoonBody" xml:space="preserve">
+    <value>Your license will expire in {0} days.
+Please renew to continue using the software.</value>
+  </data>
+  <data name="Msg_LoggingIn" xml:space="preserve">
+    <value>Logging In...</value>
+  </data>
+  <data name="Msg_Machine" xml:space="preserve">
+    <value>Machine Name</value>
+  </data>
+  <data name="Msg_NoPdfPrinter" xml:space="preserve">
+    <value>No PDF printer found. Please use the Print button and select a PDF printer manually.</value>
+  </data>
+  <data name="Msg_PdfPrinterNotFound" xml:space="preserve">
+    <value>PDF printer not found (e.g. Microsoft Print to PDF). Please click Print and select a PDF printer manually.</value>
+  </data>
+  <data name="Msg_PredictivePO" xml:space="preserve">
+    <value>Predictive Purchase Order</value>
+  </data>
+  <data name="Msg_QuotationConverted" xml:space="preserve">
+    <value>Quotation converted to sales order successfully!</value>
+  </data>
+  <data name="Msg_QuotationExportSuccess" xml:space="preserve">
+    <value>Quotation exported to PDF successfully!</value>
+  </data>
+  <data name="Msg_ReadyToScan" xml:space="preserve">
+    <value>Ready to scan!</value>
+  </data>
+  <data name="Msg_Scan" xml:space="preserve">
+    <value>Scan</value>
+  </data>
+  <data name="Msg_SelectToDelete" xml:space="preserve">
+    <value>Please select at least one item to delete.</value>
+  </data>
+  <data name="Msg_StackTrace" xml:space="preserve">
+    <value>Error Stack Trace:</value>
+  </data>
+  <data name="Msg_Trial" xml:space="preserve">
+    <value>Trial Version</value>
+  </data>
+  <data name="Msg_UpdateCustomer" xml:space="preserve">
+    <value>Update Customer Details</value>
+  </data>
+  <data name="Plugins_BackupNow" xml:space="preserve">
+    <value>Create Backup Now</value>
+  </data>
+  <data name="Plugins_BackupSuccess" xml:space="preserve">
+    <value>Backup created successfully!</value>
+  </data>
+  <data name="Plugins_BackupTip" xml:space="preserve">
+    <value>Tip: Create a daily backup to protect your data.</value>
+  </data>
+  <data name="Plugins_BackupTitle" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="Plugins_CalcTitle" xml:space="preserve">
+    <value>Calculator</value>
+  </data>
+  <data name="Plugins_LastBackup" xml:space="preserve">
+    <value>Last Backup: {0}</value>
+  </data>
+  <data name="Plugins_NoBackup" xml:space="preserve">
+    <value>No backup created yet</value>
+  </data>
+  <data name="Plugins_OpenFolder" xml:space="preserve">
+    <value>Open Backup Folder</value>
+  </data>
+  <data name="Plugins_Restore" xml:space="preserve">
+    <value>Restore Backup</value>
+  </data>
+  <data name="Plugins_RestoreConfirm" xml:space="preserve">
+    <value>This will replace the database. Are you sure?</value>
+  </data>
+  <data name="Plugins_RestoreSuccess" xml:space="preserve">
+    <value>Database restored successfully. Please restart the application.</value>
+  </data>
+  <data name="PO_ID" xml:space="preserve">
+    <value>PO ID</value>
+  </data>
+  <data name="Return_TitleNoReceipt" xml:space="preserve">
+    <value>Return Items (No Receipt)</value>
+  </data>
+  <data name="User_SearchPlaceholder" xml:space="preserve">
+    <value>Search users...</value>
+  </data>
+  <data name="Error_NoPermissionEditSuppliers" xml:space="preserve">
+    <value>You do not have permission to edit suppliers.</value>
+  </data>
+  <data name="Error_NoPermissionDeleteSuppliers" xml:space="preserve">
+    <value>You do not have permission to delete suppliers.</value>
+  </data>
+  <data name="Error_InvalidSupplierFileFormat" xml:space="preserve">
+    <value>Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes</value>
+  </data>
+  <data name="Msg_ImportCompleteResults" xml:space="preserve">
+    <value>Import complete!
+Imported: {0}
+Skipped: {1}</value>
+  </data>
+  <data name="Msg_ConfirmDeleteSuppliers" xml:space="preserve">
+    <value>Are you sure you want to delete {0} selected suppliers?</value>
+  </data>
+  <data name="Msg_ExportSuppliersSuccess" xml:space="preserve">
+    <value>Exported {0} suppliers to CSV successfully!</value>
+  </data>
+  <data name="Msg_ExportExcelSuppliersSuccess" xml:space="preserve">
+    <value>Exported {0} suppliers to Excel successfully!</value>
+  </data>
+  <data name="Msg_LicenseActivateSuccess" xml:space="preserve">
+    <value>License activated successfully!
+
+Expires: {0:MMMM dd, yyyy}</value>
+  </data>
+  <data name="Msg_TrialActivateSuccess" xml:space="preserve">
+    <value>Trial activated! You have {0} days remaining.</value>
+  </data>
+  <data name="Msg_LicenseRenewNotice" xml:space="preserve">
+    <value>Your license is expiring soon. Please renew.</value>
+  </data>
+  <data name="Msg_Days" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="Val_FillRequired" xml:space="preserve">
+    <value>Please fill all required fields</value>
+  </data>
+  <data name="Val_FieldRequired" xml:space="preserve">
+    <value>Field '{0}' is required</value>
+  </data>
+  <data name="Val_InvalidNumber" xml:space="preserve">
+    <value>{0} must be a valid number (e.g. 10.50).</value>
+  </data>
+  <data name="Val_InvalidWholeNumber" xml:space="preserve">
+    <value>{0} must be a valid whole number.</value>
+  </data>
+  <data name="Val_InvalidPhone" xml:space="preserve">
+    <value>Phone number appears invalid (too few digits).</value>
+  </data>
+  <data name="Val_InvalidEmail" xml:space="preserve">
+    <value>Invalid email address format.</value>
+  </data>
+  <data name="Time_SecondsAgo" xml:space="preserve">
+    <value>{0} seconds ago</value>
+  </data>
+  <data name="Time_MinutesAgo" xml:space="preserve">
+    <value>about {0} minutes ago</value>
+  </data>
+  <data name="Time_MinuteAgo" xml:space="preserve">
+    <value>about a minute ago</value>
+  </data>
+  <data name="Time_HoursAgo" xml:space="preserve">
+    <value>about {0} hours ago</value>
+  </data>
+  <data name="Time_HourAgo" xml:space="preserve">
+    <value>about an hour ago</value>
+  </data>
+  <data name="Time_DaysAgo" xml:space="preserve">
+    <value>about {0} days ago</value>
+  </data>
+  <data name="Time_Yesterday" xml:space="preserve">
+    <value>yesterday</value>
+  </data>
+  <data name="Msg_DevelopedBy" xml:space="preserve">
+    <value>Developed by Softio</value>
+  </data>
+  <data name="Nav_AboutUs" xml:space="preserve">
+    <value>About Us</value>
+  </data>
+  <data name="Plugins_BackupRestore" xml:space="preserve">
+    <value>Backup &amp; Restore</value>
+  </data>
+  <data name="Plugins_ClearCache" xml:space="preserve">
+    <value>Clear Image Cache</value>
+  </data>
+  <data name="Plugins_ClearCacheSuccess" xml:space="preserve">
+    <value>Image cache cleared successfully!</value>
+  </data>
+  <data name="Plugins_ResetDb" xml:space="preserve">
+    <value>Reset Database (Wipe All Data)</value>
+  </data>
+  <data name="Plugins_ResetDbWarning1" xml:space="preserve">
+    <value>WARNING: This will permanently delete ALL data (inventory, sales, customers)! Are you sure?</value>
+  </data>
+  <data name="Plugins_ResetDbWarning2" xml:space="preserve">
+    <value>FINAL WARNING: This cannot be undone. Are you absolutely sure you want to wipe the database?</value>
+  </data>
+  <data name="Plugins_PasswordVerifyFailed" xml:space="preserve">
+    <value>Password verification failed.</value>
+  </data>
+  <data name="Plugins_ResetDbSuccess" xml:space="preserve">
+    <value>Database reset successfully. Please restart the application.</value>
+  </data>
+  <data name="Plugins_AdminVerifyTitle" xml:space="preserve">
+    <value>Admin Verification Required</value>
+  </data>
+  <data name="Plugins_AdminVerifyText" xml:space="preserve">
+    <value>Please enter your admin password to continue:</value>
+  </data>
+  <data name="Plugins_BackupSuccessMsg" xml:space="preserve">
+    <value>Backup created successfully!
+{0}</value>
+  </data>
+  <data name="Plugins_SelectBackupFile" xml:space="preserve">
+    <value>Select Backup File</value>
+  </data>
+  <data name="Error_ReturnQtyExceedsOrdered" xml:space="preserve">
+    <value>Return quantity cannot exceed ordered quantity for item: {0}</value>
+  </data>
+  <data name="Msg_EnterCategoryName" xml:space="preserve">
+    <value>Please enter a category name</value>
+  </data>
+  <data name="Msg_CategoryExists" xml:space="preserve">
+    <value>Category already exists!</value>
+  </data>
+  <data name="Exp_ManageCategories" xml:space="preserve">
+    <value>Manage Expense Categories</value>
+  </data>
+  <data name="Msg_NewCategory" xml:space="preserve">
+    <value>New Category</value>
+  </data>
+  <data name="Msg_CategoryName" xml:space="preserve">
+    <value>Category Name</value>
+  </data>
+  <data name="Msg_ConfirmDeleteCategory" xml:space="preserve">
+    <value>Are you sure you want to delete this category?</value>
+  </data>
+  <data name="DetailsForm_TitlePrefix" xml:space="preserve">
+    <value>Details - </value>
+  </data>
+  <data name="DetailsForm_BalanceDue" xml:space="preserve">
+    <value>Balance Due</value>
+  </data>
+  <data name="DetailsForm_NextDue" xml:space="preserve">
+    <value>Next Due: {0}</value>
+  </data>
+  <data name="DetailsForm_AddBill" xml:space="preserve">
+    <value>Add Bill</value>
+  </data>
+  <data name="DetailsForm_PaySupplier" xml:space="preserve">
+    <value>Pay Supplier</value>
+  </data>
+  <data name="DetailsForm_RecordSale" xml:space="preserve">
+    <value>Record Sale</value>
+  </data>
+  <data name="DetailsForm_ReceivePayment" xml:space="preserve">
+    <value>Receive Payment</value>
+  </data>
+  <data name="DetailsForm_ColPayment" xml:space="preserve">
+    <value>Payment</value>
+  </data>
+  <data name="Btn_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="AboutUs_Desc" xml:space="preserve">
+    <value>A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support.</value>
+  </data>
+  <data name="AboutUs_DevInfo" xml:space="preserve">
+    <value>Developed by Softio Digital Transformation</value>
+  </data>
+  <data name="AboutUs_ContactSupport" xml:space="preserve">
+    <value>Contact Support</value>
+  </data>
+  <data name="AddCurr_EnterCodeFirst" xml:space="preserve">
+    <value>Please enter currency code first</value>
+  </data>
+  <data name="AddCurr_FetchRateError" xml:space="preserve">
+    <value>Could not fetch rate. Please enter manually.</value>
+  </data>
+  <data name="AddCurr_Fetch" xml:space="preserve">
+    <value>Fetch</value>
+  </data>
+  <data name="AddCurr_CodeLabel" xml:space="preserve">
+    <value>Currency Code (e.g. EUR)</value>
+  </data>
+  <data name="AddCurr_NameLabel" xml:space="preserve">
+    <value>Currency Name (e.g. Euro)</value>
+  </data>
+  <data name="AddCurr_SymbolLabel" xml:space="preserve">
+    <value>Symbol (e.g. €)</value>
+  </data>
+  <data name="AddCurr_RateLabel" xml:space="preserve">
+    <value>Exchange Rate (1 USD = ?)</value>
+  </data>
+  <data name="AddCurr_CodeTooLong" xml:space="preserve">
+    <value>Code too long</value>
+  </data>
+  <data name="AddUser_SuccessMsg" xml:space="preserve">
+    <value>User added successfully!
+Username: '{0}'</value>
+  </data>
+  <data name="BlindReturn_ItemNotFound" xml:space="preserve">
+    <value>Item not found in inventory (Barcode: {0}). Cannot return this item.</value>
+  </data>
+  <data name="QuotePreview_Title" xml:space="preserve">
+    <value>Quotation Preview</value>
+  </data>
+  <data name="QuotePreview_Quote" xml:space="preserve">
+    <value>QUOTATION</value>
+  </data>
+  <data name="QuotePreview_TermsHead" xml:space="preserve">
+    <value>TERMS AND CONDITIONS</value>
+  </data>
+  <data name="QuotePreview_TermsBody" xml:space="preserve">
+    <value>• Validity: 15 days from issue.
+• Payment due prior to delivery.
+• Acceptance indicates billing confirmation.
+
+Accepted By: __________________________</value>
+  </data>
+  <data name="QuotePreview_Tax" xml:space="preserve">
+    <value>Tax / Extras</value>
+  </data>
+  <data name="QuotePreview_FinalMsg" xml:space="preserve">
+    <value>Thank you for your business! Please contact us if you have any questions.</value>
+  </data>
+  <data name="ThermalLabel_PreviewTitle" xml:space="preserve">
+    <value>Label Preview</value>
+  </data>
+  <data name="CustForm_ExportSuccess" xml:space="preserve">
+    <value>Exported {0} customers to CSV successfully!</value>
+  </data>
+  <data name="CustForm_InvalidFileFormat" xml:space="preserve">
+    <value>Invalid file format. Required columns: CustomerName, Phone, Email, Address, CustomerType</value>
+  </data>
+  <data name="CurrSettings_Connecting" xml:space="preserve">
+    <value>Connecting to exchange rate service...</value>
+  </data>
+  <data name="CurrSettings_FetchError" xml:space="preserve">
+    <value>Could not reach server. Using cached rates.</value>
+  </data>
+  <data name="Nav_LanguageToolTip" xml:space="preserve">
+    <value>Switch language</value>
+  </data>
+  <data name="POS_AddShipping" xml:space="preserve">
+    <value>Add Shipping Details</value>
+  </data>
+  <data name="POS_ViewShipping" xml:space="preserve">
+    <value>View Shipping Details</value>
+  </data>
+  <data name="AddPart_UploadImage" xml:space="preserve">
+    <value>Upload Image</value>
+  </data>
+  <data name="AddPart_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="AddPart_Service" xml:space="preserve">
+    <value>Service</value>
+  </data>
+  <data name="AddPart_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="AddPart_SalesItem" xml:space="preserve">
+    <value>Sales item</value>
+  </data>
+  <data name="AddPart_PurchaseItem" xml:space="preserve">
+    <value>Purchase item</value>
+  </data>
+  <data name="AddPart_Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="AddPart_TaxRates" xml:space="preserve">
+    <value>Tax Rates:</value>
+  </data>
+  <data name="AddPart_ExpiryDate" xml:space="preserve">
+    <value>Expiry Date</value>
+  </data>
+  <data name="AddPart_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="AddPart_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="AddPart_Auto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="AddPart_BatchNo" xml:space="preserve">
+    <value>Batch No.</value>
+  </data>
+  <data name="AddPart_UnitOfMeasure" xml:space="preserve">
+    <value>Unit of Measure</value>
+  </data>
+  <data name="AddPart_StockControl" xml:space="preserve">
+    <value>Stock control</value>
+  </data>
+  <data name="AddPart_ControlThisItem" xml:space="preserve">
+    <value>Control this item</value>
+  </data>
+  <data name="AddPart_LowLevel" xml:space="preserve">
+    <value>Low level</value>
+  </data>
+  <data name="AddPart_SupplierCost" xml:space="preserve">
+    <value>Supplier Cost</value>
+  </data>
+  <data name="AddPart_Supplier" xml:space="preserve">
+    <value>Supplier</value>
+  </data>
+  <data name="AddPart_Cost" xml:space="preserve">
+    <value>Cost</value>
+  </data>
+  <data name="AddPart_Prices" xml:space="preserve">
+    <value>Prices</value>
+  </data>
+  <data name="AddPart_Level" xml:space="preserve">
+    <value>Level</value>
+  </data>
+  <data name="AddPart_Gross" xml:space="preserve">
+    <value>Gross %</value>
+  </data>
+  <data name="AddPart_Profit" xml:space="preserve">
+    <value>Profit</value>
+  </data>
+  <data name="AddPart_Price1" xml:space="preserve">
+    <value>Price 1</value>
+  </data>
+  <data name="AddPart_Price2" xml:space="preserve">
+    <value>Price 2</value>
+  </data>
+  <data name="AddPart_Price3" xml:space="preserve">
+    <value>Price 3</value>
+  </data>
+  <data name="AddPart_Price4" xml:space="preserve">
+    <value>Price 4</value>
+  </data>
+  <data name="Scale_Title" xml:space="preserve">
+    <value>TM-A17 Weighing Scale &amp; Price Calculator</value>
+  </data>
+  <data name="Scale_SettingsBtn" xml:space="preserve">
+    <value>Scale Settings</value>
+  </data>
+  <data name="Scale_ReadWeight" xml:space="preserve">
+    <value>Read Weight</value>
+  </data>
+  <data name="Scale_ApplyPrice1" xml:space="preserve">
+    <value>Apply to Price 1</value>
+  </data>
+  <data name="Scale_ApplyStock" xml:space="preserve">
+    <value>Apply Weight to Stock</value>
+  </data>
+  <data name="OrderDetails_Title" xml:space="preserve">
+    <value>Order #{0} Details</value>
+  </data>
+  <data name="OrderDetails_Customer" xml:space="preserve">
+    <value>Customer:</value>
+  </data>
+  <data name="OrderDetails_Date" xml:space="preserve">
+    <value>Date:</value>
+  </data>
+  <data name="OrderDetails_Status" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="OrderDetails_TotalAmount" xml:space="preserve">
+    <value>Total Amount:</value>
+  </data>
+  <data name="OrderDetails_ShippingTo" xml:space="preserve">
+    <value>Shipping To:</value>
+  </data>
+  <data name="OrderDetails_DeliveryDate" xml:space="preserve">
+    <value>Delivery Date:</value>
+  </data>
+  <data name="OrderDetails_PaymentDue" xml:space="preserve">
+    <value>Payment Due:</value>
+  </data>
+  <data name="OrderDetails_NotFound" xml:space="preserve">
+    <value>Order not found.</value>
+  </data>
 </root>

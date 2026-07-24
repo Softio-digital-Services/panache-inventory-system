@@ -153,9 +153,7 @@ namespace InventorySystem.Forms
                     MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_SelectOneSupplier"));
                     return;
                 }
-                string confirmMsg = LocalizationManager.IsArabic
-                    ? $"هل أنت متأكد من رغبتك في حذف {checkedIds.Count} من الموردين المحددين؟"
-                    : $"Are you sure you want to delete {checkedIds.Count} selected suppliers?";
+                string confirmMsg = string.Format(LocalizationManager.GetString("Msg_ConfirmDeleteSuppliers", "Are you sure you want to delete {0} selected suppliers?"), checkedIds.Count);
                 if (MessageHelper.ConfirmAction(confirmMsg))
                 {
                     Services.SupplierService supplierService = new Services.SupplierService();
@@ -299,7 +297,7 @@ namespace InventorySystem.Forms
                 // Edit
                 if (!InventorySystem.Helpers.UserSession.IsAdmin)
                 {
-                    MessageHelper.ShowWarning(InventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646." : "You do not have permission to edit suppliers.");
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Error_NoPermissionEditSuppliers", "You do not have permission to edit suppliers."));
                     return;
                 }
 
@@ -326,7 +324,7 @@ namespace InventorySystem.Forms
                 // Delete
                 if (!InventorySystem.Helpers.UserSession.IsAdmin)
                 {
-                    MessageHelper.ShowWarning(InventorySystem.Helpers.LocalizationManager.IsArabic ? "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u0635\u0644\u0627\u062d\u064a\u0629 \u0644\u062d\u0630\u0641 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646." : "You do not have permission to delete suppliers.");
+                    MessageHelper.ShowWarning(LocalizationManager.GetString("Error_NoPermissionDeleteSuppliers", "You do not have permission to delete suppliers."));
                     return;
                 }
 
@@ -484,9 +482,7 @@ namespace InventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToCsv(exportDt, saveDialog.FileName))
                     {
-                        string successMsg = LocalizationManager.IsArabic
-                            ? $"تم تصدير {exportDt.Rows.Count} موردين إلى CSV بنجاح!"
-                            : $"Exported {exportDt.Rows.Count} suppliers to CSV successfully!";
+                        string successMsg = string.Format(LocalizationManager.GetString("Msg_ExportSuppliersSuccess", "Exported {0} suppliers to CSV successfully!"), exportDt.Rows.Count);
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
@@ -549,9 +545,7 @@ namespace InventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToExcel(exportDt, saveDialog.FileName, "Suppliers"))
                     {
-                        string successMsg = LocalizationManager.IsArabic
-                            ? $"تم تصدير {exportDt.Rows.Count} موردين إلى Excel بنجاح!"
-                            : $"Exported {exportDt.Rows.Count} suppliers to Excel successfully!";
+                        string successMsg = string.Format(LocalizationManager.GetString("Msg_ExportExcelSuppliersSuccess", "Exported {0} suppliers to Excel successfully!"), exportDt.Rows.Count);
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
@@ -586,9 +580,7 @@ namespace InventorySystem.Forms
 
                     if (!dt.Columns.Contains("SupplierName"))
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic
-                            ? "تنسيق الملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"
-                            : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
+                        MessageHelper.ShowError(LocalizationManager.GetString("Error_InvalidSupplierFileFormat", "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"));
                         return;
                     }
 
@@ -634,9 +626,7 @@ namespace InventorySystem.Forms
                     }
 
                     LoadData();
-                    string completeMsg = LocalizationManager.IsArabic
-                        ? $"اكتمل الاستيراد!\nتم الاستيراد: {imported}\nتم التخطي: {skipped}"
-                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
+                    string completeMsg = string.Format(LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nSkipped: {1}"), imported, skipped);
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }
@@ -666,9 +656,7 @@ namespace InventorySystem.Forms
 
                     if (!dt.Columns.Contains("SupplierName"))
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic
-                            ? "تنسيق الملف غير صالح. الأعمدة المطلوبة: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"
-                            : "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes");
+                        MessageHelper.ShowError(LocalizationManager.GetString("Error_InvalidSupplierFileFormat", "Invalid file format. Required columns: SupplierName, ContactPerson, Email, Phone, Address, City, PostalCode, Website, Notes"));
                         return;
                     }
 
@@ -714,9 +702,7 @@ namespace InventorySystem.Forms
                     }
 
                     LoadData();
-                    string completeMsg = LocalizationManager.IsArabic
-                        ? $"اكتمل الاستيراد!\nتم الاستيراد: {imported}\nتم التخطي: {skipped}"
-                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
+                    string completeMsg = string.Format(LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nSkipped: {1}"), imported, skipped);
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }

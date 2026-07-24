@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using InventorySystem.Helpers;
@@ -11,7 +11,7 @@ namespace InventorySystem.Forms
         public AboutUsForm()
         {
             InitializeAboutLayout();
-            this.TitleText = LocalizationManager.IsArabic ? "عن البرنامج" : "About Us";
+            this.TitleText = LocalizationManager.GetString("Nav_AboutUs", "About Us");
             this.Size = new Size(500, 580);
         }
 
@@ -56,9 +56,7 @@ namespace InventorySystem.Forms
 
             // Description
             Label lblDesc = new Label {
-                Text = LocalizationManager.IsArabic 
-                    ? "نظام متكامل لإدارة المخازن والمبيعات، مصمم خصيصاً لتلبية احتياجات الشركات الصغيرة والمتوسطة. يتميز بواجهة عصرية ودعم كامل للغة العربية."
-                    : "A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support.",
+                Text = LocalizationManager.GetString("AboutUs_Desc", "A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support."),
                 Font = new Font("Segoe UI", 10.5f),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -77,7 +75,7 @@ namespace InventorySystem.Forms
 
             // Developer Info
             Label lblDev = new Label {
-                Text = LocalizationManager.IsArabic ? "تطوير بواسطة Softio Digital Transformation" : "Developed by Softio Digital Transformation",
+                Text = LocalizationManager.GetString("AboutUs_DevInfo", "Developed by Softio Digital Transformation"),
                 Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -88,7 +86,7 @@ namespace InventorySystem.Forms
 
             // Links/Contact
             Button btnContact = new ModernButton {
-                Text = "  " + (LocalizationManager.IsArabic ? "تواصل معنا" : "Contact Support"),
+                Text = "  " + LocalizationManager.GetString("AboutUs_ContactSupport", "Contact Support"),
                 Size = new Size(200, 45),
                 Location = new Point(150, 385),
                 Cursor = Cursors.Hand,
@@ -100,7 +98,7 @@ namespace InventorySystem.Forms
             ThemeConfig.ApplyPrimaryButton(btnContact);
             btnContact.Click += (s, e) => {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:softioservices@gmail.com") { UseShellExecute = true }); }
-                catch { MessageHelper.ShowInfo("Contact us at: softioservices@gmail.com"); }
+                catch { MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_ContactSupport", "Contact us at: softioservices@gmail.com")); }
             };
             container.Controls.Add(btnContact);
 

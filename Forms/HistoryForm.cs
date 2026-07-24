@@ -328,11 +328,8 @@ namespace InventorySystem.Forms
                 if (col.Name == "Status" && e.Value != null)
                 {
                     string statusStr = e.Value.ToString();
-                    if (statusStr == "Completed" && InventorySystem.Helpers.LocalizationManager.IsArabic)
-                    {
-                        e.Value = "\u0645\u0643\u062A\u0645\u0644";
-                        e.FormattingApplied = true;
-                    }
+                    e.Value = LocalizationManager.GetString("Status_" + statusStr, statusStr);
+                    e.FormattingApplied = true;
                 }
             }
         }

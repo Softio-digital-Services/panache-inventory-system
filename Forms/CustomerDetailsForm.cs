@@ -36,7 +36,7 @@ namespace InventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.TitleText = (LocalizationManager.IsArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _customerName;
+            this.TitleText = LocalizationManager.GetString("DetailsForm_TitlePrefix", "Details - ") + _customerName;
 
             // Main Layout container
             TableLayoutPanel tlpMain = new TableLayoutPanel {
@@ -105,13 +105,13 @@ namespace InventorySystem.Forms
             tlpBalance.Controls.Add(lblDueDate, 0, 2);
             
             // 2. Receive Payment Button
-            btnReceivePayment = new ModernButton { Text = "\uD83D\uDCB5 " + (LocalizationManager.IsArabic ? "\u0642\u0628\u0636 \u062F\u0641\u0631\u0629" : "Receive Payment"), Size = new Size(165, 45) };
+            btnReceivePayment = new ModernButton { Text = "\uD83D\uDCB5 " + LocalizationManager.GetString("DetailsForm_ReceivePayment", "Receive Payment"), Size = new Size(165, 45) };
             ThemeConfig.ApplyEmojiButton(btnReceivePayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
             btnReceivePayment.Click += BtnReceivePayment_Click;
             btnReceivePayment.Margin = new Padding(5, 5, 5, 5);
 
             // 3. Record Sale button
-            btnRecordSale = new ModernButton { Text = "\uD83D\uDED2 " + (LocalizationManager.IsArabic ? "\u062A\u0633\u062C\u064A\u0644 \u0628\u064A\u0639" : "Record Sale"), Size = new Size(155, 45) };
+            btnRecordSale = new ModernButton { Text = "\uD83D\uDED2 " + LocalizationManager.GetString("DetailsForm_RecordSale", "Record Sale"), Size = new Size(155, 45) };
             ThemeConfig.ApplyEmojiButton(btnRecordSale, ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, Color.White);
             btnRecordSale.Click += BtnRecordSale_Click;
             btnRecordSale.Margin = new Padding(5, 5, 5, 5);
@@ -140,7 +140,7 @@ namespace InventorySystem.Forms
             this.ContentPanel.Controls.Add(tlpMain);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "\u0625\u063A\u0644\u0627\u0642" : "Close",
+                LocalizationManager.GetString("Btn_Close", "Close"),
                 "",
                 (s, e) => this.Close(),
                 null
@@ -178,7 +178,7 @@ namespace InventorySystem.Forms
                     {
                         if (DateTime.TryParse(nextDue.ToString(), out DateTime due))
                         {
-                            lblDueDate.Text = (LocalizationManager.IsArabic ? "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0627\u0633\u062A\u062D\u0642\u0627\u0642: " : "Next Due: ") + due.ToString("yyyy-MM-dd");
+                            lblDueDate.Text = string.Format(LocalizationManager.GetString("DetailsForm_NextDue", "Next Due: {0}"), due.ToString("yyyy-MM-dd"));
                             lblDueDate.Visible = true;
                         }
                     }
@@ -212,8 +212,17 @@ namespace InventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = (isArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _customerName;
-            lblBalTitle.Text = isArabic ? "\u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062D\u0642" : "Balance Due";
+            this.TitleText = LocalizationManager.GetString("DetailsForm_TitlePrefix", "Details - ") + _customerName;
+            lblBalTitle.Text = LocalizationManager.GetString("DetailsForm_BalanceDue", "Balance Due");
+            btnReceivePayment.Text = "\uD83D\uDCB5 " + LocalizationManager.GetString("DetailsForm_ReceivePayment", "Receive Payment");
+            btnRecordSale.Text = "\uD83D\uDED2 " + LocalizationManager.GetString("DetailsForm_RecordSale", "Record Sale");
+
+            SetFooterButtons(
+                LocalizationManager.GetString("Btn_Close", "Close"),
+                "",
+                (s, e) => this.Close(),
+                null
+            );
 
             ApplyGridLocalizations();
         }
@@ -224,7 +233,7 @@ namespace InventorySystem.Forms
 
             if (dgvHistory.Columns["Date"] != null) dgvHistory.Columns["Date"].HeaderText = LocalizationManager.GetString("Hist_ColDate");
             if (dgvHistory.Columns["Action"] != null) dgvHistory.Columns["Action"].HeaderText = LocalizationManager.GetString("Hist_ColAction");
-            if (dgvHistory.Columns["Amount"] != null) dgvHistory.Columns["Amount"].HeaderText = LocalizationManager.IsArabic ? "الدفعة" : "Payment";
+            if (dgvHistory.Columns["Amount"] != null) dgvHistory.Columns["Amount"].HeaderText = LocalizationManager.GetString("DetailsForm_ColPayment", "Payment");
             if (dgvHistory.Columns["Due Date"] != null) dgvHistory.Columns["Due Date"].HeaderText = LocalizationManager.GetString("Tran_DueDateLabel", "Due Date");
             if (dgvHistory.Columns["Details"] != null) dgvHistory.Columns["Details"].HeaderText = LocalizationManager.GetString("Hist_ColDetails");
         }

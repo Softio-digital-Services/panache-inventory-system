@@ -51,6 +51,8 @@ namespace InventorySystem.Forms
         private DateTime _lastScanTime = DateTime.Now;
         private string _scanBuffer = "";
         private ShippingDetailsForm _shippingDetails = null;
+        private Button btnManageDrafts;
+        private Button btnAddShipping;
 
         // ---------------------------------------------------------------------
         // CONSTRUCTOR
@@ -153,8 +155,8 @@ namespace InventorySystem.Forms
             };
             txtProductSearch.TextChanged += (s, ev) => LoadProducts(txtProductSearch.Text);
 
-            Button btnManageDrafts = new InventorySystem.Controls.ModernButton { Text = "Manage Drafts", Cursor = Cursors.Hand, Height = 35, Width = 160 };
-            Button btnAddShipping = new InventorySystem.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200 };
+            btnManageDrafts = new InventorySystem.Controls.ModernButton { Text = "Manage Drafts", Cursor = Cursors.Hand, Height = 35, Width = 160 };
+            btnAddShipping = new InventorySystem.Controls.ModernButton { Text = "Add Shipping Details", Cursor = Cursors.Hand, Height = 35, Width = 200 };
 
             ThemeConfig.ApplyPaletteButton(btnManageDrafts, Color.FromArgb(99, 102, 241)); // Indigo
             ThemeConfig.ApplyPaletteButton(btnAddShipping, ThemeConfig.PrimaryColor); // Gold
@@ -170,7 +172,7 @@ namespace InventorySystem.Forms
                 if (_shippingDetails == null) _shippingDetails = new ShippingDetailsForm();
                 if (_shippingDetails.ShowDialog() == DialogResult.OK)
                 {
-                    btnAddShipping.Text = "View Shipping Details";
+                    ApplyLocalization();
                 }
             };
 
@@ -210,7 +212,7 @@ namespace InventorySystem.Forms
             };
             tlpLeft.Controls.Add(pnlCategorySection, 0, 2);
 
-            // Title row � "Menu" label + prev/next arrows
+            // Title row  "Menu" label + prev/next arrows
             Panel pnlCatHeader = new Panel
             {
                 Height = 30,
@@ -336,7 +338,7 @@ namespace InventorySystem.Forms
             tlpLeft.Controls.Add(pnlPagination, 0, 4);
 
             // ------------------------------------------------------------------
-            // RIGHT PANEL � cart & summary
+            // RIGHT PANEL  cart & summary
             // ------------------------------------------------------------------
             // RIGHT PANEL - cards layout
             // ------------------------------------------------------------------
@@ -828,7 +830,7 @@ namespace InventorySystem.Forms
         }
 
         // ---------------------------------------------------------------------
-        // CURRENCY SELECTOR PANEL � ComboBox dropdown
+        // CURRENCY SELECTOR PANEL  ComboBox dropdown
         // ---------------------------------------------------------------------
         private void BuildCurrencySelectorPanel(Panel pnl)
         {
@@ -992,7 +994,7 @@ namespace InventorySystem.Forms
         }
 
         // ---------------------------------------------------------------------
-        // CATEGORY CHIPS  � reference card style
+        // CATEGORY CHIPS   reference card style
         // ---------------------------------------------------------------------
         private void BuildCategoryChips()
         {
@@ -1063,7 +1065,7 @@ namespace InventorySystem.Forms
                 catch { }
             }
 
-            // Card dimensions � wider to accommodate icon + text
+            // Card dimensions  wider to accommodate icon + text
             var nameFont = ThemeConfig.SmallBoldFont ?? new Font("Segoe UI", 9F, FontStyle.Bold);
             var countFont = new Font("Segoe UI", 7.5F);
             int nameW = TextRenderer.MeasureText(label, nameFont).Width;
@@ -1073,7 +1075,7 @@ namespace InventorySystem.Forms
             const int CARD_H = 64;
             // const int ICON_AREA = 32; // width reserved for the emoji circle
 
-            // Active border color � teal/primary on top edge (like reference)
+            // Active border color  teal/primary on top edge (like reference)
             Color activeBorder = ThemeConfig.POS_ChipActiveBorder;
             Color inactiveBg = ThemeConfig.SurfaceColor;
 
@@ -1153,12 +1155,12 @@ namespace InventorySystem.Forms
                 // Title and Subtitle block is vertically centered together
                 int textBlockY = cy + 2;
 
-                // Category name � always dark, bold
+                // Category name  always dark, bold
                 TextRenderer.DrawText(g, label, nameFont,
                     new Rectangle(textX, textBlockY, textW, 16), ThemeConfig.TextColorDark,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
 
-                // Item count � always small grey below name
+                // Item count  always small grey below name
                 using (var cf = new Font("Segoe UI", 7.5F))
                     TextRenderer.DrawText(g, countText, cf,
                         new Rectangle(textX, textBlockY + 18, textW, 16), ThemeConfig.SecondaryColor,
@@ -1294,10 +1296,10 @@ namespace InventorySystem.Forms
                         pe.Graphics.DrawPath(pen, path);
                 }
             };
-            // Hover wiring deferred � applied after all children are built (see PropagateHover below)
+            // Hover wiring deferred  applied after all children are built (see PropagateHover below)
 
             // ------------------------------------------------------------------
-            // SECTION 1 � Image container  (div.card-image)
+            // SECTION 1  Image container  (div.card-image)
             // A transparent panel that centres the circular image
             // ------------------------------------------------------------------
             const int IMG_SECTION_H = 128; // height of image zone
@@ -1309,7 +1311,7 @@ namespace InventorySystem.Forms
             };
             card.Controls.Add(pnlImageSection);
 
-            // Circular background disc � centred in the image section
+            // Circular background disc  centred in the image section
             int circleDiameter = IMG_SIZE + 6;
             int circleX = (CARD_W - circleDiameter) / 2;
             int circleY = (IMG_SECTION_H - circleDiameter) / 2;
@@ -1321,7 +1323,7 @@ namespace InventorySystem.Forms
                 BackColor = Color.Transparent   // parent handles clearing
             };
 
-            // Load image once � drawn directly in Paint (no PictureBox needed)
+            // Load image once  drawn directly in Paint (no PictureBox needed)
             var bmp = LoadProductImage(part.PartImage, part.CategoryName, IMG_SIZE);
 
             pnlImgBg.Paint += (s, pe) =>
@@ -1346,7 +1348,7 @@ namespace InventorySystem.Forms
                     float avail = Math.Min(w, h) - PAD * 2f;   // usable diameter
                     float scale = Math.Min(avail / bmp.Width, avail / bmp.Height);
 
-                    // Use float throughout � integer truncation causes systematic 1px error
+                    // Use float throughout  integer truncation causes systematic 1px error
                     float scaledW = bmp.Width * scale;
                     float scaledH = bmp.Height * scale;
 
@@ -1366,7 +1368,7 @@ namespace InventorySystem.Forms
             pnlImageSection.Controls.Add(pnlImgBg);
 
             // ------------------------------------------------------------------
-            // SECTION 2 � Text container  (div.card-body)
+            // SECTION 2  Text container  (div.card-body)
             // Category italic label + bold product name, both centred
             // ------------------------------------------------------------------
             const int TEXT_SECTION_H = 56;
@@ -1380,7 +1382,7 @@ namespace InventorySystem.Forms
             };
             card.Controls.Add(pnlTextSection);
 
-            // Category � small italic grey (like reference)
+            // Category  small italic grey (like reference)
             Label lblCat = new Label
             {
                 Text = part.CategoryName,
@@ -1669,7 +1671,7 @@ namespace InventorySystem.Forms
 
 
         // ---------------------------------------------------------------------
-        // CART DISPLAY � simple text rows matching reference design
+        // CART DISPLAY  simple text rows matching reference design
         // ---------------------------------------------------------------------
         public void RefreshCartDisplay()
         {
@@ -2049,7 +2051,7 @@ namespace InventorySystem.Forms
         }
 
         // ---------------------------------------------------------------------
-        // INITIALIZE CART  (business logic � preserved)
+        // INITIALIZE CART  (business logic  preserved)
         // ---------------------------------------------------------------------
         private void InitializeCart()
         {
@@ -2114,11 +2116,16 @@ namespace InventorySystem.Forms
         private void ApplyLocalization()
         {
             LocalizationManager.ApplyRTL(this);
-            LocalizationManager.TranslateControl(this);
             Func<string, string> L = LocalizationManager.GetString;
 
             if (btnCheckout != null) btnCheckout.Text = L("POS_Checkout");
-            // if (btnClearCart != null) btnClearCart.Text = L("POS_ClearCart");
+            if (btnManageDrafts != null) btnManageDrafts.Text = LocalizationManager.GetString("POS_ManageDrafts", "Manage Drafts");
+            if (btnAddShipping != null) 
+            {
+                btnAddShipping.Text = _shippingDetails != null 
+                    ? LocalizationManager.GetString("POS_ViewShipping", "View Shipping Details") 
+                    : LocalizationManager.GetString("POS_AddShipping", "Add Shipping Details");
+            }
 
             if (cardTodayOrders != null) cardTodayOrders.Title = L("POS_Orders");
             if (cardTodaySales != null) cardTodaySales.Title = L("POS_Sales");

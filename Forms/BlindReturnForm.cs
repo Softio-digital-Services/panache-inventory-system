@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -218,9 +218,10 @@ namespace InventorySystem.Forms
                     }
                     else
                     {
-                        string warnMsg = LocalizationManager.IsArabic 
-                            ? $"الصنف غير موجود في المخزن (الباركود: {barcode}). لا يمكن إرجاع هذا الصنف." 
-                            : $"Item not found in inventory (Barcode: {barcode}). Cannot return this item.";
+                        string warnMsg = string.Format(
+                            LocalizationManager.GetString("BlindReturn_ItemNotFound", "Item not found in inventory (Barcode: {0}). Cannot return this item."),
+                            barcode
+                        );
                         MessageHelper.ShowWarning(warnMsg);
                     }
 

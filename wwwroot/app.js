@@ -7,6 +7,8 @@ const TRANSLATIONS = {
         login_username: 'Username',
         login_password: 'Password',
         login_btn: 'Sign In',
+        login_username_ph: 'admin',
+        search_placeholder: 'Search inventory...',
         // Lock screen
         lock_unlock: 'Unlock',
         lock_switch: 'Switch User / Logout',
@@ -58,6 +60,8 @@ const TRANSLATIONS = {
         login_username: 'اسم المستخدم',
         login_password: 'كلمة المرور',
         login_btn: 'تسجيل الدخول',
+        login_username_ph: 'مدير',
+        search_placeholder: 'ابحث في المخزون...',
         // Lock screen
         lock_unlock: 'إلغاء القفل',
         lock_switch: 'تبديل المستخدم / تسجيل الخروج',
@@ -130,7 +134,7 @@ function applyLanguage() {
 
     // Translate dynamic placeholders
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) searchInput.placeholder = isRtl ? 'ابحث في المخزون...' : 'Search inventory...';
+    if (searchInput) searchInput.placeholder = t('search_placeholder');
 
     // Add/Edit modal input placeholders
     const newItemName = document.getElementById('newItemName');
@@ -145,7 +149,7 @@ function applyLanguage() {
 
     // Login screen placeholders
     const loginUser = document.getElementById('loginUser');
-    if (loginUser) loginUser.placeholder = isRtl ? 'مدير' : 'admin';
+    if (loginUser) loginUser.placeholder = t('login_username_ph');
 
     // Camera modal flip button text
     const btnSwitch = document.getElementById('btnSwitchCamera');

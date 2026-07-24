@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -167,9 +167,10 @@ namespace InventorySystem.Forms
                     int ordered = (int)row.Cells["QtyOrdered"].Value;
                     if (qty > ordered)
                     {
-                        string msg = LocalizationManager.IsArabic 
-                            ? $"لا يمكن أن تتجاوز الكمية المرتجعة الكمية المطلوبة للصنف: {row.Cells["PartName"].Value}"
-                            : $"Return quantity cannot exceed ordered quantity for item: {row.Cells["PartName"].Value}";
+                        string msg = string.Format(
+                            LocalizationManager.GetString("Error_ReturnQtyExceedsOrdered", "Return quantity cannot exceed ordered quantity for item: {0}"),
+                            row.Cells["PartName"].Value
+                        );
                         MessageHelper.ShowWarning(msg);
                         return;
                     }

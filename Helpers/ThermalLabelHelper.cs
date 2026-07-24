@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
@@ -44,7 +44,7 @@ namespace InventorySystem.Helpers
             using (PrintPreviewDialog preview = new PrintPreviewDialog())
             {
                 preview.Document = pd;
-                preview.Text = LocalizationManager.IsArabic ? "معاينة الملصقات" : "Label Preview";
+                preview.Text = LocalizationManager.GetString("ThermalLabel_PreviewTitle", "Label Preview");
                 
                 ThemeConfig.ApplyPrintPreviewTheme(preview);
 

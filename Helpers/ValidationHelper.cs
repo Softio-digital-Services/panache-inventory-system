@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using InventorySystem.Helpers;
 using InventorySystem.Controls;
@@ -67,8 +67,8 @@ namespace InventorySystem
             if (isEmpty)
             {
                 string msg = string.IsNullOrEmpty(fieldName)
-                    ? (LocalizationManager.IsArabic ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields")
-                    : (LocalizationManager.IsArabic ? $"الحقل '{fieldName}' مطلوب" : $"Field '{fieldName}' is required");
+                    ? LocalizationManager.GetString("Val_FillRequired", "Please fill all required fields")
+                    : string.Format(LocalizationManager.GetString("Val_FieldRequired", "Field '{0}' is required"), fieldName);
                 
                 ShowValidationError(msg);
                 control.Focus();
@@ -84,9 +84,10 @@ namespace InventorySystem
         {
             if (!decimal.TryParse(input, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out result))
             {
-                string msg = LocalizationManager.IsArabic 
-                    ? $"{fieldName} يجب أن يكون رقماً صالحاً (مثال: 10.50)" 
-                    : $"{fieldName} must be a valid number (e.g. 10.50).";
+                string msg = string.Format(
+                    LocalizationManager.GetString("Val_InvalidNumber", "{0} must be a valid number (e.g. 10.50)."),
+                    fieldName
+                );
                 ShowValidationError(msg);
                 return false;
             }
@@ -108,9 +109,10 @@ namespace InventorySystem
         {
             if (!int.TryParse(input, out result))
             {
-                string msg = LocalizationManager.IsArabic 
-                    ? $"{fieldName} يجب أن يكون رقماً صحيحاً" 
-                    : $"{fieldName} must be a valid whole number.";
+                string msg = string.Format(
+                    LocalizationManager.GetString("Val_InvalidWholeNumber", "{0} must be a valid whole number."),
+                    fieldName
+                );
                 ShowValidationError(msg);
                 return false;
             }
@@ -129,7 +131,7 @@ namespace InventorySystem
             
             if (digitCount < 7)
             {
-                ShowValidationError(LocalizationManager.IsArabic ? "رقم الهاتف غير صالح" : "Phone number appears invalid (too few digits).");
+                ShowValidationError(LocalizationManager.GetString("Val_InvalidPhone", "Phone number appears invalid (too few digits)."));
                 return false;
             }
             return true;
@@ -148,7 +150,7 @@ namespace InventorySystem
             }
             catch
             {
-                ShowValidationError(LocalizationManager.IsArabic ? "عنوان البريد الإلكتروني غير صالح" : "Invalid email address format.");
+                ShowValidationError(LocalizationManager.GetString("Val_InvalidEmail", "Invalid email address format."));
                 return false;
             }
         }
@@ -164,22 +166,23 @@ namespace InventorySystem
         public static string TimeAgo(DateTime dateTime)
         {
             var timeSpan = DateTime.Now.Subtract(dateTime);
-            bool ar = LocalizationManager.IsArabic;
-
             if (timeSpan <= TimeSpan.FromSeconds(60)) 
-                return ar ? "منذ ثوانٍ" : string.Format("{0} seconds ago", timeSpan.Seconds);
+                return string.Format(LocalizationManager.GetString("Time_SecondsAgo", "{0} seconds ago"), timeSpan.Seconds);
             
             if (timeSpan <= TimeSpan.FromMinutes(60)) 
-                return ar ? (timeSpan.Minutes > 1 ? $"منذ {timeSpan.Minutes} دقيقة" : "منذ دقيقة") 
-                          : (timeSpan.Minutes > 1 ? $"about {timeSpan.Minutes} minutes ago" : "about a minute ago");
+                return timeSpan.Minutes > 1 
+                    ? string.Format(LocalizationManager.GetString("Time_MinutesAgo", "about {0} minutes ago"), timeSpan.Minutes) 
+                    : LocalizationManager.GetString("Time_MinuteAgo", "about a minute ago");
             
             if (timeSpan <= TimeSpan.FromHours(24)) 
-                return ar ? (timeSpan.Hours > 1 ? $"منذ {timeSpan.Hours} ساعة" : "منذ ساعة") 
-                          : (timeSpan.Hours > 1 ? $"about {timeSpan.Hours} hours ago" : "about an hour ago");
+                return timeSpan.Hours > 1 
+                    ? string.Format(LocalizationManager.GetString("Time_HoursAgo", "about {0} hours ago"), timeSpan.Hours) 
+                    : LocalizationManager.GetString("Time_HourAgo", "about an hour ago");
             
             if (timeSpan <= TimeSpan.FromDays(30)) 
-                return ar ? (timeSpan.Days > 1 ? $"منذ {timeSpan.Days} يوم" : "أمس") 
-                          : (timeSpan.Days > 1 ? $"about {timeSpan.Days} days ago" : "yesterday");
+                return timeSpan.Days > 1 
+                    ? string.Format(LocalizationManager.GetString("Time_DaysAgo", "about {0} days ago"), timeSpan.Days) 
+                    : LocalizationManager.GetString("Time_Yesterday", "yesterday");
 
             return dateTime.ToString("yyyy-MM-dd");
         }

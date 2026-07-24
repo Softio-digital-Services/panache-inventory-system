@@ -512,9 +512,10 @@ namespace InventorySystem.Forms
 
                     if (Helpers.ImportExportHelper.ExportToCsv(dt, saveDialog.FileName))
                     {
-                        string successMsg = LocalizationManager.IsArabic
-                            ? $"تم تصدير {dt.Rows.Count} عملاء إلى CSV بنجاح!"
-                            : $"Exported {dt.Rows.Count} customers to CSV successfully!";
+                        string successMsg = string.Format(
+                            LocalizationManager.GetString("CustForm_ExportSuccess", "Exported {0} customers to CSV successfully!"),
+                            dt.Rows.Count
+                        );
                         MessageHelper.ShowSuccess(successMsg);
                     }
                     else
@@ -549,9 +550,7 @@ namespace InventorySystem.Forms
 
                     if (!dt.Columns.Contains("CustomerName"))
                     {
-                        MessageHelper.ShowError(LocalizationManager.IsArabic
-                            ? "تنسيق الملف غير صالح. الأعمدة المطلوبة: CustomerName, Phone, Email, Address, CustomerType"
-                            : "Invalid file format. Required columns: CustomerName, Phone, Email, Address, CustomerType");
+                        MessageHelper.ShowError(LocalizationManager.GetString("CustForm_InvalidFileFormat", "Invalid file format. Required columns: CustomerName, Phone, Email, Address, CustomerType"));
                         return;
                     }
 
@@ -603,9 +602,11 @@ namespace InventorySystem.Forms
                     }
 
                     LoadData();
-                    string completeMsg = LocalizationManager.IsArabic
-                        ? $"اكتمل الاستيراد!\nتم الاستيراد: {imported}\nتم التخطي: {skipped}"
-                        : $"Import complete!\nImported: {imported}\nSkipped: {skipped}";
+                    string completeMsg = string.Format(
+                        LocalizationManager.GetString("Msg_ImportCompleteResults", "Import complete!\nImported: {0}\nSkipped: {1}"),
+                        imported,
+                        skipped
+                    );
                     MessageHelper.ShowSuccess(completeMsg);
                 }
             }

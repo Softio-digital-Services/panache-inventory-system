@@ -18,10 +18,29 @@ namespace InventorySystem.Forms
         {
             _orderId = orderId;
             _orderService = new OrderService();
-            this.TitleText = $"Order #{_orderId} Details";
             this.Size = new Size(700, 650);
 
             InitializeComponent();
+
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = string.Format(LocalizationManager.GetString("OrderDetails_Title", "Order #{0} Details"), _orderId);
+            
+            var grids = this.Controls.Find("dgvItems", true);
+            if (grids.Length > 0 && grids[0] is DataGridView dgv)
+            {
+                if (dgv.Columns.Contains("Item")) dgv.Columns["Item"].HeaderText = LocalizationManager.GetString("POS_GridProduct", "Item");
+                if (dgv.Columns.Contains("Qty")) dgv.Columns["Qty"].HeaderText = LocalizationManager.GetString("POS_GridQty", "Qty");
+                if (dgv.Columns.Contains("Price")) dgv.Columns["Price"].HeaderText = LocalizationManager.GetString("POS_GridPrice", "Price");
+                if (dgv.Columns.Contains("Total")) dgv.Columns["Total"].HeaderText = LocalizationManager.GetString("POS_GridTotal", "Total");
+            }
+
+            SetFooterButtons(LocalizationManager.GetString("Btn_Close", "Close"), "", (s, e) => { this.Close(); }, null);
         }
 
         private void InitializeComponent()
@@ -41,7 +60,7 @@ namespace InventorySystem.Forms
             DataRow header = _orderService.GetOrderHeader(_orderId);
             if (header == null)
             {
-                Label lblErr = new Label { Text = "Order not found.", ForeColor = Color.Red, AutoSize = true };
+                Label lblErr = new Label { Text = LocalizationManager.GetString("OrderDetails_NotFound", "Order not found."), ForeColor = Color.Red, AutoSize = true };
                 mainLayout.Controls.Add(lblErr, 0, 0);
                 this.ContentPanel.Controls.Add(mainLayout);
                 return;
@@ -71,7 +90,7 @@ namespace InventorySystem.Forms
             this.ContentPanel.Controls.Add(mainLayout);
 
             // Footer Button
-            SetFooterButtons("Close", "", (s, e) => { this.Close(); }, null);
+            SetFooterButtons(LocalizationManager.GetString("Btn_Close", "Close"), "", (s, e) => { this.Close(); }, null);
         }
 
         private TableLayoutPanel CreateHeaderGrid(DataRow header)
@@ -80,10 +99,10 @@ namespace InventorySystem.Forms
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
 
-            AddRow(tlp, 0, "Customer:", header["customer_name"]?.ToString() ?? "Walk-in");
-            AddRow(tlp, 1, "Date:", Convert.ToDateTime(header["order_date"]).ToString("g"));
-            AddRow(tlp, 2, "Status:", $"{header["status"]} ({header["payment_status"]})");
-            AddRow(tlp, 3, "Total Amount:", CurrencyService.Format(Convert.ToDecimal(header["total_amount"])));
+            AddRow(tlp, 0, LocalizationManager.GetString("OrderDetails_Customer", "Customer:"), header["customer_name"]?.ToString() ?? LocalizationManager.GetString("POS_WalkInCustomer", "Walk-in"));
+            AddRow(tlp, 1, LocalizationManager.GetString("OrderDetails_Date", "Date:"), Convert.ToDateTime(header["order_date"]).ToString("g"));
+            AddRow(tlp, 2, LocalizationManager.GetString("OrderDetails_Status", "Status:"), $"{header["status"]} ({header["payment_status"]})");
+            AddRow(tlp, 3, LocalizationManager.GetString("OrderDetails_TotalAmount", "Total Amount:"), CurrencyService.Format(Convert.ToDecimal(header["total_amount"])));
 
             return tlp;
         }
@@ -94,13 +113,13 @@ namespace InventorySystem.Forms
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
 
-            AddRow(tlp, 0, "Shipping To:", header["shipping_address"]?.ToString());
+            AddRow(tlp, 0, LocalizationManager.GetString("OrderDetails_ShippingTo", "Shipping To:"), header["shipping_address"]?.ToString());
             
             string delDate = header["delivery_date"] != DBNull.Value ? Convert.ToDateTime(header["delivery_date"]).ToString("g") : "N/A";
-            AddRow(tlp, 1, "Delivery Date:", delDate);
+            AddRow(tlp, 1, LocalizationManager.GetString("OrderDetails_DeliveryDate", "Delivery Date:"), delDate);
             
             string dueDate = header["due_date"] != DBNull.Value ? Convert.ToDateTime(header["due_date"]).ToString("g") : "N/A";
-            AddRow(tlp, 2, "Payment Due:", dueDate);
+            AddRow(tlp, 2, LocalizationManager.GetString("OrderDetails_PaymentDue", "Payment Due:"), dueDate);
 
             return tlp;
         }
@@ -117,6 +136,7 @@ namespace InventorySystem.Forms
         {
             DataGridView dgv = new DataGridView
             {
+                Name = "dgvItems",
                 Dock = DockStyle.Fill,
                 BackgroundColor = ThemeConfig.SurfaceColor,
                 BorderStyle = BorderStyle.None,
@@ -127,11 +147,11 @@ namespace InventorySystem.Forms
                 RowHeadersVisible = false
             };
             ThemeConfig.ApplyGridTheme(dgv);
-
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Item", HeaderText = "Item", DataPropertyName = "PartName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "Qty", DataPropertyName = "Quantity", Width = 80 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "Price", DataPropertyName = "UnitPrice", Width = 100 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "Total", DataPropertyName = "Total", Width = 120 });
+ 
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Item", HeaderText = LocalizationManager.GetString("POS_GridProduct", "Item"), DataPropertyName = "PartName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = LocalizationManager.GetString("POS_GridQty", "Qty"), DataPropertyName = "Quantity", Width = 80 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = LocalizationManager.GetString("POS_GridPrice", "Price"), DataPropertyName = "UnitPrice", Width = 100 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = LocalizationManager.GetString("POS_GridTotal", "Total"), DataPropertyName = "Total", Width = 120 });
 
             var items = _orderService.GetOrderItems(_orderId);
             dgv.DataSource = items;

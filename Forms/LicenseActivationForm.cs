@@ -151,9 +151,10 @@ namespace InventorySystem.Forms
 
             // Success
             LicenseActivated = true;
-            string successMsg = LocalizationManager.IsArabic
-                ? $"تم تفعيل الترخيص بنجاح!\n\nتنتهي الصلاحية في: {license.ExpirationDate:MMMM dd, yyyy}"
-                : $"License activated successfully!\n\nExpires: {license.ExpirationDate:MMMM dd, yyyy}";
+            string successMsg = string.Format(
+                LocalizationManager.GetString("Msg_LicenseActivateSuccess", "License activated successfully!\n\nExpires: {0:MMMM dd, yyyy}"),
+                license.ExpirationDate
+            );
             MessageHelper.ShowSuccess(successMsg);
 
             this.DialogResult = DialogResult.OK;
@@ -176,9 +177,10 @@ namespace InventorySystem.Forms
                 if (trial != null)
                 {
                     LicenseActivated = true;
-                    string msg = LocalizationManager.IsArabic
-                        ? $"تم تفعيل الفترة التجريبية! لديك {trial.DaysRemaining()} يومًا متبقية."
-                        : $"Trial activated! You have {trial.DaysRemaining()} days remaining.";
+                    string msg = string.Format(
+                        LocalizationManager.GetString("Msg_TrialActivateSuccess", "Trial activated! You have {0} days remaining."),
+                        trial.DaysRemaining()
+                    );
                     MessageHelper.ShowSuccess(msg);
                     this.DialogResult = DialogResult.OK;
                     this.Close();

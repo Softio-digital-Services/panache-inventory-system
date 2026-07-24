@@ -35,7 +35,7 @@ namespace InventorySystem.Forms
 
         private void InitializeComponent()
         {
-            this.TitleText = (LocalizationManager.IsArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _supplierName;
+            this.TitleText = LocalizationManager.GetString("DetailsForm_TitlePrefix", "Details - ") + _supplierName;
 
             // Main Layout container
             TableLayoutPanel tlpMain = new TableLayoutPanel {
@@ -103,13 +103,13 @@ namespace InventorySystem.Forms
             tlpBalance.Controls.Add(lblDueDate, 0, 2);
             
             // 2. Add Bill button
-            btnAddBill = new ModernButton { Text = "\uD83E\uDDFE " + (LocalizationManager.IsArabic ? "\u0625\u0636\u0627\u0641\u0629 \u0641\u0627\u062A\u0648\u0631\u0629" : "Add Bill"), Size = new Size(155, 45) };
+            btnAddBill = new ModernButton { Text = "\uD83E\uDDFE " + LocalizationManager.GetString("DetailsForm_AddBill", "Add Bill"), Size = new Size(155, 45) };
             ThemeConfig.ApplyEmojiButton(btnAddBill, ThemeConfig.WarningColor, ThemeConfig.WarningColor, Color.White);
             btnAddBill.Click += BtnAddBill_Click;
             btnAddBill.Margin = new Padding(5, 5, 5, 5);
 
             // 3. Pay Supplier button
-            btnPayment = new ModernButton { Text = "\uD83D\uDCB8 " + (LocalizationManager.IsArabic ? "\u062F\u0641\u0639 \u0644\u0644\u0645\u0648\u0631\u062F" : "Pay Supplier"), Size = new Size(165, 45) };
+            btnPayment = new ModernButton { Text = "\uD83D\uDCB8 " + LocalizationManager.GetString("DetailsForm_PaySupplier", "Pay Supplier"), Size = new Size(165, 45) };
             ThemeConfig.ApplyEmojiButton(btnPayment, ThemeConfig.SuccessColor, ThemeConfig.SuccessColor, Color.White);
             btnPayment.Click += BtnPayment_Click;
             btnPayment.Margin = new Padding(5, 5, 5, 5); 
@@ -138,7 +138,7 @@ namespace InventorySystem.Forms
             this.ContentPanel.Controls.Add(tlpMain);
 
             SetFooterButtons(
-                LocalizationManager.IsArabic ? "\u0625\u063A\u0644\u0627\u0642" : "Close",
+                LocalizationManager.GetString("Btn_Close", "Close"),
                 "",
                 (s, e) => this.Close(),
                 null
@@ -172,7 +172,7 @@ namespace InventorySystem.Forms
                     {
                         if (DateTime.TryParse(nextDue.ToString(), out DateTime due))
                         {
-                            lblDueDate.Text = (LocalizationManager.IsArabic ? "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0627\u0633\u062A\u062D\u0642\u0627\u0642: " : "Next Due: ") + due.ToString("yyyy-MM-dd");
+                            lblDueDate.Text = string.Format(LocalizationManager.GetString("DetailsForm_NextDue", "Next Due: {0}"), due.ToString("yyyy-MM-dd"));
                             lblDueDate.Visible = true;
                         }
                     }
@@ -206,8 +206,17 @@ namespace InventorySystem.Forms
             bool isArabic = LocalizationManager.IsArabic;
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
 
-            this.TitleText = (isArabic ? "\u062A\u0641\u0627\u0635\u064A\u0644 " : "Details - ") + _supplierName;
-            lblBalTitle.Text = isArabic ? "\u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062D\u0642" : "Balance Due";
+            this.TitleText = LocalizationManager.GetString("DetailsForm_TitlePrefix", "Details - ") + _supplierName;
+            lblBalTitle.Text = LocalizationManager.GetString("DetailsForm_BalanceDue", "Balance Due");
+            btnAddBill.Text = "\uD83E\uDDFE " + LocalizationManager.GetString("DetailsForm_AddBill", "Add Bill");
+            btnPayment.Text = "\uD83D\uDCB8 " + LocalizationManager.GetString("DetailsForm_PaySupplier", "Pay Supplier");
+
+            SetFooterButtons(
+                LocalizationManager.GetString("Btn_Close", "Close"),
+                "",
+                (s, e) => this.Close(),
+                null
+            );
 
             ApplyGridLocalizations();
         }

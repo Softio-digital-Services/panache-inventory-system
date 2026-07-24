@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -16,9 +16,7 @@ namespace InventorySystem.Forms
 
         public ManageExpenseCategoriesForm()
         {
-            bool isAr = LocalizationManager.IsArabic;
-            string title = LocalizationManager.GetString("Exp_ManageCategories");
-            if (title == "Exp_ManageCategories") title = isAr ? "إدارة فئات المصروفات" : "Manage Expense Categories";
+            string title = LocalizationManager.GetString("Exp_ManageCategories", "Manage Expense Categories");
             
             this.TitleText = title;
             this.Size = new Size(450, 500);
@@ -54,7 +52,7 @@ namespace InventorySystem.Forms
             txtNewCategory = new ModernTextBox
             {
                 Dock = DockStyle.Fill,
-                LabelText = isAr ? "فئة جديدة" : "New Category",
+                LabelText = LocalizationManager.GetString("Msg_NewCategory", "New Category"),
                 Margin = new Padding(0, 0, 10, 0)
             };
 
@@ -105,7 +103,7 @@ namespace InventorySystem.Forms
             {
                 Name = "category_name",
                 DataPropertyName = "category_name",
-                HeaderText = isAr ? "اسم الفئة" : "Category Name",
+                HeaderText = LocalizationManager.GetString("Msg_CategoryName", "Category Name"),
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
             });
 
@@ -113,8 +111,7 @@ namespace InventorySystem.Forms
             mainLayout.Controls.Add(pnlGridBorder, 0, 1);
 
             // Delete Button
-            string delText = LocalizationManager.GetString("Gen_Delete");
-            if (delText == "Gen_Delete") delText = isAr ? "حذف المحدد" : "Delete Selected";
+            string delText = LocalizationManager.GetString("Btn_DeleteSelected", "Delete Selected");
 
             btnDelete = new ModernButton
             {
@@ -151,14 +148,14 @@ namespace InventorySystem.Forms
             string catName = txtNewCategory.Text.Trim();
             if (string.IsNullOrEmpty(catName))
             {
-                MessageHelper.ShowWarning(LocalizationManager.IsArabic ? "الرجاء إدخال اسم الفئة" : "Please enter a category name");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_EnterCategoryName", "Please enter a category name"));
                 return;
             }
 
             int count = Convert.ToInt32(DatabaseHelper.ExecuteScalar<long>($"SELECT COUNT(*) FROM expense_categories WHERE LOWER(category_name) = '{catName.ToLower()}'"));
             if (count > 0)
             {
-                MessageHelper.ShowWarning("Category already exists!");
+                MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_CategoryExists", "Category already exists!"));
                 return;
             }
 
@@ -171,7 +168,7 @@ namespace InventorySystem.Forms
         {
             if (dgvCategories.SelectedRows.Count == 0) return;
             
-            if (MessageHelper.ShowConfirm("Are you sure you want to delete this category?"))
+            if (MessageHelper.ShowConfirm(LocalizationManager.GetString("Msg_ConfirmDeleteCategory", "Are you sure you want to delete this category?")))
             {
                 int id = Convert.ToInt32(dgvCategories.SelectedRows[0].Cells["category_id"].Value);
                 DatabaseHelper.ExecuteNonQuery($"DELETE FROM expense_categories WHERE category_id = {id}");

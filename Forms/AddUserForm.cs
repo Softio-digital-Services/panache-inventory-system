@@ -144,20 +144,14 @@ namespace InventorySystem.Forms
 
             string currentRole = cmbRole.SelectedItem?.ToString();
             cmbRole.Items.Clear();
-            if (isArabic)
-            {
-                cmbRole.Items.AddRange(new object[] { LocalizationManager.GetString("Role_Admin"), LocalizationManager.GetString("Role_Staff"), LocalizationManager.GetString("Role_Accountant") });
-                if (currentRole == "Admin" || currentRole == LocalizationManager.GetString("Role_Admin")) cmbRole.SelectedIndex = 0;
-                else if (currentRole == "Accountant" || currentRole == LocalizationManager.GetString("Role_Accountant")) cmbRole.SelectedIndex = 2;
-                else cmbRole.SelectedIndex = 1;
-            }
-            else
-            {
-                cmbRole.Items.AddRange(new object[] { "Admin", "Staff", "Accountant" });
-                if (currentRole == LocalizationManager.GetString("Role_Admin") || currentRole == "Admin") cmbRole.SelectedIndex = 0;
-                else if (currentRole == LocalizationManager.GetString("Role_Accountant") || currentRole == "Account accountant") cmbRole.SelectedIndex = 2;
-                else cmbRole.SelectedIndex = 1;
-            }
+            cmbRole.Items.AddRange(new object[] { 
+                LocalizationManager.GetString("Role_Admin", "Admin"), 
+                LocalizationManager.GetString("Role_Staff", "Staff"), 
+                LocalizationManager.GetString("Role_Accountant", "Accountant") 
+            });
+            if (currentRole == "Admin" || currentRole == LocalizationManager.GetString("Role_Admin")) cmbRole.SelectedIndex = 0;
+            else if (currentRole == "Accountant" || currentRole == LocalizationManager.GetString("Role_Accountant")) cmbRole.SelectedIndex = 2;
+            else cmbRole.SelectedIndex = 1;
         }
 
         private void LoadUserData(int userId)
@@ -257,9 +251,10 @@ namespace InventorySystem.Forms
                         new SqliteParameter("@fullname", string.IsNullOrEmpty(fullName) ? username : fullName),
                         new SqliteParameter("@role", role));
 
-                    string successMsg = LocalizationManager.IsArabic 
-                        ? $"تمت إضافة المستخدم بنجاح!\nاسم المستخدم: '{username}'"
-                        : $"User added successfully!\nUsername: '{username}'";
+                    string successMsg = string.Format(
+                        LocalizationManager.GetString("AddUser_SuccessMsg", "User added successfully!\nUsername: '{0}'"),
+                        username
+                    );
                     MessageHelper.ShowSuccess(successMsg);
                 }
 

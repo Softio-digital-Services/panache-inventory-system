@@ -87,8 +87,8 @@ namespace InventorySystem.Forms
 
             // License Type
             string typeDisplay = _license.IsTrial() 
-                ? ("Trial Version") 
-                : ("Licensed Version");
+                ? LocalizationManager.GetString("Msg_Trial", "Trial Version") 
+                : LocalizationManager.GetString("Msg_Licensed", "Licensed Version");
             AddInfoRow(LocalizationManager.GetString("Msg_LicenseType"), typeDisplay, ThemeConfig.TextColorDark);
 
             // Customer Name
@@ -113,17 +113,17 @@ namespace InventorySystem.Forms
             // Days Remaining
             int daysLeft = _license.DaysRemaining();
             Color daysColor = daysLeft <= 30 ? ThemeConfig.DangerColor : ThemeConfig.SuccessColor;
-            string daysText = isArabic ? $"{daysLeft} يوماً" : $"{daysLeft} days";
+            string daysText = string.Format(LocalizationManager.GetString("Msg_Days", "{0} days"), daysLeft);
             AddInfoRow(LocalizationManager.GetString("Msg_DaysRemaining"), daysText, daysColor);
 
             // Status
             bool isValid = _license.IsValid();
-            string statusText = isValid ? ("Active") : ("Expired");
+            string statusText = isValid ? LocalizationManager.GetString("Msg_Active", "Active") : LocalizationManager.GetString("Msg_Expired", "Expired");
             Color statusColor = isValid ? ThemeConfig.SuccessColor : ThemeConfig.DangerColor;
             AddInfoRow(LocalizationManager.GetString("Msg_Status"), statusText, statusColor);
 
             // Machine Name
-            AddInfoRow("Machine:", _license.MachineName, ThemeConfig.SecondaryColor);
+            AddInfoRow(LocalizationManager.GetString("Msg_Machine", "Machine:"), _license.MachineName, ThemeConfig.SecondaryColor);
 
             // Renewal Notice
             if (_license.IsExpiringSoon() && !_license.IsTrial())
@@ -132,9 +132,7 @@ namespace InventorySystem.Forms
                 tlpInfo.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 lblRenewal = new Label
                 {
-                    Text = isArabic 
-                        ? "يرجى تجديد اشتراكك قبل انتهاء الترخيص." 
-                        : "Your license is expiring soon. Please renew.",
+                    Text = LocalizationManager.GetString("Msg_LicenseRenewNotice", "Your license is expiring soon. Please renew."),
                     Font = ThemeConfig.StandardFont,
                     ForeColor = ThemeConfig.WarningColor,
                     AutoSize = true,
