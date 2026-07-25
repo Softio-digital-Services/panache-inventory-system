@@ -910,9 +910,7 @@ namespace InventorySystem.Forms
                     pe.Graphics.DrawPath(pen, path);
             };
 
-            string addText = _activeCategory == null
-                ? LocalizationManager.GetString("Parts_New", "New")
-                : string.Format(LocalizationManager.GetString("Parts_AddToCart", "Add to {0}"), _activeCategory);
+            string addText = LocalizationManager.GetString("Btn_Add", "Add");
 
             // Use a proper standard add button centered in the card
             var btnAdd = new InventorySystem.Controls.ModernButton
@@ -982,14 +980,14 @@ namespace InventorySystem.Forms
                 using (var b = new SolidBrush(ThemeConfig.BackgroundColor))
                     pe.Graphics.FillEllipse(b, 0, 0, pb.Width - 1, pb.Height - 1);
 
-                var img = pb.Image;
+                var img = pb.Tag as Image;
                 if (img != null)
                     pe.Graphics.DrawImage(img, new Rectangle(4, 4, pb.Width - 8, pb.Height - 8));
 
                 using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
                     pe.Graphics.DrawEllipse(pen, 0, 0, pb.Width - 1, pb.Height - 1);
             };
-            pb.Image = CreateProductImage(imgPath, category);
+            pb.Tag = CreateProductImage(imgPath, category);
 
             // Category label (muted)
             Label lblCat = new Label

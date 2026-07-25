@@ -36,7 +36,7 @@ namespace InventorySystem.Plugins
             {
                 return new InventorySystem.Forms.CustomersForm();
             }
-            
+
             // Return an empty access denied control or null.
             return new UserControl { BackColor = System.Drawing.Color.Red }; // Placeholder for denied
         }

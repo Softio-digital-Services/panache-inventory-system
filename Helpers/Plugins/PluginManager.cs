@@ -22,7 +22,7 @@ namespace InventorySystem.Helpers.Plugins
         /// <summary>
         /// Call this once from MainForm constructor AFTER InitializeNavigation().
         /// </summary>
-                public static void DiscoverAndLoad(PluginContext context)
+        public static void DiscoverAndLoad(PluginContext context)
         {
             _context = context;
             _loaded.Clear(); // Prevent duplication on multiple reloads
@@ -100,7 +100,6 @@ namespace InventorySystem.Helpers.Plugins
             TryRegister(new InventorySystem.Plugins.CustomersPlugin());
             TryRegister(new InventorySystem.Plugins.SuppliersPlugin());
             TryRegister(new InventorySystem.Plugins.QuotationsPlugin());
-            // TryRegister(new InventorySystem.Plugins.PurchaseOrdersPlugin());
             TryRegister(new InventorySystem.Plugins.MonthlyExpensesPlugin());
             TryRegister(new InventorySystem.Plugins.BarcodeLabelsPlugin());
         }
@@ -126,7 +125,7 @@ namespace InventorySystem.Helpers.Plugins
             }
         }
 
-                private static void TryRegister(IPlugin plugin)
+        private static void TryRegister(IPlugin plugin)
         {
             try
             {

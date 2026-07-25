@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -835,9 +835,7 @@
     <value>اتجاهات المبيعات</value>
   </data>
   <!-- New Modules -->
-  <data name="Nav_PurchaseOrders" xml:space="preserve">
-    <value>طلبات الشراء</value>
-  </data>
+
   <data name="Nav_Returns" xml:space="preserve">
     <value>مرتجعات المبيعات</value>
   </data>

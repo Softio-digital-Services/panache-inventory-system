@@ -31,7 +31,8 @@ namespace InventorySystem.Plugins
         public UserControl CreateTabContent()
         {
             var allowed = false;
-            foreach (var role in new string[] { "Admin" }) {
+            foreach (var role in new string[] { "Admin" })
+            {
                 if (_context.UserRole == role || (_context.IsAdmin && role == "Admin")) allowed = true;
             }
 
@@ -42,7 +43,7 @@ namespace InventorySystem.Plugins
                 if (loadMethod != null) { if (loadMethod.GetParameters().Length == 1) loadMethod.Invoke(form, new object[] { "" }); else loadMethod.Invoke(form, null); }
                 return form;
             }
-            
+
             return new UserControl { BackColor = System.Drawing.Color.Red };
         }
 

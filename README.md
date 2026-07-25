@@ -31,8 +31,8 @@ dotnet build CarPartsInventorySystem.csproj
    - License keys are generated using the separate License Generator tool
 
 2. **Default Login**
-   - Username: `admin`
-   - Password: `admin123`
+   - Username: ``
+   - Password: ``
 
 3. **Database Setup**
    - Database automatically creates on first run

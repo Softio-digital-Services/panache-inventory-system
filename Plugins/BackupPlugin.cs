@@ -44,7 +44,7 @@ namespace InventorySystem.Plugins
         public BackupPanel(PluginContext ctx)
         {
             _ctx = ctx;
-            this.BackColor = ThemeConfig.BackgroundColor;
+            this.BackColor = ThemeConfig.SurfaceColor;
             this.Dock      = DockStyle.Fill;
             Build();
         }
@@ -54,24 +54,7 @@ namespace InventorySystem.Plugins
             bool ar = LocalizationManager.IsArabic;
             bool isAdmin = UserSession.IsAdmin;
 
-            // Title removed as it's already in the Modal Header
-
-            // Card container
-            Panel card = new Panel();
-            card.Width     = 480;
-            card.Height    = isAdmin ? 480 : 410;
-            card.BackColor = ThemeConfig.SurfaceColor;
-            card.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = RoundRect(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 16))
-                using (var pen  = new Pen(ThemeConfig.BorderColor, 1.5f))
-                    e.Graphics.DrawPath(pen, path);
-            };
-            this.Resize += (s, e) => card.Location = new Point((this.Width - card.Width) / 2, 90);
-            this.Controls.Add(card);
-
-            int y = 30;
+            int y = 10;
 
             // Last backup info
             _lblLastBackup = new Label
@@ -84,32 +67,32 @@ namespace InventorySystem.Plugins
                 TextAlign = ContentAlignment.MiddleCenter,
                 Text      = GetLastBackupText()
             };
-            card.Controls.Add(_lblLastBackup);
+            this.Controls.Add(_lblLastBackup);
             y += 40;
 
             // Separator
-            card.Controls.Add(new Panel { BackColor = ThemeConfig.BorderColor, Location = new Point(20, y), Size = new Size(440, 1) });
+            this.Controls.Add(new Panel { BackColor = ThemeConfig.BorderColor, Location = new Point(20, y), Size = new Size(440, 1) });
             y += 20;
 
             // Action buttons
-            AddActionButton(card, ref y,
+            AddActionButton(this, ref y,
                 LocalizationManager.GetString("Plugins_BackupNow", "Create Backup Now"),
                 "backup", ThemeConfig.PrimaryColor, DoBackup);
 
             y += 10;
 
-            AddActionButton(card, ref y,
+            AddActionButton(this, ref y,
                 LocalizationManager.GetString("Plugins_Restore", "Restore from Backup"),
                 "restore_from_backup", ThemeConfig.WarningBorder, DoRestore);
 
             y += 10;
 
-            AddActionButton(card, ref y,
+            AddActionButton(this, ref y,
                 LocalizationManager.GetString("Plugins_OpenFolder", "Open Backup Folder"),
                 "open_backup_folder", ThemeConfig.SecondaryColor, OpenBackupFolder);
 
             y += 10;
-            AddActionButton(card, ref y,
+            AddActionButton(this, ref y,
                 LocalizationManager.GetString("Plugins_ClearCache", "Clear Image Cache"),
                 "refresh", ThemeConfig.SecondaryColor, () => {
                     InventorySystem.Helpers.CacheManager.ClearImageCache();
@@ -119,7 +102,7 @@ namespace InventorySystem.Plugins
             if (isAdmin)
             {
                 y += 10;
-                AddActionButton(card, ref y,
+                AddActionButton(this, ref y,
                     LocalizationManager.GetString("Plugins_ResetDb", "Reset Database (Wipe All Data)"),
                     "delete", Color.FromArgb(231, 76, 60), DoResetDatabase);
             }
@@ -135,10 +118,13 @@ namespace InventorySystem.Plugins
                 TextAlign = ContentAlignment.MiddleCenter,
                 Text      = LocalizationManager.GetString("Plugins_BackupTip", "Tip: Create a daily backup to protect your data from accidental loss.")
             };
-            card.Controls.Add(note);
+            this.Controls.Add(note);
+
+            // Force the panel to have a minimum height so BaseModalForm doesn't clip the bottom
+            this.MinimumSize = new Size(480, note.Bottom + 20);
         }
 
-        private void AddActionButton(Panel card, ref int y, string text, string icon, Color color, Action action)
+        private void AddActionButton(Control card, ref int y, string text, string icon, Color color, Action action)
         {
             Button btn = new Button
             {

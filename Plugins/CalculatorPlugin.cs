@@ -46,16 +46,23 @@ namespace InventorySystem.Plugins
 
         public CalculatorPanel()
         {
-            this.BackColor = ThemeConfig.BackgroundColor;
+            this.BackColor = ThemeConfig.SurfaceColor;
             this.Dock      = DockStyle.Fill;
             Build();
 
-            // Enable Keyboard Support
+            // Enable Keyboard Support and fix modal size
             this.Load += (s, e) => {
                 var form = this.FindForm();
                 if (form != null) {
                     form.KeyPreview = true;
                     form.KeyDown += (sf, ef) => HandleKeyDown(ef);
+                    
+                    if (form is InventorySystem.Forms.BaseModalForm modal)
+                    {
+                        modal.EnforceMinWidth = false;
+                        modal.Width = 400; // Small size for calculator
+                        modal.FitToContent();
+                    }
                 }
             };
         }
@@ -76,26 +83,14 @@ namespace InventorySystem.Plugins
 
         private void Build()
         {
-            // Title removed as it's already in the Modal Header
+            this.BackColor = ThemeConfig.SurfaceColor;
 
-            // Centered card
-            Panel card = new Panel();
-            card.Width     = 340;
-            card.Height    = 460;
-            card.BackColor = ThemeConfig.SurfaceColor;
-            card.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = RoundRect(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 16))
-                using (var pen  = new Pen(ThemeConfig.BorderColor, 1.5f))
-                    e.Graphics.DrawPath(pen, path);
+            Panel container = new Panel();
+            container.Size = new Size(340, 440);
+            this.Resize += (s, e) => {
+                container.Location = new Point((this.Width - container.Width) / 2, (this.Height - container.Height) / 2);
             };
-
-            this.Resize += (s, e) =>
-            {
-                card.Location = new Point((this.Width - card.Width) / 2, (this.Height - card.Height) / 2);
-            };
-            this.Controls.Add(card);
+            this.Controls.Add(container);
 
             // Display
             _display = new TextBox();
@@ -109,12 +104,12 @@ namespace InventorySystem.Plugins
             _display.ForeColor   = ThemeConfig.TextColorDark;
             _display.Location    = new Point(10, 15);
             _display.Size        = new Size(320, 55);
-            _display.GotFocus   += (s, e) => { _display.SelectionLength = 0; card.Focus(); };
-            card.Controls.Add(_display);
+            _display.GotFocus   += (s, e) => { _display.SelectionLength = 0; this.Focus(); };
+            container.Controls.Add(_display);
 
             // Separator
             Panel sep = new Panel { BackColor = ThemeConfig.BorderColor, Location = new Point(10, 75), Size = new Size(320, 1) };
-            card.Controls.Add(sep);
+            container.Controls.Add(sep);
 
             // Button grid
             string[][] rows =
@@ -174,7 +169,7 @@ namespace InventorySystem.Plugins
 
                     string captured = label;
                     btn.Click += (s, e) => PressButton(captured);
-                    card.Controls.Add(btn);
+                    container.Controls.Add(btn);
                 }
             }
         }
