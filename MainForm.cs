@@ -53,6 +53,12 @@ namespace InventorySystem
             this.FormClosed += (s, e) => Helpers.Plugins.PluginManager.ShutdownAll();
         }
 
+        protected override void WndProc(ref Message m)
+        {
+            BorderlessFormHelper.HandleGetMinMaxInfo(this, ref m);
+            base.WndProc(ref m);
+        }
+
         private void LoadPlugins()
         {
             var pnlNav = this.Controls.Find("pnlNav", true).FirstOrDefault() as Panel;
@@ -134,8 +140,8 @@ namespace InventorySystem
         private void ApplyLocalization()
         {
             bool isAr = LocalizationManager.IsArabic;
+            SuspendLayout();
             LocalizationManager.ApplyRTL(this);
-            LocalizationManager.TranslateControl(this);
             Func<string, string> L = LocalizationManager.GetString;
 
             label2.Text = L("Nav_MainTitle");
@@ -161,32 +167,94 @@ namespace InventorySystem
             if (btnLock != null) btnLock.Text = ""; // Icon is set via btnLock.Image below
 
             if (lblVersion != null)
-                lblVersion.Text = L("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services";
+                lblVersion.Text = string.Format(L("Nav_VersionFooter"), L("Nav_MainTitle"));
             if (lblDeveloper != null)
-                lblDeveloper.Text = LocalizationManager.GetString("Msg_DevelopedBy", "Developed by Softio");
+                lblDeveloper.Text = L("Msg_DevelopedBy");
 
             if (pbLanguage != null)
             {
                 if (_languageToolTip == null) _languageToolTip = new ToolTip();
-                _languageToolTip.SetToolTip(pbLanguage, LocalizationManager.GetString("Nav_LanguageToolTip", "Switch language"));
+                _languageToolTip.SetToolTip(pbLanguage, L("Nav_LanguageToolTip"));
             }
+
+            RefreshSidebarButtonLayout();
 
             var pnlHeaderIcons = this.Controls.Find("rightPanel", true).FirstOrDefault() as Panel;
             if (pnlHeaderIcons != null)
             {
+                pnlHeaderIcons.Dock = DockStyle.Right;
+                pnlHeaderIcons.RightToLeft = RightToLeft.No;
+                LayoutHeaderChrome(pnlHeaderIcons);
                 if (isAr)
-                {
                     panel2.Dock = DockStyle.Right;
-                    pnlHeaderIcons.Dock = DockStyle.Left;
-                }
                 else
-                {
                     panel2.Dock = DockStyle.Left;
-                    pnlHeaderIcons.Dock = DockStyle.Right;
-                }
             }
             label2.Visible = false; // Forced hide to prevent clipping
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 10, (panel1.Height - label2.Height) / 2) : new Point(10, (panel1.Height - label2.Height) / 2);
+
+            LocalizationManager.TranslateControl(this);
+            ResumeLayout(true);
+        }
+
+        private void LayoutHeaderChrome(Panel rightPanel)
+        {
+            if (rightPanel == null) return;
+            const int w = 550;
+            foreach (Control c in rightPanel.Controls)
+            {
+                if (c.Name == "btnWinClose") c.Location = new Point(w - 45, 6);
+                else if (c.Name == "btnWinMax") c.Location = new Point(w - 90, 6);
+                else if (c.Name == "btnWinMin") c.Location = new Point(w - 135, 6);
+                else if (c == pbUserAvatar) c.Location = new Point(w - 185, 4);
+                else if (c == pbNotification) c.Location = new Point(w - 235, 4);
+                else if (c == btnLock) c.Location = new Point(w - 285, 4);
+                else if (c == pbLanguage) c.Location = new Point(w - 535, 4);
+                else if (c.Name == "headerIcon_calc") c.Location = new Point(w - 335, 4);
+                else if (c.Name == "headerIcon_backup") c.Location = new Point(w - 385, 4);
+                else if (c.Name == "headerIcon_currencies") c.Location = new Point(w - 435, 4);
+                else if (c.Name == "headerIcon_about") c.Location = new Point(w - 485, 4);
+            }
+        }
+
+        private void RefreshSidebarButtonLayout()
+        {
+            bool dashActive = Dashboard_btn?.Tag != null && Dashboard_btn.Tag is bool d && d;
+            ThemeConfig.ApplySidebarButtonIcon(Dashboard_btn, Dashboard_btn?.Image, dashActive);
+
+            string[] navIds = { "btnInventory", "btnCustomers", "btnSuppliers", "btnPOS", "btnReports", "btnHistory", "btnQuotations", "btnCurrencies", "btnExpenses", "btnUsers", "btnLabels" };
+            foreach (string id in navIds)
+            {
+                var found = Controls.Find(id, true);
+                if (found.Length > 0 && found[0] is Button nb)
+                {
+                    bool active = nb.Tag != null && nb.Tag is bool b && b;
+                    ThemeConfig.ApplySidebarButtonIcon(nb, nb.Image, active);
+                }
+            }
+
+            if (button3 != null)
+            {
+                button3.TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                button3.ImageAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                button3.TextImageRelation = LocalizationManager.IsArabic ? TextImageRelation.TextBeforeImage : TextImageRelation.ImageBeforeText;
+                int padLeft = LocalizationManager.IsArabic ? 0 : 15;
+                int padRight = LocalizationManager.IsArabic ? 15 : 0;
+                button3.Padding = new Padding(padLeft, 0, padRight, 0);
+            }
+
+            var pnlNav = Controls.Find("pnlNav", true).FirstOrDefault() as Panel;
+            if (pnlNav != null)
+            {
+                foreach (Control c in pnlNav.Controls)
+                {
+                    if (c is Button sb && sb != Dashboard_btn && sb != button3)
+                    {
+                        bool active = sb.Tag != null && sb.Tag is bool b && b;
+                        ThemeConfig.ApplySidebarButtonIcon(sb, sb.Image, active);
+                    }
+                }
+            }
         }
 
         private void UpdateNavText(string name, string key)
@@ -289,20 +357,20 @@ namespace InventorySystem
             bool isWorker = UserSession.IsStaff;
 
             // Worker can see POS, Inventory
-            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Inventory", "inventory", "btnInventory", () => ShowForm(partsForm));
-            if (isAdmin || isWorker) AddNavButton(pnlNav, "POS / Checkout", "pos", "btnPOS", () => ShowForm(posForm));
+            if (isAdmin || isWorker || isAccountant) AddNavButton(pnlNav, "Nav_Inventory", "inventory", "btnInventory", () => ShowForm(partsForm));
+            if (isAdmin || isWorker) AddNavButton(pnlNav, "Nav_POS", "pos", "btnPOS", () => ShowForm(posForm));
 
             // Accountants & Admins
             if (isAdmin || isAccountant)
             {
-                AddNavButton(pnlNav, "Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
-                AddNavButton(pnlNav, "History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
+                AddNavButton(pnlNav, "Nav_Reports", "reports", "btnReports", () => { reportsForm.RefreshData(); ShowForm(reportsForm); });
+                AddNavButton(pnlNav, "Nav_History", "history", "btnHistory", () => { historyForm.LoadHistory(); ShowForm(historyForm); });
             }
 
             // Admin Only
             if (isAdmin)
             {
-                AddNavButton(pnlNav, "Users Management", "users", "btnUsers", () => ShowForm(usersForm));
+                AddNavButton(pnlNav, "Nav_Users", "users", "btnUsers", () => ShowForm(usersForm));
             }
 
             ShowForm(dashboardForm);
@@ -317,8 +385,9 @@ namespace InventorySystem
             return f;
         }
 
-        private void AddNavButton(Panel pnl, string text, string icon, string name, Action clickAction)
+        private void AddNavButton(Panel pnl, string resourceKey, string icon, string name, Action clickAction)
         {
+            string text = LocalizationManager.GetString(resourceKey);
             Button btn = CreateNavigationButton(text, icon, (s, e) => clickAction());
             btn.Name = name; btn.Dock = DockStyle.Top; btn.Margin = new Padding(0);
             pnl.Controls.Add(btn);
@@ -348,15 +417,13 @@ namespace InventorySystem
             button3.Text = "  " + LocalizationManager.GetString("Nav_Logout");
             button3.ForeColor = ThemeConfig.DangerColor;
             Image logoutIcon = ThemeConfig.GetNuricon("logout");
-            if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); button3.ImageAlign = ContentAlignment.MiddleLeft; button3.TextImageRelation = TextImageRelation.ImageBeforeText; }
-            button3.TextAlign = ContentAlignment.MiddleLeft; button3.Padding = new Padding(LocalizationManager.IsArabic ? 0 : 15, 0, LocalizationManager.IsArabic ? 15 : 0, 0);
+            if (logoutIcon != null) { button3.Image = ResizeImage(logoutIcon, 22, 22); }
             button3.Font = Dashboard_btn.Font;
             button3.FlatAppearance.MouseOverBackColor = ThemeConfig.DangerLight;
 
-            // Logout button is docked to the bottom.
-
             SetupHeaderIcons();
             SetupFooter();
+            RefreshSidebarButtonLayout();
         }
 
         private void SetupFooter()
@@ -365,16 +432,16 @@ namespace InventorySystem
             {
                 Name = "pnlFooter",
                 Dock = DockStyle.Bottom,
-                Height = 30,
+                Height = 22,
                 BackColor = ThemeConfig.SurfaceColor,
-                Padding = new Padding(15, 0, 15, 0)
+                Padding = new Padding(10, 0, 10, 0)
             };
 
             lblVersion = new Label
             {
-                Text = LocalizationManager.GetString("Nav_MainTitle") + " | Version 1.0.2 | (c) 2026 Softio Services",
+                Text = string.Format(LocalizationManager.GetString("Nav_VersionFooter"), LocalizationManager.GetString("Nav_MainTitle")),
                 AutoSize = true,
-                Font = new Font("Segoe UI", 8.5f),
+                Font = new Font("Segoe UI", 7.25f),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Left
@@ -385,7 +452,7 @@ namespace InventorySystem
             {
                 Text = LocalizationManager.GetString("Msg_DevelopedBy", "Developed by Softio"),
                 AutoSize = true,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
+                Font = new Font("Segoe UI", 7.25f, FontStyle.Italic),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleRight,
                 Dock = DockStyle.Right
@@ -432,25 +499,25 @@ namespace InventorySystem
             rightPanel.Controls.Add(btnLock);
 
             // Calculator
-            PictureBox pbCalc = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
+            PictureBox pbCalc = new PictureBox { Name = "headerIcon_calc", Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCalc);
             pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.GetString("Plugins_CalcTitle", "Calculator"), 380, 580);
             rightPanel.Controls.Add(pbCalc);
 
             // Backup
-            PictureBox pbBackup = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
+            PictureBox pbBackup = new PictureBox { Name = "headerIcon_backup", Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbBackup);
             pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.GetString("Plugins_BackupRestore", "Backup & Restore"), 520, 500);
             rightPanel.Controls.Add(pbBackup);
 
             // Currencies
-            PictureBox pbCurrencies = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("currencies"), Color.White) };
+            PictureBox pbCurrencies = new PictureBox { Name = "headerIcon_currencies", Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("currencies"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCurrencies);
             pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbCurrencies);
 
             // About Us
-            PictureBox pbAbout = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
+            PictureBox pbAbout = new PictureBox { Name = "headerIcon_about", Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbAbout, 0.55f);
             ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.GetString("Nav_AboutUs", "About Us"));
             pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
@@ -623,12 +690,21 @@ namespace InventorySystem
             selectedButton.Paint += DrawSelectionBorder;
             selectedButton.Invalidate();
             selectedButton.Update();
+            RefreshSidebarButtonLayout();
         }
 
         private void DrawSelectionBorder(object sender, PaintEventArgs e)
         {
             if (sender is Button btn && btn.Tag != null && (bool)btn.Tag)
-                using (Pen pen = new Pen(ThemeConfig.PrimaryColor, 5)) e.Graphics.DrawLine(pen, 0, 0, 0, btn.Height);
+            {
+                using (Pen pen = new Pen(ThemeConfig.PrimaryColor, 5))
+                {
+                    if (LocalizationManager.IsArabic)
+                        e.Graphics.DrawLine(pen, btn.Width - 1, 0, btn.Width - 1, btn.Height);
+                    else
+                        e.Graphics.DrawLine(pen, 0, 0, 0, btn.Height);
+                }
+            }
         }
 
 

@@ -56,11 +56,19 @@ namespace InventorySystem.Forms
         {
             LocalizationManager.ApplyRTL(this);
             LocalizationManager.TranslateControl(this);
+            Func<string, string> L = LocalizationManager.GetString;
 
-            if (gbPort != null) gbPort.Text = LocalizationManager.GetString("gbPort", "TM-A17 Serial COM Port Settings");
-            if (gbTest != null) gbTest.Text = LocalizationManager.GetString("gbTest", "Live Scale Readout & Test Simulator");
-            if (PrimaryButton != null) PrimaryButton.Text = LocalizationManager.GetString("Scale_SaveSettings", "Save Settings");
-            if (SecondaryButton != null) SecondaryButton.Text = LocalizationManager.GetString("Scale_Close", "Close");
+            this.TitleText = L("Scale_FormTitle");
+            if (gbPort != null) gbPort.Text = L("gbPort");
+            if (gbTest != null) gbTest.Text = L("gbTest");
+            if (PrimaryButton != null) PrimaryButton.Text = L("Scale_SaveSettings");
+            if (SecondaryButton != null) SecondaryButton.Text = L("Scale_Close");
+            if (btnRefreshPorts != null) btnRefreshPorts.Text = L("btnRefreshPorts");
+            if (btnSimulate != null) btnSimulate.Text = L("btnSimulate");
+            if (btnConnectToggle != null)
+                btnConnectToggle.Text = ScaleService.Instance.IsConnected ? L("Scale_Disconnect") : L("btnConnectToggle");
+
+            SetFooterButtons(L("Scale_SaveSettings"), L("Scale_Close"), btnSave_Click, btnCancel_Click);
         }
 
         private void InitializeUI()

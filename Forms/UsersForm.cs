@@ -65,18 +65,26 @@ namespace InventorySystem.Forms
             dgvUsers.CellPainting += DgvUsers_CellPainting;
 
             dgvUsers.CellFormatting += (s, e) => {
-                if (e.RowIndex >= 0 && dgvUsers.Columns[e.ColumnIndex].Name == "id")
+                if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+                string col = dgvUsers.Columns[e.ColumnIndex].Name;
+                if (col == "id")
                 {
                     e.Value = (e.RowIndex + 1).ToString();
+                    e.FormattingApplied = true;
+                }
+                else if (col == "role" && e.Value != null)
+                {
+                    string roleKey = "Role_" + e.Value.ToString().Replace(" ", "");
+                    e.Value = LocalizationManager.GetString(roleKey, e.Value.ToString());
                     e.FormattingApplied = true;
                 }
             };
 
             dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "db_id", DataPropertyName = "id", Visible = false });
-            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", HeaderText = "ID", Width = 80 });
-            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "username", HeaderText = "Username", DataPropertyName = "username", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "role", HeaderText = "Role", DataPropertyName = "role", Width = 150 });
-            dgvUsers.Columns.Add(new DataGridViewButtonColumn { Name = "actions", HeaderText = "Actions", Text = "", UseColumnTextForButtonValue = true, Width = 140, FlatStyle = FlatStyle.Flat });
+            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", HeaderText = LocalizationManager.GetString("Users_GridID"), Width = 80 });
+            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "username", HeaderText = LocalizationManager.GetString("Users_GridUsername", "Username"), DataPropertyName = "username", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            dgvUsers.Columns.Add(new DataGridViewTextBoxColumn { Name = "role", HeaderText = LocalizationManager.GetString("Users_GridRole", "Role"), DataPropertyName = "role", Width = 150 });
+            dgvUsers.Columns.Add(new DataGridViewButtonColumn { Name = "actions", HeaderText = LocalizationManager.GetString("Parts_GridActions"), Text = "", UseColumnTextForButtonValue = true, Width = 140, FlatStyle = FlatStyle.Flat });
 
             Panel pnlGridCard = ThemeConfig.CreateCardPanel(dgvUsers);
             mainLayout.Controls.Add(pnlGridCard, 0, 1);
@@ -96,10 +104,11 @@ namespace InventorySystem.Forms
             this.RightToLeft = isArabic ? RightToLeft.Yes : RightToLeft.No;
             lblUsersTitle.Text = LocalizationManager.GetString("Msg_UserManagement");
             ThemeConfig.ApplyStandardAddButton(btnAddUser, "User_AddUser");
-            if (txtSearch != null) txtSearch.PlaceholderText = LocalizationManager.GetString("Parts_Search");
+            if (txtSearch != null) txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchUsers");
             if (dgvUsers.Columns["id"] != null) dgvUsers.Columns["id"].HeaderText = LocalizationManager.GetString("Users_GridID", "ID");
-            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = LocalizationManager.GetString("User_Username");
-            if (dgvUsers.Columns["role"] != null) dgvUsers.Columns["role"].HeaderText = LocalizationManager.GetString("User_Role", "Role");
+            if (dgvUsers.Columns["username"] != null) dgvUsers.Columns["username"].HeaderText = LocalizationManager.GetString("Users_GridUsername", "Username");
+            if (dgvUsers.Columns["role"] != null) dgvUsers.Columns["role"].HeaderText = LocalizationManager.GetString("Users_GridRole", "Role");
+            dgvUsers.Invalidate();
             if (dgvUsers.Columns["actions"] != null) dgvUsers.Columns["actions"].HeaderText = LocalizationManager.GetString("Parts_GridActions");
         }
 

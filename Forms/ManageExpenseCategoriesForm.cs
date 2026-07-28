@@ -16,16 +16,31 @@ namespace InventorySystem.Forms
 
         public ManageExpenseCategoriesForm()
         {
-            string title = LocalizationManager.GetString("Exp_ManageCategories", "Manage Expense Categories");
-            
-            this.TitleText = title;
             this.Size = new Size(450, 500);
             InitializeComponent();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
             LoadCategories();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Exp_ManageCategories", "Manage Expense Categories");
+            if (txtNewCategory != null)
+                txtNewCategory.LabelText = LocalizationManager.GetString("Msg_NewCategory", "New Category");
+            if (dgvCategories?.Columns["category_name"] != null)
+                dgvCategories.Columns["category_name"].HeaderText = LocalizationManager.GetString("Msg_CategoryName", "Category Name");
+            if (btnDelete != null)
+                btnDelete.Text = LocalizationManager.GetString("Btn_DeleteSelected", "Delete Selected");
+            if (btnAdd != null) btnAdd.Invalidate();
         }
 
         private void InitializeComponent()
         {
+            string title = LocalizationManager.GetString("Exp_ManageCategories", "Manage Expense Categories");
+            
+            this.TitleText = title;
             TableLayoutPanel mainLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,

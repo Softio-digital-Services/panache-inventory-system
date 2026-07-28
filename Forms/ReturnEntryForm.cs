@@ -18,18 +18,42 @@ namespace InventorySystem.Forms
         private DataTable _itemsTable;
         private OrderService _orderService;
         private ReturnService _returnService;
+        private Label _lblReason;
 
         public ReturnEntryForm(int orderId)
         {
             _orderId = orderId;
             _orderService = new OrderService();
             _returnService = new ReturnService();
-            
-            this.TitleText = LocalizationManager.GetString("Return_Title") + " - Order #" + orderId;
-            // Adaptive sizing handled by BaseModalForm.OnLoad
 
             InitializeForm();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
             LoadOrderItems();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = string.Format(
+                LocalizationManager.GetString("Return_TitleWithOrder"),
+                LocalizationManager.GetString("Return_Title"),
+                _orderId);
+            if (dgvItems != null && dgvItems.Columns.Count > 0)
+            {
+                if (dgvItems.Columns.Contains("PartName")) dgvItems.Columns["PartName"].HeaderText = LocalizationManager.GetString("POS_GridProduct");
+                if (dgvItems.Columns.Contains("QtyOrdered")) dgvItems.Columns["QtyOrdered"].HeaderText = LocalizationManager.GetString("Return_OriginalQty");
+                if (dgvItems.Columns.Contains("UnitPrice")) dgvItems.Columns["UnitPrice"].HeaderText = LocalizationManager.GetString("POS_GridPrice");
+                if (dgvItems.Columns.Contains("QtyToReturn")) dgvItems.Columns["QtyToReturn"].HeaderText = LocalizationManager.GetString("Return_Qty");
+            }
+            if (_lblReason != null) _lblReason.Text = LocalizationManager.GetString("AdjustStock_Reason") + ":";
+            SetFooterButtons(
+                LocalizationManager.GetString("Return_Action"),
+                LocalizationManager.GetString("AddPart_Cancel"),
+                BtnSubmit_Click,
+                (s, e) => this.Close()
+            );
+            CalculateTotal();
         }
 
         private void InitializeForm()
@@ -52,7 +76,7 @@ namespace InventorySystem.Forms
             
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartID", DataPropertyName = "part_id", Visible = false });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "PartName", DataPropertyName = "part_name", HeaderText = LocalizationManager.GetString("POS_GridProduct"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "QtyOrdered", DataPropertyName = "quantity", HeaderText = "Ordered", Width = 80, ReadOnly = true });
+            dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "QtyOrdered", DataPropertyName = "quantity", HeaderText = LocalizationManager.GetString("Return_OriginalQty"), Width = 80, ReadOnly = true });
             dgvItems.Columns.Add(new DataGridViewTextBoxColumn { Name = "UnitPrice", DataPropertyName = "price", HeaderText = LocalizationManager.GetString("POS_GridPrice"), Width = 100, ReadOnly = true });
             
             DataGridViewTextBoxColumn colReturn = new DataGridViewTextBoxColumn { Name = "QtyToReturn", DataPropertyName = "QtyToReturn", HeaderText = LocalizationManager.GetString("Return_Qty"), Width = 100 };
@@ -82,14 +106,14 @@ namespace InventorySystem.Forms
 
             // Reason Section (Left)
             TableLayoutPanel tlpReason = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
-            Label lblReason = new Label { Text = LocalizationManager.GetString("AdjustStock_Reason") + ":", AutoSize = true, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 5) };
+            _lblReason = new Label { AutoSize = true, Font = ThemeConfig.SubHeaderFont, Margin = new Padding(0, 0, 0, 5) };
             txtReason = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = ThemeConfig.StandardFont, Margin = new Padding(0, 0, 10, 0) };
-            tlpReason.Controls.Add(lblReason, 0, 0);
+            tlpReason.Controls.Add(_lblReason, 0, 0);
             tlpReason.Controls.Add(txtReason, 0, 1);
             tlpBottom.Controls.Add(tlpReason, 0, 0);
 
             // Summary Section (Right)
-            lblTotalRefund = new Label { Text = "Total Refund: $0.00", Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.BottomRight };
+            lblTotalRefund = new Label { Text = string.Format(LocalizationManager.GetString("Return_TotalRefund"), CurrencyService.Format(0)), Dock = DockStyle.Fill, Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.PrimaryColor, TextAlign = ContentAlignment.BottomRight };
             tlpBottom.Controls.Add(lblTotalRefund, 1, 1);
             tlpBottom.SetRowSpan(tlpReason, 2);
 
@@ -128,7 +152,7 @@ namespace InventorySystem.Forms
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError("Error loading items: " + ex.Message);
+                MessageHelper.ShowError(string.Format(LocalizationManager.GetString("Msg_ErrorLoadingItems"), ex.Message));
             }
         }
 
@@ -154,7 +178,7 @@ namespace InventorySystem.Forms
                     }
                 }
             }
-            lblTotalRefund.Text = "Total Refund: " + CurrencyService.Format(total);
+            lblTotalRefund.Text = string.Format(LocalizationManager.GetString("Return_TotalRefund"), CurrencyService.Format(total));
         }
 
         private void BtnSubmit_Click(object sender, EventArgs e)

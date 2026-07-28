@@ -29,9 +29,22 @@ namespace InventorySystem.Forms
             _returnService = new ReturnService();
             
             this.TitleText = LocalizationManager.GetString("Title_ItemReturn");
-            LocalizationManager.ApplyRTL(this);
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
 
             InitializeForm();
+            ApplyLocalization();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Title_ItemReturn");
+            if (dgvItems != null && dgvItems.Columns.Count > 0)
+            {
+                if (dgvItems.Columns.Contains("PartName")) dgvItems.Columns["PartName"].HeaderText = LocalizationManager.GetString("Parts_GridProduct");
+                if (dgvItems.Columns.Contains("UnitPrice")) dgvItems.Columns["UnitPrice"].HeaderText = LocalizationManager.GetString("POS_GridPrice");
+                if (dgvItems.Columns.Contains("QtyToReturn")) dgvItems.Columns["QtyToReturn"].HeaderText = LocalizationManager.GetString("Return_Qty");
+            }
         }
 
         private void InitializeForm()

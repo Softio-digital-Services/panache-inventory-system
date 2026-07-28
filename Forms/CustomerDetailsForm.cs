@@ -97,7 +97,7 @@ namespace InventorySystem.Forms
             tlpBalance.RowStyles.Add(new RowStyle(SizeType.Percent, 30F));
 
             lblBalance = new Label() { Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.WarningColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft };
-            lblBalTitle = new Label() { Text = "Balance Due", Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft };
+            lblBalTitle = new Label() { Text = LocalizationManager.GetString("DetailsForm_BalanceDue"), Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft };
             lblDueDate = new Label() { Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.DangerColor, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft, Visible = false };
 
             tlpBalance.Controls.Add(lblBalance, 0, 0);

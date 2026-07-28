@@ -10,14 +10,26 @@ namespace InventorySystem
     {
         private bool _isDragging = false;
         private Point _dragStartPoint = Point.Empty;
+        private EventHandler _languageChangedHandler;
 
         public LoginForm()
         {
             InitializeComponent();
             ApplyTheme();
             ThemeConfig.ApplyFormIcon(this);
+            _languageChangedHandler = (s, e) =>
+            {
+                if (!IsDisposed && Visible) ApplyLocalization();
+            };
+            LocalizationManager.LanguageChanged += _languageChangedHandler;
             ApplyLocalization();
             SetupDragging();
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            BorderlessFormHelper.HandleGetMinMaxInfo(this, ref m);
+            base.WndProc(ref m);
         }
 
         private void SetupDragging()
@@ -201,6 +213,15 @@ namespace InventorySystem
             Application.Exit();
         }
 
+        private void OnLoginSucceeded(MainForm mainForm)
+        {
+            if (_languageChangedHandler != null)
+                LocalizationManager.LanguageChanged -= _languageChangedHandler;
+            mainForm.FormClosed += (s, e) => Application.Exit();
+            mainForm.Show();
+            Hide();
+        }
+
         private void loginBtn_Click(object sender, EventArgs e)
         {
             if (!ValidationHelper.ValidateRequiredFields(txtUsername, txtPassword))
@@ -217,8 +238,7 @@ namespace InventorySystem
                     UserSession.Role = "Admin";
 
                     MainForm mForm = new MainForm();
-                    mForm.Show();
-                    this.Hide();
+                    OnLoginSucceeded(mForm);
                     return;
                 }
 
@@ -239,8 +259,7 @@ namespace InventorySystem
                         UserSession.Role = row["role"].ToString();
 
                         MainForm mForm = new MainForm();
-                        mForm.Show();
-                        this.Hide();
+                        OnLoginSucceeded(mForm);
                     }
                     else
                     {

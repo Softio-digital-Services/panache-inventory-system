@@ -9,11 +9,11 @@ namespace InventorySystem.Forms
     public class OrderIdPromptForm : BaseModalForm
     {
         private ModernTextBox txtOrderId;
+        private Label _lblDesc;
         public int OrderId { get; private set; }
 
         public OrderIdPromptForm()
         {
-            this.TitleText = LocalizationManager.GetString("Title_ReturnOrder");
             this.Size = new Size(420, 280);
             LocalizationManager.ApplyRTL(this);
 
@@ -29,17 +29,16 @@ namespace InventorySystem.Forms
             
             Label lblDesc = new Label
             {
-                Text = LocalizationManager.GetString("Msg_EnterOrderId"),
                 AutoSize = true,
                 Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0, 0, 0, 15)
             };
+            _lblDesc = lblDesc;
             
             txtOrderId = new ModernTextBox
             {
-                LabelText = LocalizationManager.GetString("Msg_OrderId"),
                 Dock = DockStyle.Top,
                 Width = 340,
                 Height = 67 
@@ -51,16 +50,26 @@ namespace InventorySystem.Forms
 
             this.ContentPanel.Controls.Add(tlp);
 
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+
+            this.Shown += (s, e) => {
+                txtOrderId.Focus();
+            };
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Title_ReturnOrder");
+            if (_lblDesc != null) _lblDesc.Text = LocalizationManager.GetString("Msg_EnterOrderId");
+            if (txtOrderId != null) txtOrderId.LabelText = LocalizationManager.GetString("Msg_OrderId");
             SetFooterButtons(
                 LocalizationManager.GetString("Tran_Continue"),
                 LocalizationManager.GetString("Popup_Cancel"),
                 (s, e) => Submit(),
                 (s, e) => { DialogResult = DialogResult.Cancel; Close(); }
             );
-            
-            this.Shown += (s, e) => {
-                txtOrderId.Focus();
-            };
         }
 
 

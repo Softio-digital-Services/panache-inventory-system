@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,8 +19,22 @@ namespace InventorySystem
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            if (args != null && args.Length > 0 &&
+                args.Any(a => string.Equals(a, "--test-reports", StringComparison.OrdinalIgnoreCase)))
+            {
+                Environment.Exit(RunReportsSmokeTest());
+                return;
+            }
+
+            if (args != null && args.Length > 0 &&
+                args.Any(a => string.Equals(a, "--test-i18n", StringComparison.OrdinalIgnoreCase)))
+            {
+                Environment.Exit(RunI18nSmokeTest());
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -93,6 +108,213 @@ namespace InventorySystem
                     LocalizationManager.GetString("Error_AppCrash"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+            }
+        }
+
+        private static int RunI18nSmokeTest()
+        {
+            const string logPath = @"c:\Users\Baraa\source\repos\panache-inventory-system\debug-1f5731.log";
+            int failures = 0;
+
+            void AgentLog(string hypothesisId, string location, string message, Dictionary<string, object> data)
+            {
+                // #region agent log
+                try
+                {
+                    var payload = new Dictionary<string, object>
+                    {
+                        ["sessionId"] = "1f5731",
+                        ["runId"] = "i18n-smoke",
+                        ["hypothesisId"] = hypothesisId,
+                        ["location"] = location,
+                        ["message"] = message,
+                        ["data"] = data,
+                        ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    };
+                    string line = System.Text.Json.JsonSerializer.Serialize(payload) + Environment.NewLine;
+                    File.AppendAllText(logPath, line);
+                }
+                catch { }
+                // #endregion
+            }
+
+            try
+            {
+                LocalizationManager.SetLanguage("en-US");
+                string enTitle = LocalizationManager.GetString("Rep_Title");
+                bool enOk = !string.IsNullOrEmpty(enTitle) && enTitle.Contains("Sales", StringComparison.OrdinalIgnoreCase);
+                AgentLog("H1", "Program.RunI18nSmokeTest", "EN Rep_Title", new Dictionary<string, object> { ["value"] = enTitle ?? "", ["ok"] = enOk });
+                if (!enOk) failures++;
+
+                LocalizationManager.SetLanguage("ar");
+                string arTitle = LocalizationManager.GetString("Rep_Title");
+                bool arOk = LocalizationManager.IsArabic && !string.IsNullOrEmpty(arTitle) && arTitle.Contains("تقارير");
+                AgentLog("H1", "Program.RunI18nSmokeTest", "AR Rep_Title", new Dictionary<string, object> { ["value"] = arTitle ?? "", ["isArabic"] = LocalizationManager.IsArabic, ["ok"] = arOk });
+                if (!arOk) failures++;
+
+                LocalizationManager.SetLanguage("en-US");
+                string afterEn = LocalizationManager.GetString("Rep_Title");
+                bool switchBackOk = afterEn.Contains("Sales", StringComparison.OrdinalIgnoreCase);
+                AgentLog("H2", "Program.RunI18nSmokeTest", "EN after AR toggle", new Dictionary<string, object> { ["value"] = afterEn ?? "", ["ok"] = switchBackOk });
+                if (!switchBackOk) failures++;
+
+                var summary = new SalesReportSummary
+                {
+                    FromDate = DateTime.Today,
+                    ToDate = DateTime.Today,
+                    TotalSales = 100m,
+                    TotalCost = 40m,
+                    TotalProfit = 60m,
+                    TotalExpenses = 10m,
+                    TotalProfitAfterExpenses = 50m
+                };
+                var detail = new System.Data.DataTable();
+                string exportDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "test-exports");
+                Directory.CreateDirectory(exportDir);
+
+                LocalizationManager.SetLanguage("ar");
+                string arPath = Path.Combine(exportDir, "i18n_ar_export.xlsx");
+                bool arExport = ImportExportHelper.ExportSalesReport(arPath, summary, detail, LocalizationManager.GetString("Rep_Period_Monthly"));
+                string arCellA1 = "";
+                if (arExport && File.Exists(arPath))
+                {
+                    using var wb = new ClosedXML.Excel.XLWorkbook(arPath);
+                    arCellA1 = wb.Worksheet(1).Cell(1, 1).GetString();
+                }
+                bool arExcelOk = arExport && arCellA1.Contains("تقارير");
+                AgentLog("H3", "Program.RunI18nSmokeTest", "AR Excel A1", new Dictionary<string, object> { ["exportOk"] = arExport, ["a1"] = arCellA1, ["ok"] = arExcelOk });
+                if (!arExcelOk) failures++;
+
+                LocalizationManager.SetLanguage("en-US");
+                string enPath = Path.Combine(exportDir, "i18n_en_export.xlsx");
+                bool enExport = ImportExportHelper.ExportSalesReport(enPath, summary, detail, LocalizationManager.GetString("Rep_Period_Monthly"));
+                string enCellA1 = "";
+                if (enExport && File.Exists(enPath))
+                {
+                    using var wb = new ClosedXML.Excel.XLWorkbook(enPath);
+                    enCellA1 = wb.Worksheet(1).Cell(1, 1).GetString();
+                }
+                bool enExcelOk = enExport && enCellA1.Contains("Sales", StringComparison.OrdinalIgnoreCase);
+                AgentLog("H3", "Program.RunI18nSmokeTest", "EN Excel A1", new Dictionary<string, object> { ["exportOk"] = enExport, ["a1"] = enCellA1, ["ok"] = enExcelOk });
+                if (!enExcelOk) failures++;
+
+                string[] navKeys = { "Nav_Inventory", "Nav_Suppliers", "Nav_Quotations", "Nav_Reports", "Nav_Customers" };
+                LocalizationManager.SetLanguage("ar");
+                var missingAr = new List<string>();
+                foreach (var k in navKeys)
+                {
+                    var v = LocalizationManager.GetString(k);
+                    if (string.IsNullOrEmpty(v) || v == k) missingAr.Add(k);
+                }
+                AgentLog("H4", "Program.RunI18nSmokeTest", "AR nav keys", new Dictionary<string, object> { ["missing"] = string.Join(",", missingAr), ["ok"] = missingAr.Count == 0 });
+                if (missingAr.Count > 0) failures++;
+
+                LocalizationManager.SetLanguage("ar");
+                string arQuote = LocalizationManager.GetString("QuotePreview_Quote");
+                bool quoteArOk = !string.IsNullOrEmpty(arQuote) && arQuote != "QuotePreview_Quote";
+                AgentLog("H5", "Program.RunI18nSmokeTest", "AR quotation preview strings", new Dictionary<string, object> { ["QuotePreview_Quote"] = arQuote ?? "", ["ok"] = quoteArOk });
+                if (!quoteArOk) failures++;
+
+                Console.WriteLine($"I18N SMOKE: failures={failures} (see {logPath})");
+                return failures == 0 ? 0 : 1;
+            }
+            catch (Exception ex)
+            {
+                AgentLog("H0", "Program.RunI18nSmokeTest", "exception", new Dictionary<string, object> { ["error"] = ex.Message });
+                Console.WriteLine("I18N SMOKE EXCEPTION: " + ex);
+                return 2;
+            }
+        }
+
+        private static int RunReportsSmokeTest()
+        {
+            try
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                LocalizationManager.SetLanguage("en-US");
+                DatabaseInitializer.Initialize();
+                DatabaseHelper.EnsureSchema();
+                CurrencyService.EnsureTable();
+
+                var svc = new ReportService();
+                string exportDir = Path.Combine(Application.StartupPath, "Data", "test-exports");
+                Directory.CreateDirectory(exportDir);
+
+                string[] presets = { "Daily", "Weekly", "Monthly", "Yearly" };
+                int failures = 0;
+
+                foreach (string preset in presets)
+                {
+                    var (from, to) = svc.GetPresetRange(preset);
+                    var summary = svc.GetSummary(from, to);
+                    var products = svc.GetTopSellingProducts(from, to, 25);
+                    var categories = svc.GetTopSellingCategories(from, to, 25);
+                    var detail = svc.GetSoldProductsDetail(from, to);
+
+                    Console.WriteLine($"[{preset}] {from:yyyy-MM-dd}..{to:yyyy-MM-dd}");
+                    Console.WriteLine($"  Sales={summary.TotalSales:0.00} Cost={summary.TotalCost:0.00} Expenses={summary.TotalExpenses:0.00} Profit={summary.TotalProfit:0.00} AfterExpenses={summary.TotalProfitAfterExpenses:0.00}");
+                    Console.WriteLine($"  Products={products.Rows.Count} Categories={categories.Rows.Count} DetailRows={detail.Rows.Count}");
+
+                    if (preset is "Monthly" or "Yearly" or "Weekly")
+                    {
+                        if (summary.TotalSales <= 0 || products.Rows.Count == 0 || categories.Rows.Count == 0)
+                        {
+                            Console.WriteLine($"  FAIL: expected seeded sales data for {preset}");
+                            failures++;
+                        }
+                    }
+
+                    string path = Path.Combine(exportDir, $"report_{preset}_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                    bool ok = ImportExportHelper.ExportSalesReport(path, summary, detail, preset);
+                    if (!ok || !File.Exists(path))
+                    {
+                        Console.WriteLine($"  FAIL: export failed for {preset}");
+                        failures++;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  Export OK: {path} ({new FileInfo(path).Length} bytes)");
+                    }
+                }
+
+                // Custom range spanning full year
+                var customFrom = new DateTime(DateTime.Today.Year, 1, 1);
+                var customTo = DateTime.Today;
+                var custom = svc.GetSummary(customFrom, customTo);
+                Console.WriteLine($"[Custom] Sales={custom.TotalSales:0.00}");
+                if (custom.TotalSales <= 0)
+                {
+                    Console.WriteLine("  FAIL: custom yearly range empty");
+                    failures++;
+                }
+
+                // Host ReportsForm briefly to ensure UI constructs without throw
+                using (var host = new Form { Width = 1200, Height = 800 })
+                {
+                    var reports = new Forms.ReportsForm { Dock = DockStyle.Fill };
+                    host.Controls.Add(reports);
+                    host.Show();
+                    reports.RefreshData();
+                    Application.DoEvents();
+                    System.Threading.Thread.Sleep(400);
+                    host.Close();
+                }
+                Console.WriteLine("ReportsForm construct+RefreshData OK");
+
+                if (failures == 0)
+                {
+                    Console.WriteLine("REPORTS SMOKE TEST PASSED");
+                    return 0;
+                }
+
+                Console.WriteLine($"REPORTS SMOKE TEST FAILED ({failures} issues)");
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("REPORTS SMOKE TEST EXCEPTION: " + ex);
+                return 2;
             }
         }
 

@@ -29,6 +29,7 @@ namespace InventorySystem.Forms
             InitializeComponent();
             SetupSearchTimer();
             ApplyTheme();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 
@@ -190,7 +191,7 @@ namespace InventorySystem.Forms
             this.txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = "Search Customers...";
+            txtSearch.PlaceholderText = LocalizationManager.GetString("Cust_Search");
             txtSearch.Size = new Size(320, 35);
             txtSearch.TextChanged += txtSearch_TextChanged;
 

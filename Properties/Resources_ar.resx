@@ -68,6 +68,9 @@
   <data name="POS_Shipping" xml:space="preserve">
     <value>الشحن</value>
   </data>
+  <data name="POS_Discount" xml:space="preserve">
+    <value>الخصم</value>
+  </data>
   <data name="POS_GrandTotal" xml:space="preserve">
     <value>الإجمالي الكلي</value>
   </data>
@@ -406,7 +409,7 @@
   </data>
   <!-- Reports -->
   <data name="Rep_Title" xml:space="preserve">
-    <value>التحليلات والتقارير</value>
+    <value>تقارير المبيعات</value>
   </data>
   <data name="Rep_ValuationTitle" xml:space="preserve">
     <value>تقييم المخزون بمرور الوقت</value>
@@ -415,10 +418,13 @@
     <value>المبيعات حسب الفئة</value>
   </data>
   <data name="Rep_TopProductsTitle" xml:space="preserve">
-    <value>الأصناف الأكثر مبيعاً (هذا الشهر)</value>
+    <value>الأصناف الأكثر مبيعاً</value>
+  </data>
+  <data name="Rep_TopCategoriesTitle" xml:space="preserve">
+    <value>الفئات الأكثر مبيعاً</value>
   </data>
   <data name="Rep_TotalSales" xml:space="preserve">
-    <value>إجمالي المبيعات (السنوي):</value>
+    <value>إجمالي المبيعات</value>
   </data>
   <data name="Rep_AvgOrder" xml:space="preserve">
     <value>متوسط قيمة الطلب:</value>
@@ -428,6 +434,96 @@
   </data>
   <data name="Rep_ChartSales" xml:space="preserve">
     <value>المبيعات</value>
+  </data>
+  <data name="Rep_MonthlyExpenses" xml:space="preserve">
+    <value>المصروفات الشهرية</value>
+  </data>
+  <data name="Rep_TotalCost" xml:space="preserve">
+    <value>تكلفة المنتجات</value>
+  </data>
+  <data name="Rep_TotalProfit" xml:space="preserve">
+    <value>إجمالي الربح</value>
+  </data>
+  <data name="Rep_ProfitAfterExpenses" xml:space="preserve">
+    <value>الربح بعد المصروفات</value>
+  </data>
+  <data name="Rep_From" xml:space="preserve">
+    <value>من</value>
+  </data>
+  <data name="Rep_To" xml:space="preserve">
+    <value>إلى</value>
+  </data>
+  <data name="Rep_Apply" xml:space="preserve">
+    <value>تطبيق</value>
+  </data>
+  <data name="Rep_Export" xml:space="preserve">
+    <value>تصدير إلى Excel</value>
+  </data>
+  <data name="Rep_ExportTitle" xml:space="preserve">
+    <value>تصدير تقرير المبيعات</value>
+  </data>
+  <data name="Rep_ExportSuccess" xml:space="preserve">
+    <value>تم تصدير التقرير بنجاح.</value>
+  </data>
+  <data name="Rep_Period_Daily" xml:space="preserve">
+    <value>يومي</value>
+  </data>
+  <data name="Rep_Period_Weekly" xml:space="preserve">
+    <value>أسبوعي</value>
+  </data>
+  <data name="Rep_Period_Monthly" xml:space="preserve">
+    <value>شهري</value>
+  </data>
+  <data name="Rep_Period_Yearly" xml:space="preserve">
+    <value>سنوي</value>
+  </data>
+  <data name="Rep_Period_Custom" xml:space="preserve">
+    <value>مخصص</value>
+  </data>
+  <data name="Rep_ColProduct" xml:space="preserve">
+    <value>المنتج</value>
+  </data>
+  <data name="Rep_ColCategory" xml:space="preserve">
+    <value>الفئة</value>
+  </data>
+  <data name="Rep_ColQty" xml:space="preserve">
+    <value>الكمية</value>
+  </data>
+  <data name="Rep_ColUnitPrice" xml:space="preserve">
+    <value>سعر الوحدة</value>
+  </data>
+  <data name="Rep_ColTotalSales" xml:space="preserve">
+    <value>إجمالي المبيعات</value>
+  </data>
+  <data name="Rep_ColProfit" xml:space="preserve">
+    <value>الربح</value>
+  </data>
+  <data name="Rep_ColTotalCost" xml:space="preserve">
+    <value>إجمالي التكلفة</value>
+  </data>
+  <data name="Rep_ColQuantitySold" xml:space="preserve">
+    <value>الكمية المباعة</value>
+  </data>
+  <data name="Rep_ExportPeriodLabel" xml:space="preserve">
+    <value>الفترة</value>
+  </data>
+  <data name="Rep_ExportSummary" xml:space="preserve">
+    <value>ملخص</value>
+  </data>
+  <data name="Rep_ExportSoldProducts" xml:space="preserve">
+    <value>المنتجات المباعة</value>
+  </data>
+  <data name="Rep_ExportFinalTotals" xml:space="preserve">
+    <value>الإجماليات النهائية</value>
+  </data>
+  <data name="Rep_ExportSheetName" xml:space="preserve">
+    <value>تقرير المبيعات</value>
+  </data>
+  <data name="Rep_ExportTotalCostProducts" xml:space="preserve">
+    <value>إجمالي تكلفة المنتجات</value>
+  </data>
+  <data name="Rep_ExportFilePrefix" xml:space="preserve">
+    <value>تقرير_المبيعات</value>
   </data>
   <!-- Form Fields & Buttons -->
   <data name="Popup_Phone" xml:space="preserve">
@@ -1605,6 +1701,9 @@
   <data name="Users_GridUsername" xml:space="preserve">
     <value>اسم المستخدم</value>
   </data>
+  <data name="Users_GridRole" xml:space="preserve">
+    <value>الدور</value>
+  </data>
   <data name="Title_BarcodeLabels" xml:space="preserve">
     <value>توليد ملصقات الباركود</value>
   </data>
@@ -2191,5 +2290,159 @@
   </data>
   <data name="OrderDetails_NotFound" xml:space="preserve">
     <value>الطلب غير موجود.</value>
+  </data>
+  <data name="POS_Actions" xml:space="preserve">
+    <value>الإجراءات</value>
+  </data>
+  <data name="POS_OrderedItems" xml:space="preserve">
+    <value>الطلب الحالي</value>
+  </data>
+  <data name="POS_PaymentSummary" xml:space="preserve">
+    <value>ملخص الدفع</value>
+  </data>
+  <data name="POS_NewOrder" xml:space="preserve">
+    <value>طلب جديد</value>
+  </data>
+  <data name="POS_PageTitle" xml:space="preserve">
+    <value>نقطة البيع</value>
+  </data>
+  <data name="POS_MenuTitle" xml:space="preserve">
+    <value>القائمة</value>
+  </data>
+  <data name="POS_SearchProducts" xml:space="preserve">
+    <value>بحث عن منتجات...</value>
+  </data>
+  <data name="POS_SelectCustomerForBill" xml:space="preserve">
+    <value>يرجى اختيار عميل مسجل لإضافة الفاتورة إلى حسابه.</value>
+  </data>
+  <data name="POS_Currency" xml:space="preserve">
+    <value>العملة</value>
+  </data>
+  <data name="POS_Print" xml:space="preserve">
+    <value>طباعة</value>
+  </data>
+  <data name="POS_PlaceOrder" xml:space="preserve">
+    <value>تأكيد الطلب</value>
+  </data>
+  <data name="POS_AllCategories" xml:space="preserve">
+    <value>جميع الفئات</value>
+  </data>
+  <data name="POS_Others" xml:space="preserve">
+    <value>أخرى</value>
+  </data>
+  <data name="POS_NoProductsFound" xml:space="preserve">
+    <value>لم يتم العثور على منتجات.</value>
+  </data>
+  <data name="POS_OutOfStockBadge" xml:space="preserve">
+    <value>غير متوفر</value>
+  </data>
+  <data name="POS_TotalPayable" xml:space="preserve">
+    <value>المبلغ المستحق</value>
+  </data>
+  <data name="POS_CustomerBill" xml:space="preserve">
+    <value>فاتورة العميل</value>
+  </data>
+  <data name="POS_LowStock" xml:space="preserve">
+    <value>منخفض: {0}</value>
+  </data>
+  <data name="Msg_ErrorLoadingProducts" xml:space="preserve">
+    <value>خطأ في تحميل المنتجات: {0}</value>
+  </data>
+  <data name="Nav_VersionFooter" xml:space="preserve">
+    <value>{0} | الإصدار 1.0.2 | (c) 2026 Softio Services</value>
+  </data>
+  <data name="POS_WalkInCustomer" xml:space="preserve">
+    <value>زائر</value>
+  </data>
+  <data name="Parts_GridUom" xml:space="preserve">
+    <value>وحدة القياس</value>
+  </data>
+  <data name="Scale_FormTitle" xml:space="preserve">
+    <value>إعدادات ومعايرة ميزان TM-A17</value>
+  </data>
+  <data name="Scale_Disconnect" xml:space="preserve">
+    <value>قطع الاتصال</value>
+  </data>
+  <data name="Return_TotalRefund" xml:space="preserve">
+    <value>إجمالي الاسترداد: {0}</value>
+  </data>
+  <data name="Return_TitleWithOrder" xml:space="preserve">
+    <value>{0} - طلب #{1}</value>
+  </data>
+  <data name="Msg_ErrorLoadingItems" xml:space="preserve">
+    <value>خطأ في تحميل العناصر: {0}</value>
+  </data>
+  <data name="AddCat_TitleEdit" xml:space="preserve">
+    <value>تعديل الفئة: {0}</value>
+  </data>
+  <data name="AboutUs_AppName" xml:space="preserve">
+    <value>نظام مخزون Panache</value>
+  </data>
+  <data name="AboutUs_Version" xml:space="preserve">
+    <value>الإصدار 1.0.2 Platinum</value>
+  </data>
+  <data name="AboutUs_Copyright" xml:space="preserve">
+    <value>© 2026 Softio Services. جميع الحقوق محفوظة.</value>
+  </data>
+  <data name="QuotePreview_ColPhoto" xml:space="preserve">
+    <value>صورة</value>
+  </data>
+  <data name="QuotePreview_ColDesc" xml:space="preserve">
+    <value>وصف الصنف</value>
+  </data>
+  <data name="QuotePreview_CustHeader" xml:space="preserve">
+    <value>بيانات العميل</value>
+  </data>
+  <data name="QuotePreview_WalkIn" xml:space="preserve">
+    <value>عميل زائر</value>
+  </data>
+  <data name="QuotePreview_CompanyInfo" xml:space="preserve">
+    <value>جناح - طريق ريحاب | بيروت - لبنان | هاتف: +961 76 117731</value>
+  </data>
+  <data name="QuotePreview_ContactFooter" xml:space="preserve">
+    <value>هاتف: +961 76 117731  |  بريد: contact@panache.com  |  موقع: www.panache.com</value>
+  </data>
+  <data name="QuotePreview_MetaLine" xml:space="preserve">
+    <value>عرض سعر #: {0}   |   التاريخ: {1}   |   رقم العميل: {2}   |   الصلاحية: {3}</value>
+  </data>
+  <data name="QuotePreview_ValidityDays" xml:space="preserve">
+    <value>15 يوماً</value>
+  </data>
+  <data name="QuotePreview_ContinuedPage" xml:space="preserve">
+    <value>عرض سعر #{0} (تابع - صفحة {1})</value>
+  </data>
+  <data name="QuotePreview_PageN" xml:space="preserve">
+    <value>صفحة {0}</value>
+  </data>
+  <data name="QuotePreview_NoAddress" xml:space="preserve">
+    <value>لا يوجد عنوان</value>
+  </data>
+  <data name="QuotePreview_NoPhone" xml:space="preserve">
+    <value>لا يوجد هاتف</value>
+  </data>
+  <data name="QuotePreview_CustInfoLine" xml:space="preserve">
+    <value>{0}
+{1}: {2} | {3}: {4}</value>
+  </data>
+  <data name="QuotePreview_LoadError" xml:space="preserve">
+    <value>تعذر تحميل تفاصيل عرض السعر: {0}</value>
+  </data>
+  <data name="QuotePreview_PrintFailed" xml:space="preserve">
+    <value>فشلت الطباعة: {0}</value>
+  </data>
+  <data name="QuotePreview_ExportFailed" xml:space="preserve">
+    <value>فشل التصدير: {0}</value>
+  </data>
+  <data name="QuotePreview_ExportPdfTitle" xml:space="preserve">
+    <value>تصدير إلى PDF</value>
+  </data>
+  <data name="QuotePreview_ExportSuccess" xml:space="preserve">
+    <value>تم تصدير عرض السعر إلى PDF بنجاح!</value>
+  </data>
+  <data name="Msg_ErrorUploadImage" xml:space="preserve">
+    <value>خطأ في رفع الصورة: {0}</value>
+  </data>
+  <data name="Msg_SearchQuotations" xml:space="preserve">
+    <value>بحث في عروض الأسعار...</value>
   </data>
 </root>

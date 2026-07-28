@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ClosedXML.Excel;
+using InventorySystem.Services;
 
 namespace InventorySystem.Helpers
 {
@@ -171,6 +173,160 @@ namespace InventorySystem.Helpers
             {
                 ErrorLogger.LogError(ex, "ImportExportHelper.ImportFromExcel");
                 return new DataTable();
+            }
+        }
+
+        /// <summary>
+        /// Exports a full sales report (summary + sold products) to a real .xlsx workbook.
+        /// </summary>
+        public static bool ExportSalesReport(
+            string filePath,
+            SalesReportSummary summary,
+            DataTable soldProducts,
+            string periodLabel = null)
+        {
+            try
+            {
+                string L(string key, string fallback) => LocalizationManager.GetString(key, fallback);
+                bool isAr = LocalizationManager.IsArabic;
+
+                using var workbook = new XLWorkbook();
+                string sheetName = L("Rep_ExportSheetName", "Sales Report");
+                if (sheetName.Length > 31) sheetName = sheetName.Substring(0, 31);
+                var ws = workbook.Worksheets.Add(sheetName);
+                if (isAr)
+                    ws.RightToLeft = true;
+
+                int row = 1;
+                ws.Cell(row, 1).Value = L("Rep_Title", "Sales Reports");
+                ws.Cell(row, 1).Style.Font.Bold = true;
+                ws.Cell(row, 1).Style.Font.FontSize = 16;
+                row += 2;
+
+                if (!string.IsNullOrWhiteSpace(periodLabel))
+                {
+                    ws.Cell(row, 1).Value = L("Rep_ExportPeriodLabel", "Period");
+                    ws.Cell(row, 2).Value = periodLabel;
+                    row++;
+                }
+
+                ws.Cell(row, 1).Value = L("Rep_From", "From");
+                ws.Cell(row, 2).Value = summary.FromDate.ToString("yyyy-MM-dd");
+                row++;
+                ws.Cell(row, 1).Value = L("Rep_To", "To");
+                ws.Cell(row, 2).Value = summary.ToDate.ToString("yyyy-MM-dd");
+                row += 2;
+
+                ws.Cell(row, 1).Value = L("Rep_ExportSummary", "Summary");
+                ws.Cell(row, 1).Style.Font.Bold = true;
+                ws.Cell(row, 1).Style.Font.FontSize = 13;
+                row++;
+
+                void AddMetric(string label, decimal value)
+                {
+                    ws.Cell(row, 1).Value = label;
+                    ws.Cell(row, 2).Value = value;
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    row++;
+                }
+
+                AddMetric(L("Rep_MonthlyExpenses", "Monthly Expenses"), summary.TotalExpenses);
+                AddMetric(L("Rep_ExportTotalCostProducts", "Total Cost of Products"), summary.TotalCost);
+                AddMetric(L("Rep_TotalSales", "Total Sales"), summary.TotalSales);
+                AddMetric(L("Rep_TotalProfit", "Total Profit"), summary.TotalProfit);
+                AddMetric(L("Rep_ProfitAfterExpenses", "Profit After Expenses"), summary.TotalProfitAfterExpenses);
+                row++;
+
+                ws.Cell(row, 1).Value = L("Rep_ExportSoldProducts", "Sold Products");
+                ws.Cell(row, 1).Style.Font.Bold = true;
+                ws.Cell(row, 1).Style.Font.FontSize = 13;
+                row++;
+
+                string[] headers =
+                {
+                    L("Rep_ColProduct", "Product"),
+                    L("Rep_ColQuantitySold", "Quantity Sold"),
+                    L("Rep_ColUnitPrice", "Unit Price"),
+                    L("Rep_ColTotalSales", "Total Sales"),
+                    L("Rep_ColTotalCost", "Total Cost"),
+                    L("Rep_ColProfit", "Profit")
+                };
+                for (int c = 0; c < headers.Length; c++)
+                {
+                    ws.Cell(row, c + 1).Value = headers[c];
+                    ws.Cell(row, c + 1).Style.Font.Bold = true;
+                    ws.Cell(row, c + 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#F8FAFC");
+                }
+                row++;
+
+                int dataStart = row;
+                if (soldProducts != null)
+                {
+                    foreach (DataRow dr in soldProducts.Rows)
+                    {
+                        ws.Cell(row, 1).Value = dr["product_name"]?.ToString() ?? "";
+                        ws.Cell(row, 2).Value = Convert.ToDecimal(dr["quantity_sold"] == DBNull.Value ? 0 : dr["quantity_sold"]);
+                        ws.Cell(row, 3).Value = Convert.ToDecimal(dr["unit_price"] == DBNull.Value ? 0 : dr["unit_price"]);
+                        ws.Cell(row, 4).Value = Convert.ToDecimal(dr["total_sales"] == DBNull.Value ? 0 : dr["total_sales"]);
+                        ws.Cell(row, 5).Value = Convert.ToDecimal(dr["total_cost"] == DBNull.Value ? 0 : dr["total_cost"]);
+                        ws.Cell(row, 6).Value = Convert.ToDecimal(dr["profit"] == DBNull.Value ? 0 : dr["profit"]);
+
+                        for (int c = 2; c <= 6; c++)
+                            ws.Cell(row, c).Style.NumberFormat.Format = "#,##0.00";
+                        row++;
+                    }
+                }
+
+                int dataEnd = row - 1;
+                row++;
+
+                ws.Cell(row, 1).Value = L("Rep_ExportFinalTotals", "Final Totals");
+                ws.Cell(row, 1).Style.Font.Bold = true;
+                row++;
+
+                if (dataEnd >= dataStart)
+                {
+                    ws.Cell(row, 1).Value = L("Rep_ColQuantitySold", "Quantity Sold");
+                    ws.Cell(row, 2).FormulaA1 = $"SUM(B{dataStart}:B{dataEnd})";
+                    row++;
+                    ws.Cell(row, 1).Value = L("Rep_TotalSales", "Total Sales");
+                    ws.Cell(row, 2).FormulaA1 = $"SUM(D{dataStart}:D{dataEnd})";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    row++;
+                    ws.Cell(row, 1).Value = L("Rep_ColTotalCost", "Total Cost");
+                    ws.Cell(row, 2).FormulaA1 = $"SUM(E{dataStart}:E{dataEnd})";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    row++;
+                    ws.Cell(row, 1).Value = L("Rep_TotalProfit", "Total Profit");
+                    ws.Cell(row, 2).FormulaA1 = $"SUM(F{dataStart}:F{dataEnd})";
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    row++;
+                    ws.Cell(row, 1).Value = L("Rep_MonthlyExpenses", "Monthly Expenses");
+                    ws.Cell(row, 2).Value = summary.TotalExpenses;
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    row++;
+                    ws.Cell(row, 1).Value = L("Rep_ProfitAfterExpenses", "Profit After Expenses");
+                    ws.Cell(row, 2).Value = summary.TotalProfitAfterExpenses;
+                    ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(row, 1).Style.Font.Bold = true;
+                    ws.Cell(row, 2).Style.Font.Bold = true;
+                }
+                else
+                {
+                    AddMetric(L("Rep_MonthlyExpenses", "Monthly Expenses"), summary.TotalExpenses);
+                    AddMetric(L("Rep_TotalSales", "Total Sales"), summary.TotalSales);
+                    AddMetric(L("Rep_TotalProfit", "Total Profit"), summary.TotalProfit);
+                    AddMetric(L("Rep_ProfitAfterExpenses", "Profit After Expenses"), summary.TotalProfitAfterExpenses);
+                }
+
+                ws.Columns().AdjustToContents();
+                workbook.SaveAs(filePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "ImportExportHelper.ExportSalesReport");
+                return false;
             }
         }
 

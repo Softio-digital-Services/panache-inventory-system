@@ -8,18 +8,37 @@ namespace InventorySystem.Forms
 {
     public class AboutUsForm : BaseModalForm
     {
+        private Label _lblName;
+        private Label _lblVer;
+        private Label _lblDesc;
+        private Label _lblDev;
+        private Button _btnContact;
+        private Label _lblCopyright;
+
         public AboutUsForm()
         {
             InitializeAboutLayout();
-            this.TitleText = LocalizationManager.GetString("Nav_AboutUs", "About Us");
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
             this.Size = new Size(500, 580);
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Nav_AboutUs");
+            if (_lblName != null) _lblName.Text = LocalizationManager.GetString("AboutUs_AppName");
+            if (_lblVer != null) _lblVer.Text = LocalizationManager.GetString("AboutUs_Version");
+            if (_lblDesc != null) _lblDesc.Text = LocalizationManager.GetString("AboutUs_Desc");
+            if (_lblDev != null) _lblDev.Text = LocalizationManager.GetString("AboutUs_DevInfo");
+            if (_btnContact != null) _btnContact.Text = "  " + LocalizationManager.GetString("AboutUs_ContactSupport");
+            if (_lblCopyright != null) _lblCopyright.Text = LocalizationManager.GetString("AboutUs_Copyright");
         }
 
         private void InitializeAboutLayout()
         {
             Panel container = new Panel { Dock = DockStyle.Fill, Padding = new Padding(30) };
             
-            // Logo
             PictureBox pbLogo = new PictureBox {
                 Size = new Size(120, 120),
                 Location = new Point(160, 20),
@@ -32,40 +51,33 @@ namespace InventorySystem.Forms
             } catch { }
             container.Controls.Add(pbLogo);
 
-            // App Name
-            Label lblName = new Label {
-                Text = "InventorySystem",
+            _lblName = new Label {
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Size = new Size(440, 35),
                 Location = new Point(0, 150)
             };
-            container.Controls.Add(lblName);
+            container.Controls.Add(_lblName);
 
-            // Version
-            Label lblVer = new Label {
-                Text = "Version 1.0.2 Platinum",
+            _lblVer = new Label {
                 Font = new Font("Segoe UI", 10, FontStyle.Italic),
                 ForeColor = ThemeConfig.MutedTextColor,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Size = new Size(440, 25),
                 Location = new Point(0, 190)
             };
-            container.Controls.Add(lblVer);
+            container.Controls.Add(_lblVer);
 
-            // Description
-            Label lblDesc = new Label {
-                Text = LocalizationManager.GetString("AboutUs_Desc", "A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support."),
+            _lblDesc = new Label {
                 Font = new Font("Segoe UI", 10.5f),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Size = new Size(380, 80),
                 Location = new Point(30, 230)
             };
-            container.Controls.Add(lblDesc);
+            container.Controls.Add(_lblDesc);
 
-            // Divider
             Panel divider = new Panel {
                 Size = new Size(300, 1),
                 BackColor = Color.FromArgb(230, 230, 230),
@@ -73,20 +85,16 @@ namespace InventorySystem.Forms
             };
             container.Controls.Add(divider);
 
-            // Developer Info
-            Label lblDev = new Label {
-                Text = LocalizationManager.GetString("AboutUs_DevInfo", "Developed by Softio Digital Transformation"),
+            _lblDev = new Label {
                 Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Size = new Size(440, 25),
                 Location = new Point(0, 340)
             };
-            container.Controls.Add(lblDev);
+            container.Controls.Add(_lblDev);
 
-            // Links/Contact
-            Button btnContact = new ModernButton {
-                Text = "  " + LocalizationManager.GetString("AboutUs_ContactSupport", "Contact Support"),
+            _btnContact = new ModernButton {
                 Size = new Size(200, 45),
                 Location = new Point(150, 385),
                 Cursor = Cursors.Hand,
@@ -95,22 +103,21 @@ namespace InventorySystem.Forms
                 TextImageRelation = TextImageRelation.ImageBeforeText,
                 Padding = new Padding(10, 0, 0, 0)
             };
-            ThemeConfig.ApplyPrimaryButton(btnContact);
-            btnContact.Click += (s, e) => {
+            ThemeConfig.ApplyPrimaryButton(_btnContact);
+            _btnContact.Click += (s, e) => {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:softioservices@gmail.com") { UseShellExecute = true }); }
-                catch { MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_ContactSupport", "Contact us at: softioservices@gmail.com")); }
+                catch { MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_ContactSupport")); }
             };
-            container.Controls.Add(btnContact);
+            container.Controls.Add(_btnContact);
 
-            Label lblCopyright = new Label {
-                Text = "© 2026 Softio Services. All Rights Reserved.",
+            _lblCopyright = new Label {
                 Font = new Font("Segoe UI", 8.5f),
                 ForeColor = ThemeConfig.MutedTextColor,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Size = new Size(440, 20),
                 Location = new Point(0, 450)
             };
-            container.Controls.Add(lblCopyright);
+            container.Controls.Add(_lblCopyright);
 
             this.ContentPanel.Controls.Add(container);
         }

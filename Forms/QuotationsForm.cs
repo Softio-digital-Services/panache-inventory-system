@@ -40,13 +40,14 @@ namespace InventorySystem.Forms
 
             if (dgvQuotes != null && dgvQuotes.Columns.Count > 0)
             {
-                if (dgvQuotes.Columns.Contains("order_id"))    dgvQuotes.Columns["order_id"].HeaderText    = "ID";
+                if (dgvQuotes.Columns.Contains("order_id"))    dgvQuotes.Columns["order_id"].HeaderText    = LocalizationManager.GetString("Users_GridID");
                 if (dgvQuotes.Columns.Contains("order_date"))  dgvQuotes.Columns["order_date"].HeaderText  = LocalizationManager.GetString("Hist_ColDate");
                 if (dgvQuotes.Columns.Contains("CustomerName")) dgvQuotes.Columns["CustomerName"].HeaderText = LocalizationManager.GetString("Cust_Title");
                 if (dgvQuotes.Columns.Contains("total_amount")) dgvQuotes.Columns["total_amount"].HeaderText = LocalizationManager.GetString("Msg_Total");
                 if (dgvQuotes.Columns.Contains("colActions"))   dgvQuotes.Columns["colActions"].HeaderText  = LocalizationManager.GetString("Parts_GridActions");
             }
             if (lblQuotationsTitle != null) lblQuotationsTitle.Text = LocalizationManager.GetString("Msg_CustomerQuotations");
+            if (txtSearch != null) txtSearch.PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations");
         }
 
         private void InitializeComponent()
@@ -63,7 +64,7 @@ namespace InventorySystem.Forms
 
             txtSearch = new ModernTextBox {
                 IsSearch = true, ShowLabel = false,
-                PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations", "Search quotations..."),
+                PlaceholderText = LocalizationManager.GetString("Msg_SearchQuotations"),
                 Size = new Size(320, 35)
             };
             txtSearch.TextChanged += (s, e) => LoadQuotations(txtSearch.Text);
@@ -74,13 +75,13 @@ namespace InventorySystem.Forms
             dgvQuotes = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AutoGenerateColumns = false, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, RowHeadersVisible = false };
             ThemeConfig.ApplyGridTheme(dgvQuotes);
 
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_id", HeaderText = "ID", DataPropertyName = "order_id", Width = 60, ReadOnly = true });
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_date", HeaderText = "Date", DataPropertyName = "order_date", Width = 160, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "CustomerName", HeaderText = "Customer", DataPropertyName = "CustomerName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_id", HeaderText = LocalizationManager.GetString("Users_GridID"), DataPropertyName = "order_id", Width = 60, ReadOnly = true });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "order_date", HeaderText = LocalizationManager.GetString("Hist_ColDate"), DataPropertyName = "order_date", Width = 160, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "CustomerName", HeaderText = LocalizationManager.GetString("POS_Customer"), DataPropertyName = "CustomerName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
 
             var colTotal = new DataGridViewTextBoxColumn
             {
-                Name = "total_amount", HeaderText = "Total", DataPropertyName = "total_amount",
+                Name = "total_amount", HeaderText = LocalizationManager.GetString("Msg_Total"), DataPropertyName = "total_amount",
                 Width = 110, ReadOnly = true,
                 DefaultCellStyle = new DataGridViewCellStyle { Font = new Font("Segoe UI", 9.5F, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Alignment = DataGridViewContentAlignment.MiddleCenter }
             };
@@ -88,7 +89,7 @@ namespace InventorySystem.Forms
             dgvQuotes.CellFormatting += DgvQuotes_CellFormatting;
 
             dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "customer_id", DataPropertyName = "customer_id", Visible = false });
-            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", Width = 200, ReadOnly = true });
+            dgvQuotes.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = LocalizationManager.GetString("Parts_GridActions"), Width = 200, ReadOnly = true });
 
             dgvQuotes.CellPainting  += DgvQuotes_CellPainting;
             dgvQuotes.CellClick     += DgvQuotes_CellClick;

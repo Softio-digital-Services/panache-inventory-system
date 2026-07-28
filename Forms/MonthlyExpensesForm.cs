@@ -204,7 +204,7 @@ namespace InventorySystem.Forms
 
             // Grid
             dgvExpenses = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = ThemeConfig.SurfaceColor, BorderStyle = BorderStyle.None, AllowUserToAddRows = false, ReadOnly = true, AutoGenerateColumns = false };
-            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id", HeaderText = "ID", DataPropertyName = "expense_id", Width = 60 });
+            dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id", HeaderText = LocalizationManager.GetString("Users_GridID"), DataPropertyName = "expense_id", Width = 60 });
             dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = LocalizationManager.GetString("Exp_Date"), DataPropertyName = "expense_date", Width = 130 });
             dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Category", HeaderText = LocalizationManager.GetString("Exp_CategoryLabel"), DataPropertyName = "category", Width = 120 });
             dgvExpenses.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", HeaderText = LocalizationManager.GetString("Exp_AmountLabel"), DataPropertyName = "amount", Width = 100 });
@@ -283,6 +283,7 @@ namespace InventorySystem.Forms
                 lblDateRef.Text = LocalizationManager.GetString("Hist_ColDate", "Date");
             }
             
+            if (dgvExpenses.Columns.Contains("Id")) dgvExpenses.Columns["Id"].HeaderText = LocalizationManager.GetString("Users_GridID");
             if (dgvExpenses.Columns.Contains("Category")) dgvExpenses.Columns["Category"].HeaderText = LocalizationManager.GetString("Exp_CategoryLabel");
             if (dgvExpenses.Columns.Contains("Date")) dgvExpenses.Columns["Date"].HeaderText = LocalizationManager.GetString("Exp_Date");
             if (dgvExpenses.Columns.Contains("Amount")) dgvExpenses.Columns["Amount"].HeaderText = LocalizationManager.GetString("Exp_AmountLabel");

@@ -13,15 +13,9 @@ namespace InventorySystem.Forms
             
             this.TitleText = LocalizationManager.GetString("Curr_AddBtn");
             ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
 
             btnFetch.Click += btnFetch_Click;
-
-            SetFooterButtons(
-                LocalizationManager.GetString("AddPart_Save"),
-                LocalizationManager.GetString("Popup_Cancel"),
-                btnSave_Click,
-                (s, e) => this.Close()
-            );
         }
 
         private async void btnFetch_Click(object sender, EventArgs e)
@@ -71,6 +65,14 @@ namespace InventorySystem.Forms
             btnFetch.Padding = new Padding(10, 0, 0, 0);
             
             numRate.Value = 1.0000m;
+
+            this.TitleText = LocalizationManager.GetString("Curr_AddBtn");
+            SetFooterButtons(
+                LocalizationManager.GetString("AddPart_Save"),
+                LocalizationManager.GetString("Popup_Cancel"),
+                btnSave_Click,
+                (s, e) => this.Close()
+            );
         }
 
         private void btnSave_Click(object sender, EventArgs e)

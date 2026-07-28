@@ -22,8 +22,22 @@ namespace InventorySystem.Forms
         public ScanToConnectForm()
         {
             InitializeComponent();
-            this.TitleText = LocalizationManager.GetString("Plugins_ScanTitle");
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
             LoadData();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Plugins_ScanTitle");
+            if (lblHint != null) lblHint.Text = LocalizationManager.GetString("Dash_ScanHint");
+            SetFooterButtons(
+                null,
+                LocalizationManager.GetString("Popup_Cancel"),
+                null,
+                (s, e) => this.Close()
+            );
         }
 
         private void InitializeComponent()
@@ -81,7 +95,6 @@ namespace InventorySystem.Forms
             // Hint label
             lblHint = new Label
             {
-                Text = LocalizationManager.GetString("Dash_ScanHint"),
                 Font = ThemeConfig.StandardFont,
                 ForeColor = ThemeConfig.SecondaryColor,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -94,14 +107,6 @@ namespace InventorySystem.Forms
             tlp.Controls.Add(lblHint, 0, 2);
 
             this.ContentPanel.Controls.Add(tlp);
-
-            // Use secondary button styling for "Close" to match app standards
-            SetFooterButtons(
-                null,
-                LocalizationManager.GetString("Popup_Cancel"),
-                null,
-                (s, e) => this.Close()
-            );
         }
 
         private void LoadData()

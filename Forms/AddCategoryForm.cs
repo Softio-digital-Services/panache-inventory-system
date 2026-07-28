@@ -18,8 +18,8 @@ namespace InventorySystem.Forms
         public AddCategoryForm()
         {
             InitializeComponent();
-            this.TitleText = "Add New Category";
             btnUpload.Click += BtnUpload_Click;
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 
@@ -30,7 +30,6 @@ namespace InventorySystem.Forms
             txtName.Text = name;
             txtDesc.Text = desc;
             _currentImagePath = image;
-            this.TitleText = "Edit Category: " + name;
 
             if (!string.IsNullOrEmpty(image))
             {
@@ -43,8 +42,9 @@ namespace InventorySystem.Forms
                             pbImage.Image = Image.FromStream(stream);
                         }
                     }
-                } catch {}
+                }                 catch {}
             }
+            ApplyLocalization();
         }
 
         private void BtnUpload_Click(object sender, EventArgs e)
@@ -76,7 +76,7 @@ namespace InventorySystem.Forms
                     }
                     catch (Exception ex)
                     {
-                        MessageHelper.ShowError("Error uploading image: " + ex.Message);
+                        MessageHelper.ShowError(string.Format(LocalizationManager.GetString("Msg_ErrorUploadImage"), ex.Message));
                     }
                 }
             }
@@ -87,7 +87,9 @@ namespace InventorySystem.Forms
             bool ar = LocalizationManager.IsArabic;
             this.RightToLeft = ar ? RightToLeft.Yes : RightToLeft.No;
             
-            this.TitleText = LocalizationManager.GetString("AddCat_Title");
+            this.TitleText = _isEditMode
+                ? string.Format(LocalizationManager.GetString("AddCat_TitleEdit"), txtName.Text)
+                : LocalizationManager.GetString("AddCat_Title");
             txtName.LabelText = LocalizationManager.GetString("AddCat_Name");
             txtDesc.LabelText = LocalizationManager.GetString("AddCat_Desc");
             btnUpload.Text = LocalizationManager.GetString("AddPart_Upload");

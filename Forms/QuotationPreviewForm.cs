@@ -21,27 +21,41 @@ namespace InventorySystem.Forms
             _orderId = orderId;
             _orderService = new OrderService();
 
-            this.TitleText = LocalizationManager.GetString("QuotePreview_Title", "Quotation Preview") + " - #" + orderId;
-            this.Size = new Size(950, 950); // Increased width to ensure A4 fits
-
-            this.ContentPanel.Padding = new Padding(20, 20, 20, 20); // Add safety margin
+            this.Size = new Size(950, 950);
+            this.ContentPanel.Padding = new Padding(20, 20, 20, 20);
 
             InitializeUI();
+            LocalizationManager.LanguageChanged += OnLanguageChanged;
+            this.FormClosed += (s, e) => LocalizationManager.LanguageChanged -= OnLanguageChanged;
+            ApplyLocalization();
             LoadData();
+        }
+
+        private void OnLanguageChanged(object sender, EventArgs e)
+        {
+            if (IsDisposed) return;
+            ApplyLocalization();
+            LoadData();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            string L(string key, string fb) => LocalizationManager.GetString(key, fb);
+            this.TitleText = L("QuotePreview_Title", "Quotation Preview") + " - #" + _orderId;
+            SetFooterButtons(
+                L("Tran_Print", "Print"),
+                L("Tran_Export", "Export"),
+                (s, e) => HandlePrint(),
+                (s, e) => HandleExport(),
+                L("Popup_Cancel", "Close"),
+                (s, e) => this.Close()
+            );
         }
 
         private void InitializeUI()
         {
             this.ContentPanel.AutoScroll = true;
-
-            SetFooterButtons(
-                LocalizationManager.GetString("Tran_Print", "Print"),
-                LocalizationManager.GetString("Tran_Export", "Export"),
-                (s, e) => HandlePrint(),
-                (s, e) => HandleExport(),
-                LocalizationManager.GetString("Popup_Cancel", "Close"),
-                (s, e) => this.Close()
-            );
 
             this.ContentPanel.Resize += (s, e) =>
             {
@@ -66,9 +80,14 @@ namespace InventorySystem.Forms
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError("Could not load quotation details: " + ex.Message);
+                MessageHelper.ShowError(string.Format(
+                    LocalizationManager.GetString("QuotePreview_LoadError", "Could not load quotation details: {0}"),
+                    ex.Message));
             }
         }
+
+        private static string L(string key, string fallback) =>
+            LocalizationManager.GetString(key, fallback);
 
         private Panel CreateA4PagePanel()
         {
@@ -136,7 +155,7 @@ namespace InventorySystem.Forms
                     hy += 45;
                     Label lblCompInfo = new Label
                     {
-                        Text = "Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731",
+                        Text = L("QuotePreview_CompanyInfo", "Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731"),
                         Font = new Font("Segoe UI", 9),
                         Location = new Point(130, hy),
                         Size = new Size(500, 35),
@@ -151,7 +170,12 @@ namespace InventorySystem.Forms
                     string customerId = DatabaseHelper.ExecuteScalar<string>($"SELECT customer_id FROM orders WHERE order_id = {_orderId}");
                     Label lblQuoteInfo = new Label
                     {
-                        Text = $"QUOTE #: {_orderId}   |   DATE: {DateTime.Now:dd MMM yyyy}   |   CUST ID: {customerId ?? "N/A"}   |   VALIDITY: 15 Days",
+                        Text = string.Format(
+                            L("QuotePreview_MetaLine", "QUOTE #: {0}   |   DATE: {1}   |   CUST ID: {2}   |   VALIDITY: {3}"),
+                            _orderId,
+                            DateTime.Now.ToString("dd MMM yyyy"),
+                            customerId ?? "N/A",
+                            L("QuotePreview_ValidityDays", "15 Days")),
                         Font = new Font("Segoe UI", 9, FontStyle.Bold),
                         ForeColor = Color.FromArgb(64, 64, 64),
                         Dock = DockStyle.Fill,
@@ -160,7 +184,7 @@ namespace InventorySystem.Forms
                     pnlDetails.Controls.Add(lblQuoteInfo);
 
                     hy += 60;
-                    Label lblCustHeader = new Label { Text = "CUSTOMER DETAILS", Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Location = new Point(40, hy), AutoSize = true };
+                    Label lblCustHeader = new Label { Text = LocalizationManager.GetString("QuotePreview_CustHeader"), Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = ThemeConfig.PrimaryColor, Location = new Point(40, hy), AutoSize = true };
                     page.Controls.Add(lblCustHeader);
                     hy += 25;
 
@@ -171,9 +195,9 @@ namespace InventorySystem.Forms
                         WHERE o.order_id = {_orderId}";
                     var custDt = DatabaseHelper.ExecuteDataTable(custQuery);
 
-                    string custFullName = "Walk-in Customer";
-                    string custAddress = "No Address Provided";
-                    string custPhone = "No Phone Provided";
+                    string custFullName = L("QuotePreview_WalkIn", "Walk-in Customer");
+                    string custAddress = L("QuotePreview_NoAddress", "No Address Provided");
+                    string custPhone = L("QuotePreview_NoPhone", "No Phone Provided");
 
                     if (custDt.Rows.Count > 0 && custDt.Rows[0]["full_name"] != DBNull.Value)
                     {
@@ -187,7 +211,13 @@ namespace InventorySystem.Forms
 
                     Label lblCustInfo = new Label
                     {
-                        Text = $"{custFullName}\nAddress: {custAddress} | Phone: {custPhone}",
+                        Text = string.Format(
+                            L("QuotePreview_CustInfoLine", "{0}\n{1}: {2} | {3}: {4}"),
+                            custFullName,
+                            L("Popup_Address", "Address"),
+                            custAddress,
+                            L("Popup_Phone", "Phone"),
+                            custPhone),
                         Font = new Font("Segoe UI", 10),
                         Location = new Point(40, hy),
                         Size = new Size(600, 45),
@@ -202,7 +232,7 @@ namespace InventorySystem.Forms
                     // Continued Header
                     Label lblCont = new Label
                     {
-                        Text = $"QUOTATION #{_orderId} (Continued - Page {pageNumber})",
+                        Text = string.Format(L("QuotePreview_ContinuedPage", "QUOTATION #{0} (Continued - Page {1})"), _orderId, pageNumber),
                         Font = new Font("Segoe UI", 10, FontStyle.Bold),
                         ForeColor = Color.Gray,
                         Location = new Point(40, 40),
@@ -235,11 +265,11 @@ namespace InventorySystem.Forms
 
                 grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-                grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = "PHOTO", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Desc", HeaderText = "ITEM DESCRIPTION", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "QTY", Width = 60, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "PRICE", Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
-                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "TOTAL", Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
+                grid.Columns.Add(new DataGridViewImageColumn { Name = "Photo", HeaderText = LocalizationManager.GetString("QuotePreview_ColPhoto"), Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Desc", HeaderText = LocalizationManager.GetString("QuotePreview_ColDesc"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = LocalizationManager.GetString("POS_GridQty"), Width = 60, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = LocalizationManager.GetString("POS_GridPrice"), Width = 100, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
+                grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = LocalizationManager.GetString("POS_GridTotal"), Width = 110, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold) } });
 
                 // Calculate available grid height depending on whether this can be the final page
                 int remainingItems = items.Count - currentItemIndex;
@@ -347,7 +377,7 @@ namespace InventorySystem.Forms
 
                     Label lblContactFooter = new Label
                     {
-                        Text = "Phone: +1 (555) 000-0000  |  Email: contact@a2z.com  |  Website: www.a2z.com",
+                        Text = L("QuotePreview_ContactFooter", "Phone: +961 76 117731  |  Email: contact@panache.com  |  Website: www.panache.com"),
                         Font = new Font("Segoe UI", 8.5F),
                         Location = new Point(0, 1085),
                         Size = new Size(page.Width, 25),
@@ -363,7 +393,7 @@ namespace InventorySystem.Forms
                     // Render minimalist continued marker on intermediate document footers
                     Label lblPageFooter = new Label
                     {
-                        Text = $"Page {pageNumber}",
+                        Text = string.Format(L("QuotePreview_PageN", "Page {0}"), pageNumber),
                         Font = new Font("Segoe UI", 8.5F, FontStyle.Italic),
                         ForeColor = Color.Silver,
                         Location = new Point(0, 1100),
@@ -419,7 +449,7 @@ namespace InventorySystem.Forms
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError("Printing failed: " + ex.Message);
+                MessageHelper.ShowError(string.Format(L("QuotePreview_PrintFailed", "Printing failed: {0}"), ex.Message));
             }
         }
 
@@ -455,7 +485,7 @@ namespace InventorySystem.Forms
 
                     if (string.IsNullOrEmpty(pdfPrinter))
                     {
-                        MessageHelper.ShowWarning("No PDF printer found (e.g. Microsoft Print to PDF). Please use the 'Print' button and select a PDF printer manually.");
+                        MessageHelper.ShowWarning(LocalizationManager.GetString("Msg_PdfPrinterNotFound", "No PDF printer found (e.g. Microsoft Print to PDF). Please use the 'Print' button and select a PDF printer manually."));
                         return;
                     }
 
@@ -463,7 +493,7 @@ namespace InventorySystem.Forms
                     {
                         diag.Filter = "PDF Document|*.pdf";
                         diag.FileName = $"Quotation_{_orderId}";
-                        diag.Title = "Export to PDF";
+                        diag.Title = L("QuotePreview_ExportPdfTitle", "Export to PDF");
 
                         if (diag.ShowDialog() == DialogResult.OK)
                         {
@@ -485,14 +515,14 @@ namespace InventorySystem.Forms
                             };
 
                             pd.Print();
-                            MessageHelper.ShowInfo("Quotation exported as PDF successfully!");
+                            MessageHelper.ShowInfo(L("QuotePreview_ExportSuccess", "Quotation exported as PDF successfully!"));
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.ShowError("Export failed: " + ex.Message);
+                MessageHelper.ShowError(string.Format(L("QuotePreview_ExportFailed", "Export failed: {0}"), ex.Message));
             }
         }
     }

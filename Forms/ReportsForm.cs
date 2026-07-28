@@ -1,362 +1,598 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Windows.Forms.DataVisualization.Charting;
-using InventorySystem.Data;
+using InventorySystem.Controls;
+using InventorySystem.Helpers;
+using InventorySystem.Services;
 
 namespace InventorySystem.Forms
 {
     public partial class ReportsForm : UserControl
     {
-        private Chart chartValuation;
-        private Chart chartPie;
-        private Chart chartBar;
-        private Panel pnlKPIContainer;
-        private Label lblKPI1Value;
-        private Label lblKPI2Value;
-        private InventorySystem.Services.DashboardService _dashboardService;
+        private readonly ReportService _reportService = new ReportService();
+
+        private ModernComboBox cmbPeriod;
+        private FlatDateTimePicker dtpFrom;
+        private FlatDateTimePicker dtpTo;
+        private ModernButton btnApply;
+        private ModernButton btnExport;
+        private Label lblDateRange;
+
+        private StatCard cardExpenses;
+        private StatCard cardCost;
+        private StatCard cardSales;
+        private StatCard cardProfit;
+        private StatCard cardProfitAfterExpenses;
+
+        private DataGridView dgvProducts;
+        private DataGridView dgvCategories;
+        private Label lblProductsTitle;
+        private Label lblCategoriesTitle;
+
+        private SalesReportSummary _currentSummary;
+        private string _currentPeriodKey = "Daily";
+        private bool _suppressPeriodChange;
 
         public ReportsForm()
         {
-            _dashboardService = new InventorySystem.Services.DashboardService();
             InitializeComponent();
-            ApplyTheme();
-            InventorySystem.Helpers.LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
         }
 
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
             ApplyLocalization();
-        }
-
-
-        private void ApplyLocalization()
-        {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
-            bool isRTL = InventorySystem.Helpers.LocalizationManager.IsArabic;
-
-            var titleAlign  = isRTL ? ContentAlignment.BottomRight : ContentAlignment.BottomLeft;
-            var valueAlign  = isRTL ? ContentAlignment.TopRight    : ContentAlignment.TopLeft;
-
-            var title = this.Controls.Find("lblMainTitle", true);
-            if (title.Length > 0) title[0].Text = L("Rep_Title");
-
-            var valTitle = this.Controls.Find("lblValTitle", true);
-            if (valTitle.Length > 0) valTitle[0].Text = L("Rep_ValuationTitle");
-
-            var pieTitle = this.Controls.Find("lblPieTitle", true);
-            if (pieTitle.Length > 0) pieTitle[0].Text = L("Rep_CategoryTitle");
-
-            var kpi1 = this.Controls.Find("kpi1Title", true);
-            if (kpi1.Length > 0)
-            {
-                kpi1[0].Text = L("Rep_TotalSales");
-                ((Label)kpi1[0]).TextAlign = titleAlign;
-            }
-            if (lblKPI1Value != null) lblKPI1Value.TextAlign = valueAlign;
-
-            var kpi2 = this.Controls.Find("kpi2Title", true);
-            if (kpi2.Length > 0)
-            {
-                kpi2[0].Text = L("Rep_AvgOrder");
-                ((Label)kpi2[0]).TextAlign = titleAlign;
-            }
-            if (lblKPI2Value != null) lblKPI2Value.TextAlign = valueAlign;
-
-            var barTitle = this.Controls.Find("lblBarTitle", true);
-            if (barTitle.Length > 0) barTitle[0].Text = L("Rep_TopProductsTitle");
-
-            LoadCharts();
+            ApplyPeriodPreset("Daily");
+            LoadReport();
         }
 
         public void RefreshData()
         {
-            LoadCharts();
+            if (IsHandleCreated)
+                LoadReport();
         }
 
         private void InitializeComponent()
         {
             this.Controls.Clear();
             this.Size = new Size(1100, 750);
+            this.BackColor = ThemeConfig.BackgroundColor;
+            this.AutoScroll = true;
 
-
-            // Root Layout
-            TableLayoutPanel tlpRoot = new TableLayoutPanel();
-            tlpRoot.Dock = DockStyle.Fill;
-            tlpRoot.ColumnCount = 1;
-            tlpRoot.RowCount = 3;
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Header
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));  // Top Row (Valuation + Pie)
-            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));  // Bottom Row (KPIs + Bar)
-            tlpRoot.Padding = new Padding(20);
+            var tlpRoot = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 4,
+                Padding = new Padding(20),
+                BackColor = ThemeConfig.BackgroundColor
+            };
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // Header + filter
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 120F)); // KPIs
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // Tables
+            tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 0F));
             this.Controls.Add(tlpRoot);
 
-            // 1. Header
-            Label lblTitle = ThemeConfig.CreateStandardHeader("Analytics & Reports");
+            // ---- Header ----
+            Label lblTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Rep_Title"));
             lblTitle.Name = "lblMainTitle";
 
-            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblTitle, null, null);
+            btnExport = new ModernButton
+            {
+                Name = "btnExport",
+                Text = LocalizationManager.GetString("Rep_Export"),
+                Width = 150,
+                Height = 36
+            };
+            ThemeConfig.ApplyPrimaryButton(btnExport);
+            btnExport.Click += (s, e) => ExportToExcel();
+
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblTitle, null, new Control[] { btnExport });
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
-            // 2. Top Row Layout
-            TableLayoutPanel tlpTop = new TableLayoutPanel();
-            tlpTop.Dock = DockStyle.Fill;
-            tlpTop.ColumnCount = 2;
-            tlpTop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F)); // Valuation (Wide)
-            tlpTop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F)); // Pie (Narrow)
-            tlpTop.Margin = new Padding(0, 0, 0, 20);
-            tlpRoot.Controls.Add(tlpTop, 0, 1);
-
-            // Valuation Chart Card
-            chartValuation = new Chart { Dock = DockStyle.Fill };
-            Panel pnlValuation = ThemeConfig.CreateCardPanel(chartValuation);
-            pnlValuation.Dock = DockStyle.Fill;
-            pnlValuation.Margin = new Padding(0, 0, 10, 0);
-            
-            Label lblValTitle = GetTitleLabel("Inventory Valuation Over Time");
-            lblValTitle.Name = "lblValTitle";
-            pnlValuation.Controls[0].Controls.Add(lblValTitle);
-            lblValTitle.BringToFront(); // Ensure title is visible above chart in card
-
-            tlpTop.Controls.Add(pnlValuation, 0, 0);
-
-            // Pie Chart Card
-            chartPie = new Chart { Dock = DockStyle.Fill };
-            Panel pnlPie = ThemeConfig.CreateCardPanel(chartPie);
-            pnlPie.Dock = DockStyle.Fill;
-            pnlPie.Margin = new Padding(10, 0, 0, 0);
-            
-            Label lblPieTitle = GetTitleLabel("Sales by Category");
-            lblPieTitle.Name = "lblPieTitle";
-            pnlPie.Controls[0].Controls.Add(lblPieTitle);
-            lblPieTitle.BringToFront();
-
-            tlpTop.Controls.Add(pnlPie, 1, 0);
-
-
-            // 3. Bottom Row Layout
-            TableLayoutPanel tlpBottom = new TableLayoutPanel();
-            tlpBottom.Dock = DockStyle.Fill;
-            tlpBottom.ColumnCount = 2;
-            tlpBottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F)); // KPIs (Narrow)
-            tlpBottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F)); // Bar (Wide)
-            tlpRoot.Controls.Add(tlpBottom, 0, 2);
-
-            // KPI Container
-            pnlKPIContainer = new Panel();
-            pnlKPIContainer.Dock = DockStyle.Fill;
-            pnlKPIContainer.Margin = new Padding(0, 0, 10, 0);
-            
-            // Note: We'll add KPI cards dynamically or just place 2 here
-            TableLayoutPanel tlpKPIs = new TableLayoutPanel();
-            tlpKPIs.Dock = DockStyle.Fill;
-            tlpKPIs.ColumnCount = 1;
-            tlpKPIs.RowCount = 2;
-            tlpKPIs.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tlpKPIs.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            pnlKPIContainer.Controls.Add(tlpKPIs);
-
-            // KPI 1
-            TableLayoutPanel tlpKPI1 = new TableLayoutPanel
+            // Filter bar (sits under header inside a wrapper)
+            Panel filterHost = BuildFilterBar();
+            // Insert filter into header area by wrapping
+            var headerWrapper = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
-                Padding = new Padding(14, 10, 14, 10)
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                ColumnCount = 1,
+                RowCount = 2,
+                Margin = new Padding(0),
+                BackColor = Color.Transparent
             };
-            tlpKPI1.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));
-            tlpKPI1.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));
+            headerWrapper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            headerWrapper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            tlpRoot.Controls.Remove(tlpHeader);
+            headerWrapper.Controls.Add(tlpHeader, 0, 0);
+            headerWrapper.Controls.Add(filterHost, 0, 1);
+            tlpRoot.Controls.Add(headerWrapper, 0, 0);
 
-            Label kpi1Title = new Label
+            // ---- KPI Cards ----
+            var tlpKpis = new TableLayoutPanel
             {
-                Name = "kpi1Title", Text = "Total Sales (YTD):",
-                Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor,
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft,
-                AutoSize = false
+                Dock = DockStyle.Fill,
+                ColumnCount = 5,
+                RowCount = 1,
+                Margin = new Padding(0, 8, 0, 12),
+                BackColor = Color.Transparent
             };
-            lblKPI1Value = new Label
+            for (int i = 0; i < 5; i++)
+                tlpKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+
+            cardExpenses = CreateKpiCard("Monthly Expenses", "revenue", ThemeConfig.WarningColor);
+            cardCost = CreateKpiCard("Product Cost", "inventory_dashboard", ThemeConfig.SecondaryColor);
+            cardSales = CreateKpiCard("Total Sales", "orders", ThemeConfig.PrimaryColor);
+            cardProfit = CreateKpiCard("Total Profit", "revenue", ThemeConfig.SuccessColor);
+            cardProfitAfterExpenses = CreateKpiCard("Profit After Expenses", "revenue", ThemeConfig.PrimaryColor);
+
+            tlpKpis.Controls.Add(cardExpenses, 0, 0);
+            tlpKpis.Controls.Add(cardCost, 1, 0);
+            tlpKpis.Controls.Add(cardSales, 2, 0);
+            tlpKpis.Controls.Add(cardProfit, 3, 0);
+            tlpKpis.Controls.Add(cardProfitAfterExpenses, 4, 0);
+            tlpRoot.Controls.Add(tlpKpis, 0, 1);
+
+            // ---- Tables ----
+            var tlpTables = new TableLayoutPanel
             {
-                Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark,
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft,
-                AutoSize = false
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Margin = new Padding(0),
+                BackColor = Color.Transparent
             };
-            tlpKPI1.Controls.Add(kpi1Title, 0, 0);
-            tlpKPI1.Controls.Add(lblKPI1Value, 0, 1);
+            tlpTables.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58F));
+            tlpTables.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42F));
 
-            Panel kpi1 = ThemeConfig.CreateCardPanel(tlpKPI1);
-            kpi1.Dock = DockStyle.Fill;
-            kpi1.Margin = new Padding(0, 0, 0, 10);
-            tlpKPIs.Controls.Add(kpi1, 0, 0);
+            Panel productsCard = BuildTableCard(
+                out lblProductsTitle, out dgvProducts,
+                "Best-Selling Products", "lblProductsTitle");
+            productsCard.Margin = new Padding(0, 0, 10, 0);
+            tlpTables.Controls.Add(productsCard, 0, 0);
 
-            // KPI 2
-            TableLayoutPanel tlpKPI2 = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
-                Padding = new Padding(14, 10, 14, 10)
-            };
-            tlpKPI2.RowStyles.Add(new RowStyle(SizeType.Percent, 45F));
-            tlpKPI2.RowStyles.Add(new RowStyle(SizeType.Percent, 55F));
+            Panel categoriesCard = BuildTableCard(
+                out lblCategoriesTitle, out dgvCategories,
+                "Best-Selling Categories", "lblCategoriesTitle");
+            categoriesCard.Margin = new Padding(10, 0, 0, 0);
+            tlpTables.Controls.Add(categoriesCard, 1, 0);
 
-            Label kpi2Title = new Label
-            {
-                Name = "kpi2Title", Text = "Average Order Value:",
-                Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.SecondaryColor,
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft,
-                AutoSize = false
-            };
-            lblKPI2Value = new Label
-            {
-                Text = "$0", Font = ThemeConfig.HeaderFont, ForeColor = ThemeConfig.TextColorDark,
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.TopLeft,
-                AutoSize = false
-            };
-            tlpKPI2.Controls.Add(kpi2Title, 0, 0);
-            tlpKPI2.Controls.Add(lblKPI2Value, 0, 1);
-
-            Panel kpi2 = ThemeConfig.CreateCardPanel(tlpKPI2);
-            kpi2.Dock = DockStyle.Fill;
-            kpi2.Margin = new Padding(0, 10, 0, 0);
-            tlpKPIs.Controls.Add(kpi2, 0, 1);
-
-            tlpBottom.Controls.Add(pnlKPIContainer, 0, 0);
-
-            // Bar Chart Card
-            chartBar = new Chart { Dock = DockStyle.Fill };
-            Panel pnlBar = ThemeConfig.CreateCardPanel(chartBar);
-            pnlBar.Dock = DockStyle.Fill;
-            pnlBar.Margin = new Padding(10, 0, 0, 0);
-            
-            Label lblBarTitle = GetTitleLabel("Top Selling Products (This Month)");
-            lblBarTitle.Name = "lblBarTitle";
-            pnlBar.Controls[0].Controls.Add(lblBarTitle);
-            lblBarTitle.BringToFront();
-
-            tlpBottom.Controls.Add(pnlBar, 1, 0);
+            tlpRoot.Controls.Add(tlpTables, 0, 2);
         }
 
-        private Label GetTitleLabel(string text)
+        private Panel BuildFilterBar()
         {
-            return new Label 
-            { 
-                Text = text, 
-                Dock = DockStyle.Top, 
-                Font = ThemeConfig.SubHeaderFont, 
+            var panel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 56,
+                Margin = new Padding(0, 0, 0, 4),
+                BackColor = Color.Transparent,
+                Padding = new Padding(0, 4, 0, 4)
+            };
+
+            var flow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                AutoScroll = true,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0, 4, 0, 0)
+            };
+
+            cmbPeriod = new ModernComboBox
+            {
+                Width = 160,
+                Height = 48,
+                Margin = new Padding(0, 0, 12, 0),
+                LabelText = "",
+                ShowLabel = false,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbPeriod.Items.AddRange(new object[] {
+                LocalizationManager.GetString("Rep_Period_Daily"),
+                LocalizationManager.GetString("Rep_Period_Weekly"),
+                LocalizationManager.GetString("Rep_Period_Monthly"),
+                LocalizationManager.GetString("Rep_Period_Yearly"),
+                LocalizationManager.GetString("Rep_Period_Custom")
+            });
+            cmbPeriod.SelectedIndex = 0;
+            cmbPeriod.InnerComboBox.SelectedIndexChanged += (s, e) =>
+            {
+                if (_suppressPeriodChange) return;
+                string key = PeriodKeyFromIndex(cmbPeriod.SelectedIndex);
+                ApplyPeriodPreset(key);
+                if (key != "Custom")
+                    LoadReport();
+            };
+
+            dtpFrom = new FlatDateTimePicker
+            {
+                Width = 150,
+                Height = 36,
+                Margin = new Padding(0, 4, 8, 0),
+                Value = DateTime.Today
+            };
+            dtpTo = new FlatDateTimePicker
+            {
+                Width = 150,
+                Height = 36,
+                Margin = new Padding(0, 4, 12, 0),
+                Value = DateTime.Today
+            };
+
+            var lblFrom = new Label
+            {
+                Name = "lblFrom",
+                Text = LocalizationManager.GetString("Rep_From"),
+                AutoSize = true,
+                Margin = new Padding(0, 12, 6, 0),
+                ForeColor = ThemeConfig.SecondaryColor,
+                Font = ThemeConfig.StandardFont
+            };
+            var lblTo = new Label
+            {
+                Name = "lblTo",
+                Text = LocalizationManager.GetString("Rep_To"),
+                AutoSize = true,
+                Margin = new Padding(0, 12, 6, 0),
+                ForeColor = ThemeConfig.SecondaryColor,
+                Font = ThemeConfig.StandardFont
+            };
+
+            btnApply = new ModernButton
+            {
+                Name = "btnApply",
+                Text = LocalizationManager.GetString("Rep_Apply"),
+                Width = 100,
+                Height = 36,
+                Margin = new Padding(0, 4, 12, 0)
+            };
+            ThemeConfig.ApplySecondaryButton(btnApply);
+            btnApply.Click += (s, e) =>
+            {
+                _currentPeriodKey = "Custom";
+                _suppressPeriodChange = true;
+                try
+                {
+                    if (cmbPeriod.SelectedIndex != 4)
+                        cmbPeriod.SelectedIndex = 4;
+                }
+                finally { _suppressPeriodChange = false; }
+                SetCustomDateEnabled(true);
+                LoadReport();
+            };
+
+            lblDateRange = new Label
+            {
+                Name = "lblDateRange",
+                AutoSize = true,
+                Margin = new Padding(8, 12, 0, 0),
                 ForeColor = ThemeConfig.TextColorDark,
-                Height = 35,
-                Padding = new Padding(15, 10, 0, 0)
+                Font = ThemeConfig.StandardFont,
+                Text = ""
+            };
+
+            flow.Controls.Add(cmbPeriod);
+            flow.Controls.Add(lblFrom);
+            flow.Controls.Add(dtpFrom);
+            flow.Controls.Add(lblTo);
+            flow.Controls.Add(dtpTo);
+            flow.Controls.Add(btnApply);
+            flow.Controls.Add(lblDateRange);
+            panel.Controls.Add(flow);
+            return panel;
+        }
+
+        private Panel BuildTableCard(out Label titleLabel, out DataGridView grid, string title, string titleName)
+        {
+            var content = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+
+            titleLabel = new Label
+            {
+                Name = titleName,
+                Text = title,
+                Font = ThemeConfig.SubHeaderFont,
+                ForeColor = ThemeConfig.TextColorDark,
+                Dock = DockStyle.Top,
+                Height = 32,
+                Padding = new Padding(2, 0, 0, 0)
+            };
+
+            grid = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                ReadOnly = true,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false,
+                RowHeadersVisible = false,
+                AllowUserToResizeRows = false
+            };
+            grid.DataError += (s, e) => { e.ThrowException = false; };
+            ThemeConfig.ApplyGridTheme(grid);
+
+            content.Controls.Add(grid);
+            content.Controls.Add(titleLabel);
+            titleLabel.BringToFront();
+
+            Panel card = ThemeConfig.CreateCardPanel(content);
+            card.Dock = DockStyle.Fill;
+            return card;
+        }
+
+        private StatCard CreateKpiCard(string title, string iconName, Color color)
+        {
+            return new StatCard
+            {
+                Title = title,
+                IconImage = ThemeConfig.GetNuricon(iconName),
+                ThemeColor = color,
+                Value = CurrencyService.Format(0),
+                Subtitle = "",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(4)
             };
         }
 
-        private void ApplyTheme()
+        private void ApplyPeriodPreset(string preset)
         {
-            // Adding Titles before applying theme
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
-            
-            chartValuation.Titles.Clear();
-            ThemeConfig.ApplyChartTheme(chartValuation);
-            
-            chartPie.Titles.Clear();
-            ThemeConfig.ApplyChartTheme(chartPie);
-            
-            chartBar.Titles.Clear();
-            ThemeConfig.ApplyChartTheme(chartBar);
-        }
-        
+            _currentPeriodKey = preset ?? "Daily";
+            var (from, to) = _reportService.GetPresetRange(_currentPeriodKey);
 
-        private void LoadCharts()
-        {
-            try 
+            bool isCustom = string.Equals(_currentPeriodKey, "Custom", StringComparison.OrdinalIgnoreCase);
+            SetCustomDateEnabled(isCustom);
+
+            if (!isCustom)
             {
-                // Ensure chart areas are initialized with the expected name
-                if (chartValuation.ChartAreas.Count == 0) chartValuation.ChartAreas.Add("Default");
-                chartValuation.ChartAreas[0].Name = "Default";
-                
-                if (chartPie.ChartAreas.Count == 0) chartPie.ChartAreas.Add("Default");
-                chartPie.ChartAreas[0].Name = "Default";
+                dtpFrom.Value = from;
+                dtpTo.Value = to;
+            }
+            else if (!dtpFrom.Value.HasValue || !dtpTo.Value.HasValue)
+            {
+                dtpFrom.Value = DateTime.Today;
+                dtpTo.Value = DateTime.Today;
+            }
+        }
 
-                if (chartBar.ChartAreas.Count == 0) chartBar.ChartAreas.Add("Default");
-                chartBar.ChartAreas[0].Name = "Default";
+        private static string PeriodKeyFromIndex(int index) => index switch
+        {
+            1 => "Weekly",
+            2 => "Monthly",
+            3 => "Yearly",
+            4 => "Custom",
+            _ => "Daily"
+        };
 
-                LoadValuationChart();
-                LoadCategoryChart();
-                LoadTopProductsChart();
+        private void SetCustomDateEnabled(bool enabled)
+        {
+            dtpFrom.Enabled = true;
+            dtpTo.Enabled = true;
+            _ = enabled;
+        }
+
+        private (DateTime from, DateTime to) GetSelectedRange()
+        {
+            DateTime from = dtpFrom.Value?.Date ?? DateTime.Today;
+            DateTime to = dtpTo.Value?.Date ?? DateTime.Today;
+            if (to < from)
+            {
+                var tmp = from;
+                from = to;
+                to = tmp;
+            }
+            return (from, to);
+        }
+
+        private void LoadReport()
+        {
+            try
+            {
+                var (from, to) = GetSelectedRange();
+                _currentSummary = _reportService.GetSummary(from, to);
+
+                cardExpenses.Value = CurrencyService.Format(_currentSummary.TotalExpenses);
+                cardCost.Value = CurrencyService.Format(_currentSummary.TotalCost);
+                cardSales.Value = CurrencyService.Format(_currentSummary.TotalSales);
+                cardProfit.Value = CurrencyService.Format(_currentSummary.TotalProfit);
+                cardProfitAfterExpenses.Value = CurrencyService.Format(_currentSummary.TotalProfitAfterExpenses);
+
+                string rangeText = from == to
+                    ? from.ToString("dd MMM yyyy")
+                    : $"{from:dd MMM yyyy} – {to:dd MMM yyyy}";
+                lblDateRange.Text = rangeText;
+
+                BindProductsGrid(_reportService.GetTopSellingProducts(from, to, 25));
+                BindCategoriesGrid(_reportService.GetTopSellingCategories(from, to, 25));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Chart Load Error: " + ex.Message);
+                ErrorLogger.LogError(ex, "ReportsForm.LoadReport");
+                MessageHelper.ShowError(LocalizationManager.GetString("Msg_LoadError", "Failed to load report: ") + ex.Message);
             }
         }
 
-        private void LoadValuationChart()
+        private void BindProductsGrid(DataTable dt)
         {
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
-            chartValuation.Series.Clear();
-            var s = new Series(L("Rep_ChartValuation"));
-            s.ChartArea = "Default";
-            s.ChartType = SeriesChartType.SplineArea; 
-            s.Color = Color.FromArgb(40, ThemeConfig.PrimaryColor); 
-            s.BorderColor = ThemeConfig.PrimaryColor; 
-            s.BorderWidth = 4;
-            
-            // Add to chart before points
-            chartValuation.Series.Add(s);
+            dgvProducts.DataSource = null;
+            dgvProducts.Columns.Clear();
 
-            // Database Data
-            var monthlyRevenue = _dashboardService.GetMonthlyRevenue();
-            foreach (var kvp in monthlyRevenue)
-            {
-                s.Points.AddXY(kvp.Key, kvp.Value);
-            }
+            var display = new DataTable();
+            display.Columns.Add("Product", typeof(string));
+            display.Columns.Add("Qty", typeof(decimal));
+            display.Columns.Add("Unit Price", typeof(string));
+            display.Columns.Add("Total Sales", typeof(string));
+            display.Columns.Add("Profit", typeof(string));
 
-            ThemeConfig.ApplyChartTheme(chartValuation);
-
-            // Update KPIs
-            lblKPI1Value.Text = _dashboardService.GetTotalSalesYTD().ToString("C");
-            lblKPI2Value.Text = _dashboardService.GetAverageOrderValue().ToString("C");
-        }
-
-        private void LoadCategoryChart()
-        {
-            chartPie.Series.Clear();
-            var s = new Series("Series1");
-            s.ChartArea = "Default";
-            s.ChartType = SeriesChartType.Doughnut;
-            chartPie.Series.Add(s);
-            
-            // Database Data
-            DataTable dt = _dashboardService.GetSalesByCategory();
             foreach (DataRow row in dt.Rows)
             {
-                s.Points.AddXY(row["category_name"].ToString(), Convert.ToDecimal(row["total_sales"]));
+                display.Rows.Add(
+                    row["product_name"]?.ToString() ?? "",
+                    Convert.ToDecimal(row["quantity_sold"] == DBNull.Value ? 0 : row["quantity_sold"]),
+                    CurrencyService.Format(Convert.ToDecimal(row["unit_price"] == DBNull.Value ? 0 : row["unit_price"])),
+                    CurrencyService.Format(Convert.ToDecimal(row["total_sales"] == DBNull.Value ? 0 : row["total_sales"])),
+                    CurrencyService.Format(Convert.ToDecimal(row["profit"] == DBNull.Value ? 0 : row["profit"]))
+                );
             }
-            
-            ThemeConfig.ApplyChartTheme(chartPie);
-            
-            // Colors from Palette
-            for(int i=0; i<s.Points.Count; i++) s.Points[i].Color = ThemeConfig.ChartPalette[i % ThemeConfig.ChartPalette.Length];
+
+            dgvProducts.DataSource = display;
+            LocalizeGridHeaders(dgvProducts, new[]
+            {
+                ("Product", "Rep_ColProduct"),
+                ("Qty", "Rep_ColQty"),
+                ("Unit Price", "Rep_ColUnitPrice"),
+                ("Total Sales", "Rep_ColTotalSales"),
+                ("Profit", "Rep_ColProfit")
+            });
         }
 
-        private void LoadTopProductsChart()
+        private void BindCategoriesGrid(DataTable dt)
         {
-            Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
-            chartBar.Series.Clear();
-            var s = new Series(L("Rep_ChartSales"));
-            s.ChartArea = "Default";
-            s.ChartType = SeriesChartType.Column; 
-            s.Color = ThemeConfig.PrimaryColor;
-            chartBar.Series.Add(s);
+            dgvCategories.DataSource = null;
+            dgvCategories.Columns.Clear();
 
-            // Database Data
-            DataTable dt = _dashboardService.GetTopSellingItems(5);
+            var display = new DataTable();
+            display.Columns.Add("Category", typeof(string));
+            display.Columns.Add("Qty", typeof(decimal));
+            display.Columns.Add("Total Sales", typeof(string));
+            display.Columns.Add("Profit", typeof(string));
+
             foreach (DataRow row in dt.Rows)
             {
-                s.Points.AddXY(row["part_name"].ToString(), Convert.ToInt32(row["total_sold"]));
+                display.Rows.Add(
+                    row["category_name"]?.ToString() ?? "",
+                    Convert.ToDecimal(row["quantity_sold"] == DBNull.Value ? 0 : row["quantity_sold"]),
+                    CurrencyService.Format(Convert.ToDecimal(row["total_sales"] == DBNull.Value ? 0 : row["total_sales"])),
+                    CurrencyService.Format(Convert.ToDecimal(row["profit"] == DBNull.Value ? 0 : row["profit"]))
+                );
             }
 
-            ThemeConfig.ApplyChartTheme(chartBar);
+            dgvCategories.DataSource = display;
+            LocalizeGridHeaders(dgvCategories, new[]
+            {
+                ("Category", "Rep_ColCategory"),
+                ("Qty", "Rep_ColQty"),
+                ("Total Sales", "Rep_ColTotalSales"),
+                ("Profit", "Rep_ColProfit")
+            });
         }
 
+        private void LocalizeGridHeaders(DataGridView grid, (string col, string key)[] map)
+        {
+            foreach (var (col, key) in map)
+            {
+                if (grid.Columns.Contains(col))
+                    grid.Columns[col].HeaderText = LocalizationManager.GetString(key, col);
+            }
+        }
+
+        private void ExportToExcel()
+        {
+            try
+            {
+                var (from, to) = GetSelectedRange();
+                var summary = _currentSummary ?? _reportService.GetSummary(from, to);
+                DataTable detail = _reportService.GetSoldProductsDetail(from, to);
+
+                using var saveDialog = new SaveFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx)|*.xlsx",
+                    FileName = $"{LocalizationManager.GetString("Rep_ExportFilePrefix", "Sales_Report")}_{from:yyyyMMdd}_{to:yyyyMMdd}.xlsx",
+                    Title = LocalizationManager.GetString("Rep_ExportTitle", "Export Sales Report")
+                };
+
+                if (saveDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                string periodLabel = LocalizationManager.GetString("Rep_Period_" + _currentPeriodKey, _currentPeriodKey);
+
+                if (ImportExportHelper.ExportSalesReport(saveDialog.FileName, summary, detail, periodLabel))
+                {
+                    MessageHelper.ShowSuccess(
+                        LocalizationManager.GetString("Rep_ExportSuccess", "Report exported successfully."));
+                }
+                else
+                {
+                    MessageHelper.ShowError(
+                        LocalizationManager.GetString("Msg_ExportFailed", "Export failed."));
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "ReportsForm.ExportToExcel");
+                MessageHelper.ShowError(
+                    LocalizationManager.GetString("Msg_ExportError", "Export error: ") + ex.Message);
+            }
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            string L(string key, string fallback) => LocalizationManager.GetString(key, fallback);
+
+            var title = this.Controls.Find("lblMainTitle", true);
+            if (title.Length > 0) title[0].Text = L("Rep_Title", "Sales Reports");
+
+            if (btnExport != null) btnExport.Text = L("Rep_Export", "Export to Excel");
+            if (btnApply != null) btnApply.Text = L("Rep_Apply", "Apply");
+
+            var lblFrom = this.Controls.Find("lblFrom", true);
+            if (lblFrom.Length > 0) lblFrom[0].Text = L("Rep_From", "From");
+            var lblTo = this.Controls.Find("lblTo", true);
+            if (lblTo.Length > 0) lblTo[0].Text = L("Rep_To", "To");
+
+            if (lblProductsTitle != null)
+                lblProductsTitle.Text = L("Rep_TopProductsTitle", "Best-Selling Products");
+            if (lblCategoriesTitle != null)
+                lblCategoriesTitle.Text = L("Rep_TopCategoriesTitle", "Best-Selling Categories");
+
+            if (cardExpenses != null) cardExpenses.Title = L("Rep_MonthlyExpenses", "Monthly Expenses");
+            if (cardCost != null) cardCost.Title = L("Rep_TotalCost", "Product Cost");
+            if (cardSales != null) cardSales.Title = L("Rep_TotalSales", "Total Sales");
+            if (cardProfit != null) cardProfit.Title = L("Rep_TotalProfit", "Total Profit");
+            if (cardProfitAfterExpenses != null) cardProfitAfterExpenses.Title = L("Rep_ProfitAfterExpenses", "Profit After Expenses");
+
+            // Refresh period combo labels while preserving selection
+            if (cmbPeriod != null)
+            {
+                int idx = cmbPeriod.SelectedIndex;
+                _suppressPeriodChange = true;
+                try
+                {
+                    cmbPeriod.Items.Clear();
+                    cmbPeriod.Items.Add(L("Rep_Period_Daily", "Daily"));
+                    cmbPeriod.Items.Add(L("Rep_Period_Weekly", "Weekly"));
+                    cmbPeriod.Items.Add(L("Rep_Period_Monthly", "Monthly"));
+                    cmbPeriod.Items.Add(L("Rep_Period_Yearly", "Yearly"));
+                    cmbPeriod.Items.Add(L("Rep_Period_Custom", "Custom"));
+                    cmbPeriod.SelectedIndex = Math.Max(0, Math.Min(idx, cmbPeriod.Items.Count - 1));
+                }
+                finally { _suppressPeriodChange = false; }
+            }
+
+            if (dgvProducts?.DataSource != null)
+                LocalizeGridHeaders(dgvProducts, new[]
+                {
+                    ("Product", "Rep_ColProduct"),
+                    ("Qty", "Rep_ColQty"),
+                    ("Unit Price", "Rep_ColUnitPrice"),
+                    ("Total Sales", "Rep_ColTotalSales"),
+                    ("Profit", "Rep_ColProfit")
+                });
+            if (dgvCategories?.DataSource != null)
+                LocalizeGridHeaders(dgvCategories, new[]
+                {
+                    ("Category", "Rep_ColCategory"),
+                    ("Qty", "Rep_ColQty"),
+                    ("Total Sales", "Rep_ColTotalSales"),
+                    ("Profit", "Rep_ColProfit")
+                });
+        }
     }
 }
-

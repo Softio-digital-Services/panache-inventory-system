@@ -21,9 +21,32 @@ namespace InventorySystem.Forms
         public ProductSelectorForm()
         {
             InitializeComponent();
-            LocalizationManager.ApplyRTL(this);
-            ApplyTheme();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
             LoadProducts();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Title_SelectProduct");
+            SetFooterButtons(
+                LocalizationManager.GetString("Msg_AddSelected"),
+                LocalizationManager.GetString("Popup_Cancel"),
+                (s, e) => SelectAndClose(),
+                (s, e) => { DialogResult = DialogResult.Cancel; Close(); }
+            );
+            LocalizeGridHeaders();
+        }
+
+        private void LocalizeGridHeaders()
+        {
+            if (dgvProducts?.Columns == null) return;
+            if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = LocalizationManager.GetString("Prod_GridName");
+            if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = LocalizationManager.GetString("Prod_GridSKU");
+            if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = LocalizationManager.GetString("Prod_GridBarcode");
+            if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = LocalizationManager.GetString("Prod_GridPrice");
+            if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = LocalizationManager.GetString("Prod_GridStock");
         }
 
         private void InitializeComponent()
@@ -47,12 +70,7 @@ namespace InventorySystem.Forms
 
             this.ContentPanel.Controls.Add(tlp);
 
-            SetFooterButtons(
-                LocalizationManager.GetString("Msg_AddSelected"),
-                LocalizationManager.GetString("Popup_Cancel"),
-                (s, e) => SelectAndClose(),
-                (s, e) => { DialogResult = DialogResult.Cancel; Close(); }
-            );
+            ApplyTheme();
         }
 
         private void ApplyTheme()
@@ -73,15 +91,7 @@ namespace InventorySystem.Forms
                 }
                 dgvProducts.DataSource = DatabaseHelper.ExecuteDataTable(sql);
                 if (dgvProducts.Columns["id"] != null) dgvProducts.Columns["id"].Visible = false;
-
-                if (LocalizationManager.IsArabic)
-                {
-                if (dgvProducts.Columns["Name"] != null) dgvProducts.Columns["Name"].HeaderText = LocalizationManager.GetString("Prod_GridName");
-                if (dgvProducts.Columns["SKU"] != null) dgvProducts.Columns["SKU"].HeaderText = LocalizationManager.GetString("Prod_GridSKU");
-                if (dgvProducts.Columns["Barcode"] != null) dgvProducts.Columns["Barcode"].HeaderText = LocalizationManager.GetString("Prod_GridBarcode");
-                if (dgvProducts.Columns["Price"] != null) dgvProducts.Columns["Price"].HeaderText = LocalizationManager.GetString("Prod_GridPrice");
-                if (dgvProducts.Columns["Stock"] != null) dgvProducts.Columns["Stock"].HeaderText = LocalizationManager.GetString("Prod_GridStock");
-                }
+                LocalizeGridHeaders();
             }
             catch (Exception ex)
             {

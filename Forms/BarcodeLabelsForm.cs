@@ -27,6 +27,7 @@ namespace InventorySystem.Forms
             InitializeComponent();
             SetupSearchTimer();
             ApplyTheme();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
         }
 

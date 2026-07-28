@@ -80,7 +80,7 @@ namespace InventorySystem.Forms
             pnlCustomer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             pnlCustomer.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 45F));
             
-            cmbCustomer = new ModernComboBox { LabelText = "Customer", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 5, 0) };
+            cmbCustomer = new ModernComboBox { Name = "cmbCustomer", LabelText = LocalizationManager.GetString("POS_Customer"), Dock = DockStyle.Fill, Margin = new Padding(0, 0, 5, 0) };
             
             Button btnAddCustomer = new Button 
             { 
@@ -97,7 +97,7 @@ namespace InventorySystem.Forms
             // Shipping To
             txtShippingTo = new ModernTextBox 
             { 
-                LabelText = "Shipping To", 
+                LabelText = LocalizationManager.GetString("POS_ShippingTo"), 
                 Dock = DockStyle.Fill, 
                 Multiline = true, 
                 Height = 80, 
@@ -105,20 +105,17 @@ namespace InventorySystem.Forms
             };
             tlpMain.Controls.Add(txtShippingTo, 0, 1);
 
-            // Order Date
-            lblOrderDate = new Label { Text = "Order Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
+            lblOrderDate = new Label { Text = LocalizationManager.GetString("POS_OrderDate"), Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtpOrderDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 35, Margin = new Padding(0, 0, 0, 15) };
             tlpMain.Controls.Add(lblOrderDate, 0, 2);
             tlpMain.Controls.Add(dtpOrderDate, 0, 3);
  
-            // Delivery Date
-            lblDeliveryDate = new Label { Text = "Delivery Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
+            lblDeliveryDate = new Label { Text = LocalizationManager.GetString("POS_DeliveryDate"), Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtpDeliveryDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 35, Margin = new Padding(0, 0, 0, 15) };
             tlpMain.Controls.Add(lblDeliveryDate, 0, 4);
             tlpMain.Controls.Add(dtpDeliveryDate, 0, 5);
  
-            // Payment Due Date
-            lblPaymentDue = new Label { Text = "Payment Due Date", Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
+            lblPaymentDue = new Label { Text = LocalizationManager.GetString("AddCust_DueDate"), Font = ThemeConfig.SmallBoldFont, ForeColor = ThemeConfig.TextColorDark, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
             dtpPaymentDueDate = new FlatDateTimePicker { Dock = DockStyle.Fill, Height = 35, Margin = new Padding(0, 0, 0, 15) };
             tlpMain.Controls.Add(lblPaymentDue, 0, 6);
             tlpMain.Controls.Add(dtpPaymentDueDate, 0, 7);

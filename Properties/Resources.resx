@@ -99,6 +99,9 @@
   <data name="POS_Shipping" xml:space="preserve">
     <value>Shipping</value>
   </data>
+  <data name="POS_Discount" xml:space="preserve">
+    <value>Discount</value>
+  </data>
   <data name="POS_GrandTotal" xml:space="preserve">
     <value>Grand Total</value>
   </data>
@@ -430,7 +433,7 @@
     <value>Supplier</value>
   </data>
   <data name="Rep_Title" xml:space="preserve">
-    <value>Analytics &amp; Reports</value>
+    <value>Sales Reports</value>
   </data>
   <data name="Rep_ValuationTitle" xml:space="preserve">
     <value>Inventory Valuation Over Time</value>
@@ -439,10 +442,13 @@
     <value>Sales by Category</value>
   </data>
   <data name="Rep_TopProductsTitle" xml:space="preserve">
-    <value>Top Selling Products (This Month)</value>
+    <value>Best-Selling Products</value>
+  </data>
+  <data name="Rep_TopCategoriesTitle" xml:space="preserve">
+    <value>Best-Selling Categories</value>
   </data>
   <data name="Rep_TotalSales" xml:space="preserve">
-    <value>Total Sales (YTD):</value>
+    <value>Total Sales</value>
   </data>
   <data name="Rep_AvgOrder" xml:space="preserve">
     <value>Average Order Value:</value>
@@ -452,6 +458,96 @@
   </data>
   <data name="Rep_ChartSales" xml:space="preserve">
     <value>Sales</value>
+  </data>
+  <data name="Rep_MonthlyExpenses" xml:space="preserve">
+    <value>Monthly Expenses</value>
+  </data>
+  <data name="Rep_TotalCost" xml:space="preserve">
+    <value>Product Cost</value>
+  </data>
+  <data name="Rep_TotalProfit" xml:space="preserve">
+    <value>Total Profit</value>
+  </data>
+  <data name="Rep_ProfitAfterExpenses" xml:space="preserve">
+    <value>Profit After Expenses</value>
+  </data>
+  <data name="Rep_From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Rep_To" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Rep_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Rep_Export" xml:space="preserve">
+    <value>Export to Excel</value>
+  </data>
+  <data name="Rep_ExportTitle" xml:space="preserve">
+    <value>Export Sales Report</value>
+  </data>
+  <data name="Rep_ExportSuccess" xml:space="preserve">
+    <value>Report exported successfully.</value>
+  </data>
+  <data name="Rep_Period_Daily" xml:space="preserve">
+    <value>Daily</value>
+  </data>
+  <data name="Rep_Period_Weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="Rep_Period_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="Rep_Period_Yearly" xml:space="preserve">
+    <value>Yearly</value>
+  </data>
+  <data name="Rep_Period_Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="Rep_ColProduct" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Rep_ColCategory" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Rep_ColQty" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="Rep_ColUnitPrice" xml:space="preserve">
+    <value>Unit Price</value>
+  </data>
+  <data name="Rep_ColTotalSales" xml:space="preserve">
+    <value>Total Sales</value>
+  </data>
+  <data name="Rep_ColProfit" xml:space="preserve">
+    <value>Profit</value>
+  </data>
+  <data name="Rep_ColTotalCost" xml:space="preserve">
+    <value>Total Cost</value>
+  </data>
+  <data name="Rep_ColQuantitySold" xml:space="preserve">
+    <value>Quantity Sold</value>
+  </data>
+  <data name="Rep_ExportPeriodLabel" xml:space="preserve">
+    <value>Period</value>
+  </data>
+  <data name="Rep_ExportSummary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="Rep_ExportSoldProducts" xml:space="preserve">
+    <value>Sold Products</value>
+  </data>
+  <data name="Rep_ExportFinalTotals" xml:space="preserve">
+    <value>Final Totals</value>
+  </data>
+  <data name="Rep_ExportSheetName" xml:space="preserve">
+    <value>Sales Report</value>
+  </data>
+  <data name="Rep_ExportTotalCostProducts" xml:space="preserve">
+    <value>Total Cost of Products</value>
+  </data>
+  <data name="Rep_ExportFilePrefix" xml:space="preserve">
+    <value>Sales_Report</value>
   </data>
   <data name="Popup_Phone" xml:space="preserve">
     <value>Phone Number</value>
@@ -1283,6 +1379,9 @@ Or click the link above to copy it</value>
   </data>
   <data name="Users_GridUsername" xml:space="preserve">
     <value>Username</value>
+  </data>
+  <data name="Users_GridRole" xml:space="preserve">
+    <value>Role</value>
   </data>
   <data name="Title_BarcodeLabels" xml:space="preserve">
     <value>Generate Barcode Labels</value>
@@ -2129,5 +2228,159 @@ Accepted By: __________________________</value>
   </data>
   <data name="OrderDetails_NotFound" xml:space="preserve">
     <value>Order not found.</value>
+  </data>
+  <data name="POS_Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="POS_OrderedItems" xml:space="preserve">
+    <value>Current Order</value>
+  </data>
+  <data name="POS_PaymentSummary" xml:space="preserve">
+    <value>Payment Summary</value>
+  </data>
+  <data name="POS_NewOrder" xml:space="preserve">
+    <value>New Order</value>
+  </data>
+  <data name="POS_PageTitle" xml:space="preserve">
+    <value>Point of Sale</value>
+  </data>
+  <data name="POS_MenuTitle" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="POS_SearchProducts" xml:space="preserve">
+    <value>Search products...</value>
+  </data>
+  <data name="POS_SelectCustomerForBill" xml:space="preserve">
+    <value>Please select a registered customer to add to their bill.</value>
+  </data>
+  <data name="POS_Currency" xml:space="preserve">
+    <value>Currency</value>
+  </data>
+  <data name="POS_Print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="POS_PlaceOrder" xml:space="preserve">
+    <value>Place Order</value>
+  </data>
+  <data name="POS_AllCategories" xml:space="preserve">
+    <value>All Categories</value>
+  </data>
+  <data name="POS_Others" xml:space="preserve">
+    <value>Others</value>
+  </data>
+  <data name="POS_NoProductsFound" xml:space="preserve">
+    <value>No products found.</value>
+  </data>
+  <data name="POS_OutOfStockBadge" xml:space="preserve">
+    <value>Out of Stock</value>
+  </data>
+  <data name="POS_TotalPayable" xml:space="preserve">
+    <value>Total Payable</value>
+  </data>
+  <data name="POS_CustomerBill" xml:space="preserve">
+    <value>Customer Bill</value>
+  </data>
+  <data name="POS_LowStock" xml:space="preserve">
+    <value>Low: {0}</value>
+  </data>
+  <data name="Msg_ErrorLoadingProducts" xml:space="preserve">
+    <value>Error loading products: {0}</value>
+  </data>
+  <data name="Nav_VersionFooter" xml:space="preserve">
+    <value>{0} | Version 1.0.2 | (c) 2026 Softio Services</value>
+  </data>
+  <data name="POS_WalkInCustomer" xml:space="preserve">
+    <value>Walk-in</value>
+  </data>
+  <data name="Parts_GridUom" xml:space="preserve">
+    <value>UOM</value>
+  </data>
+  <data name="Scale_FormTitle" xml:space="preserve">
+    <value>TM-A17 Scale Settings &amp; Calibration</value>
+  </data>
+  <data name="Scale_Disconnect" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="Return_TotalRefund" xml:space="preserve">
+    <value>Total Refund: {0}</value>
+  </data>
+  <data name="Return_TitleWithOrder" xml:space="preserve">
+    <value>{0} - Order #{1}</value>
+  </data>
+  <data name="Msg_ErrorLoadingItems" xml:space="preserve">
+    <value>Error loading items: {0}</value>
+  </data>
+  <data name="AddCat_TitleEdit" xml:space="preserve">
+    <value>Edit Category: {0}</value>
+  </data>
+  <data name="AboutUs_AppName" xml:space="preserve">
+    <value>Panache Inventory</value>
+  </data>
+  <data name="AboutUs_Version" xml:space="preserve">
+    <value>Version 1.0.2 Platinum</value>
+  </data>
+  <data name="AboutUs_Copyright" xml:space="preserve">
+    <value>© 2026 Softio Services. All Rights Reserved.</value>
+  </data>
+  <data name="QuotePreview_ColPhoto" xml:space="preserve">
+    <value>Photo</value>
+  </data>
+  <data name="QuotePreview_ColDesc" xml:space="preserve">
+    <value>Item Description</value>
+  </data>
+  <data name="QuotePreview_CustHeader" xml:space="preserve">
+    <value>Customer Details</value>
+  </data>
+  <data name="QuotePreview_WalkIn" xml:space="preserve">
+    <value>Walk-in Customer</value>
+  </data>
+  <data name="QuotePreview_CompanyInfo" xml:space="preserve">
+    <value>Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731</value>
+  </data>
+  <data name="QuotePreview_ContactFooter" xml:space="preserve">
+    <value>Phone: +961 76 117731  |  Email: contact@panache.com  |  Website: www.panache.com</value>
+  </data>
+  <data name="QuotePreview_MetaLine" xml:space="preserve">
+    <value>QUOTE #: {0}   |   DATE: {1}   |   CUST ID: {2}   |   VALIDITY: {3}</value>
+  </data>
+  <data name="QuotePreview_ValidityDays" xml:space="preserve">
+    <value>15 Days</value>
+  </data>
+  <data name="QuotePreview_ContinuedPage" xml:space="preserve">
+    <value>QUOTATION #{0} (Continued - Page {1})</value>
+  </data>
+  <data name="QuotePreview_PageN" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="QuotePreview_NoAddress" xml:space="preserve">
+    <value>No Address Provided</value>
+  </data>
+  <data name="QuotePreview_NoPhone" xml:space="preserve">
+    <value>No Phone Provided</value>
+  </data>
+  <data name="QuotePreview_CustInfoLine" xml:space="preserve">
+    <value>{0}
+{1}: {2} | {3}: {4}</value>
+  </data>
+  <data name="QuotePreview_LoadError" xml:space="preserve">
+    <value>Could not load quotation details: {0}</value>
+  </data>
+  <data name="QuotePreview_PrintFailed" xml:space="preserve">
+    <value>Printing failed: {0}</value>
+  </data>
+  <data name="QuotePreview_ExportFailed" xml:space="preserve">
+    <value>Export failed: {0}</value>
+  </data>
+  <data name="QuotePreview_ExportPdfTitle" xml:space="preserve">
+    <value>Export to PDF</value>
+  </data>
+  <data name="QuotePreview_ExportSuccess" xml:space="preserve">
+    <value>Quotation exported as PDF successfully!</value>
+  </data>
+  <data name="Msg_ErrorUploadImage" xml:space="preserve">
+    <value>Error uploading image: {0}</value>
+  </data>
+  <data name="Msg_SearchQuotations" xml:space="preserve">
+    <value>Search quotations...</value>
   </data>
 </root>

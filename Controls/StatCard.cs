@@ -23,7 +23,11 @@ namespace InventorySystem.Controls
         public string Value 
         { 
             get => _lblValue.Text; 
-            set => _lblValue.Text = value; 
+            set
+            {
+                _lblValue.Text = value;
+                if (_compact) RepositionForRTL();
+            }
         }
 
         public string Subtitle 
@@ -75,6 +79,39 @@ namespace InventorySystem.Controls
             }
         }
 
+        private int _cornerRadius = 15;
+        public int CornerRadius
+        {
+            get => _cornerRadius;
+            set { _cornerRadius = Math.Max(4, value); ApplyRoundedRegion(); Invalidate(); }
+        }
+
+        private bool _compact;
+        /// <summary>
+        /// Tighter typography and a vertically centred title/value block, for rails
+        /// and toolbars where the card is short and has no subtitle.
+        /// </summary>
+        public bool Compact
+        {
+            get => _compact;
+            set
+            {
+                _compact = value;
+                if (_lblTitle == null) return;
+                _lblTitle.Font = ValueFont(value ? 9.5F : 12F);
+                if (value)
+                    _fittedText = null; // force FitValueFont to pick a size
+                else
+                    _lblValue.Font = ValueFont(22F);
+                _lblSubtitle.Visible = !value;
+                _iconPadding = value ? 4 : 8;
+                _cornerRadius = value ? 16 : 15;
+                MinimumSize = value ? new Size(100, 72) : new Size(120, 90);
+                RepositionForRTL();
+                ApplyRoundedRegion();
+            }
+        }
+
         public StatCard()
         {
             InitializeControls();
@@ -88,8 +125,11 @@ namespace InventorySystem.Controls
             this.BackColor = Color.Transparent;
             
             // Container for Icon
-            _iconPanel = new Panel();
-            _iconPanel.Size = new Size(50, 50);
+            _iconPanel = new Panel
+            {
+                Size = new Size(50, 50),
+                BackColor = Color.Transparent
+            };
             _iconPanel.Location = new Point(this.Width - 65, 20); // Top Right
             _iconPanel.Paint += IconPanel_Paint;
             
@@ -100,27 +140,28 @@ namespace InventorySystem.Controls
             _lblTitle = new Label
             {
                 Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                ForeColor = ThemeConfig.MutedTextColor, // Cool Gray
+                ForeColor = ThemeConfig.MutedTextColor,
                 AutoSize = true,
-                Location = new Point(20, 15) // Adjusted Top
+                Location = new Point(20, 15),
+                BackColor = Color.Transparent
             };
-
 
             _lblValue = new Label
             {
                 Font = new Font("Segoe UI", 22F, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark, // Dark Navy
+                ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
-                Location = new Point(18, 40)
+                Location = new Point(18, 40),
+                BackColor = Color.Transparent
             };
-
 
             _lblSubtitle = new Label
             {
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 ForeColor = ThemeConfig.MutedTextColor,
                 AutoSize = true,
-                Location = new Point(22, 85)
+                Location = new Point(22, 85),
+                BackColor = Color.Transparent
             };
 
 
@@ -132,21 +173,27 @@ namespace InventorySystem.Controls
             // Initial Theme
             this.ThemeColor = Color.FromArgb(67, 24, 255); // Default Blue
             
-            // Resize handling: reposition icon based on layout direction
-            this.Resize += (s, e) => {
-                bool isRtl = this.RightToLeft == RightToLeft.Yes;
-                _iconPanel.Location = isRtl ? new Point(15, 25) : new Point(this.Width - 70, 25);
-            };
-            
-            
-            // RightToLeft changed: reposition everything
             this.RightToLeftChanged += (s, e) => RepositionForRTL();
+            RepositionForRTL();
+            ApplyRoundedRegion();
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
             RepositionForRTL();
+            ApplyRoundedRegion();
+        }
+
+        private void ApplyRoundedRegion()
+        {
+            if (Width < 8 || Height < 8) return;
+            // Full bounds (not Width-1): a one-pixel shortfall leaves the bottom and
+            // right edges looking squared off once the region clips the card.
+            using var path = GetRoundedRect(new Rectangle(0, 0, Width, Height), _cornerRadius);
+            var old = Region;
+            Region = new Region(path);
+            old?.Dispose();
         }
 
         private void RepositionForRTL()
@@ -157,7 +204,13 @@ namespace InventorySystem.Controls
             // Use IsArabic as the source of truth — the inherited RightToLeft property
             // may not have propagated yet when OnResize fires during initialization.
             bool isRtl = Helpers.LocalizationManager.IsArabic;
-            
+
+            if (_compact)
+            {
+                RepositionCompact(isRtl);
+                return;
+            }
+
             // Icon Position
             _iconPanel.Location = isRtl ? new Point(15, 25) : new Point(this.Width - 70, 25);
             
@@ -207,6 +260,98 @@ namespace InventorySystem.Controls
             _lblTitle.TextAlign    = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
             _lblValue.TextAlign    = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
             _lblSubtitle.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+        }
+
+        private bool _repositioning;
+
+        private void RepositionCompact(bool isRtl)
+        {
+            if (this.Width < 8 || this.Height < 8) return;
+            if (_repositioning) return;
+            _repositioning = true;
+            try { LayoutCompact(isRtl); }
+            finally { _repositioning = false; }
+        }
+
+        private void LayoutCompact(bool isRtl)
+        {
+            const int edge = 14;
+            const int iconSize = 36;
+            const int gap = 10;
+
+            _iconPanel.Size = new Size(iconSize, iconSize);
+            int iconY = (Height - iconSize) / 2;
+            _iconPanel.Location = isRtl
+                ? new Point(edge, iconY)
+                : new Point(Math.Max(edge, Width - iconSize - edge), iconY);
+
+            int labelX = isRtl ? edge + iconSize + gap : edge;
+            int labelWidth = Math.Max(28, Width - iconSize - edge * 2 - gap);
+
+            FitValueFont(labelWidth);
+
+            int titleH = TextRenderer.MeasureText("Ag", _lblTitle.Font).Height;
+            int valueH = TextRenderer.MeasureText("0", _lblValue.Font).Height + 2;
+            int top = Math.Max(4, (Height - (titleH + valueH)) / 2);
+
+            _lblTitle.AutoSize = false;
+            _lblValue.AutoSize = false;
+            _lblTitle.Size = new Size(labelWidth, titleH);
+            _lblValue.Size = new Size(labelWidth, valueH);
+            _lblTitle.Location = new Point(labelX, top);
+            _lblValue.Location = new Point(labelX, top + titleH);
+
+            _lblTitle.RightToLeft = RightToLeft.No;
+            _lblValue.RightToLeft = RightToLeft.No;
+            _lblTitle.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            _lblValue.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            _lblTitle.AutoEllipsis = true;
+        }
+
+        // Shared across every card and never disposed: assigning a Label.Font raises
+        // a resize, which re-enters the layout, so a per-instance font could be
+        // disposed while still in use.
+        private static readonly System.Collections.Generic.Dictionary<float, Font> _valueFonts = new();
+
+        private static Font ValueFont(float size)
+        {
+            if (!_valueFonts.TryGetValue(size, out Font f))
+            {
+                f = new Font("Segoe UI", size, FontStyle.Bold);
+                _valueFonts[size] = f;
+            }
+            return f;
+        }
+
+        private string _fittedText;
+        private int _fittedWidth;
+
+        /// <summary>
+        /// Steps the value font down until the figure fits, so long amounts like
+        /// "$12,345.67" shrink instead of being cut off.
+        /// </summary>
+        private void FitValueFont(int maxWidth)
+        {
+            string text = _lblValue.Text ?? "";
+            if (maxWidth <= 0) return;
+            if (text == _fittedText && maxWidth == _fittedWidth) return;
+
+            _fittedText = text;
+            _fittedWidth = maxWidth;
+
+            Font chosen = ValueFont(11F);
+            for (float size = 19F; size >= 11F; size -= 1F)
+            {
+                Font candidate = ValueFont(size);
+                if (TextRenderer.MeasureText(text, candidate).Width <= maxWidth)
+                {
+                    chosen = candidate;
+                    break;
+                }
+            }
+
+            if (!ReferenceEquals(_lblValue.Font, chosen))
+                _lblValue.Font = chosen;
         }
 
         // Call this after setting Value/Title to ensure labels move if their width changed
@@ -278,7 +423,7 @@ namespace InventorySystem.Controls
             }
 
             Rectangle r = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
-            using (var path = GetRoundedRect(r, 15))
+            using (var path = GetRoundedRect(r, _cornerRadius))
             {
                 // 2. Fill rounded card with surface color
                 using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))

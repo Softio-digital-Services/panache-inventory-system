@@ -105,7 +105,7 @@ namespace InventorySystem.Forms
             this.txtSearch = new ModernTextBox();
             txtSearch.IsSearch = true;
             txtSearch.ShowLabel = false;
-            txtSearch.PlaceholderText = "Search Suppliers...";
+            txtSearch.PlaceholderText = LocalizationManager.GetString("Sup_Search");
             txtSearch.Size = new Size(320, 35);
             txtSearch.TextChanged += (s, e) =>
             {
@@ -223,13 +223,13 @@ namespace InventorySystem.Forms
             // Columns
             dgvSuppliers.Columns.Clear();
             dgvSuppliers.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, ReadOnly = false });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCompany", HeaderText = "Company Name", DataPropertyName = "supplier_name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPhone", HeaderText = "Phone", DataPropertyName = "phone", Width = 120, ReadOnly = true });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail", HeaderText = "Email", DataPropertyName = "email", Width = 200, ReadOnly = true });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colAddress", HeaderText = "Address", DataPropertyName = "address", Width = 200, ReadOnly = true });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBalance", HeaderText = "Balance Due", DataPropertyName = "balance_due", Width = 120, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", HeaderText = "Due Date", DataPropertyName = "payment_due_date", Width = 100, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd" } });
-            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = "Actions", Width = 100, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCompany", HeaderText = LocalizationManager.GetString("Sup_GridCompany"), DataPropertyName = "supplier_name", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPhone", HeaderText = LocalizationManager.GetString("Sup_GridPhone"), DataPropertyName = "phone", Width = 120, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail", HeaderText = LocalizationManager.GetString("Sup_GridEmail"), DataPropertyName = "email", Width = 200, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colAddress", HeaderText = LocalizationManager.GetString("Cust_GridAddress"), DataPropertyName = "address", Width = 200, ReadOnly = true });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBalance", HeaderText = LocalizationManager.GetString("Cust_GridBalance"), DataPropertyName = "balance_due", Width = 120, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" } });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDueDate", HeaderText = LocalizationManager.GetString("AddSup_DueDate"), DataPropertyName = "payment_due_date", Width = 100, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd" } });
+            dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "colActions", HeaderText = LocalizationManager.GetString("Sup_GridActions"), Width = 100, ReadOnly = true });
 
             // Hidden Fields
             dgvSuppliers.Columns.Add(new DataGridViewTextBoxColumn { Name = "ID", DataPropertyName = "id", Visible = false });

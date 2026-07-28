@@ -57,6 +57,27 @@ namespace InventorySystem.Helpers
             }
             catch { }
 
+            ResetTranslationCaches();
+            // #region agent log
+            try
+            {
+                int loginVisible = 0;
+                foreach (Form f in Application.OpenForms)
+                    if (f is LoginForm lf && lf.Visible) loginVisible++;
+                string line = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["sessionId"] = "1f5731",
+                    ["runId"] = "lang-switch",
+                    ["hypothesisId"] = "H6",
+                    ["location"] = "LocalizationManager.SetLanguage",
+                    ["message"] = "language set",
+                    ["data"] = new Dictionary<string, object> { ["culture"] = cultureCode, ["loginFormsVisible"] = loginVisible },
+                    ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                }) + Environment.NewLine;
+                File.AppendAllText(@"c:\Users\Baraa\source\repos\panache-inventory-system\debug-1f5731.log", line);
+            }
+            catch { }
+            // #endregion
             LanguageChanged?.Invoke(null, EventArgs.Empty);
         }
 
@@ -105,6 +126,30 @@ namespace InventorySystem.Helpers
         private static ConditionalWeakTable<Control, ValueBox<Point>> _originalLocations = new ConditionalWeakTable<Control, ValueBox<Point>>();
         private static ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>> _originalFlowDirections = new ConditionalWeakTable<FlowLayoutPanel, ValueBox<FlowDirection>>();
         private static ConditionalWeakTable<DataGridViewColumn, string> _originalColumnHeaders = new ConditionalWeakTable<DataGridViewColumn, string>();
+        private static ConditionalWeakTable<Control, ValueBox<AnchorStyles>> _originalAnchors = new ConditionalWeakTable<Control, ValueBox<AnchorStyles>>();
+
+        private static void ResetTranslationCaches()
+        {
+            _originalTexts = new ConditionalWeakTable<Control, string>();
+            _originalLabelTexts = new ConditionalWeakTable<Control, string>();
+            _originalColumnHeaders = new ConditionalWeakTable<DataGridViewColumn, string>();
+            // Keep RTL layout weak tables — clearing them desyncs dock/location mirrors from actual control state.
+        }
+
+        private static string LookupResource(string key, bool isAr)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            try
+            {
+                if (isAr)
+                {
+                    string ar = _arManager.GetString(key);
+                    if (!string.IsNullOrEmpty(ar)) return ar;
+                }
+                return _enManager.GetString(key);
+            }
+            catch { return null; }
+        }
 
         public static void TranslateControl(Control parent)
         {
@@ -123,39 +168,13 @@ namespace InventorySystem.Helpers
                     bool isStandardButton = c is Button && c.Tag != null && c.Tag.ToString().StartsWith("standard_");
                     if (!isStandardButton)
                     {
-                        // Cache original text on first encounter (which is the designer/English text)
-                        if (!_originalTexts.TryGetValue(c, out _))
-                        {
-                            _originalTexts.Add(c, c.Text);
-                        }
-
                         if (!string.IsNullOrEmpty(key))
                         {
-                            string translated = null;
-                            try 
-                            { 
-                                if (isAr)
-                                    translated = _arManager.GetString(key) ?? _enManager.GetString(key);
-                                else
-                                    translated = _enManager.GetString(key);
-                            } 
-                            catch { }
-
+                            string translated = LookupResource(key, isAr);
                             if (!string.IsNullOrEmpty(translated))
-                            {
                                 c.Text = translated;
-                            }
-                            else
-                            {
-                                if (_originalTexts.TryGetValue(c, out string orig) && orig != null)
-                                    c.Text = orig;
-                            }
                         }
-                        else
-                        {
-                            if (_originalTexts.TryGetValue(c, out string orig) && orig != null)
-                                c.Text = orig;
-                        }
+                        // No resource key: leave text as-is (ApplyLocalization updates those controls).
                     }
                 }
 
@@ -163,38 +182,11 @@ namespace InventorySystem.Helpers
                 var propLabelText = c.GetType().GetProperty("LabelText");
                 if (propLabelText != null && propLabelText.CanWrite && propLabelText.CanRead)
                 {
-                    string currentLabel = propLabelText.GetValue(c) as string;
-                    if (!_originalLabelTexts.TryGetValue(c, out _))
-                    {
-                        _originalLabelTexts.Add(c, currentLabel);
-                    }
-
                     if (!string.IsNullOrEmpty(key))
                     {
-                        string translated = null;
-                        try 
-                        { 
-                            if (isAr)
-                                translated = _arManager.GetString(key) ?? _enManager.GetString(key);
-                            else
-                                translated = _enManager.GetString(key);
-                        } 
-                        catch { }
-
+                        string translated = LookupResource(key, isAr);
                         if (!string.IsNullOrEmpty(translated))
-                        {
                             propLabelText.SetValue(c, translated);
-                        }
-                        else
-                        {
-                            if (_originalLabelTexts.TryGetValue(c, out string orig) && orig != null)
-                                propLabelText.SetValue(c, orig);
-                        }
-                    }
-                    else
-                    {
-                        if (_originalLabelTexts.TryGetValue(c, out string orig) && orig != null)
-                            propLabelText.SetValue(c, orig);
                     }
                 }
 
@@ -203,37 +195,11 @@ namespace InventorySystem.Helpers
                 {
                     foreach (TabPage page in tabCtrl.TabPages)
                     {
-                        if (!_originalTexts.TryGetValue(page, out _))
-                        {
-                            _originalTexts.Add(page, page.Text);
-                        }
-
                         if (!string.IsNullOrEmpty(page.Name))
                         {
-                            string pageTrans = null;
-                            try 
-                            { 
-                                if (isAr)
-                                    pageTrans = _arManager.GetString(page.Name) ?? _enManager.GetString(page.Name);
-                                else
-                                    pageTrans = _enManager.GetString(page.Name);
-                            } 
-                            catch { }
-
+                            string pageTrans = LookupResource(page.Name, isAr);
                             if (!string.IsNullOrEmpty(pageTrans))
-                            {
                                 page.Text = pageTrans;
-                            }
-                            else
-                            {
-                                if (_originalTexts.TryGetValue(page, out string orig) && orig != null)
-                                    page.Text = orig;
-                            }
-                        }
-                        else
-                        {
-                            if (_originalTexts.TryGetValue(page, out string orig) && orig != null)
-                                page.Text = orig;
                         }
                         TranslateControl(page);
                     }
@@ -244,37 +210,11 @@ namespace InventorySystem.Helpers
                 {
                     foreach (DataGridViewColumn col in dgv.Columns)
                     {
-                        if (!_originalColumnHeaders.TryGetValue(col, out _))
-                        {
-                            _originalColumnHeaders.Add(col, col.HeaderText);
-                        }
-
                         if (!string.IsNullOrEmpty(col.Name))
                         {
-                            string colTrans = null;
-                            try 
-                            { 
-                                if (isAr)
-                                    colTrans = _arManager.GetString(col.Name) ?? _enManager.GetString(col.Name);
-                                else
-                                    colTrans = _enManager.GetString(col.Name);
-                            } 
-                            catch { }
-
+                            string colTrans = LookupResource(col.Name, isAr);
                             if (!string.IsNullOrEmpty(colTrans))
-                            {
                                 col.HeaderText = colTrans;
-                            }
-                            else
-                            {
-                                if (_originalColumnHeaders.TryGetValue(col, out string orig) && orig != null)
-                                    col.HeaderText = orig;
-                            }
-                        }
-                        else
-                        {
-                            if (_originalColumnHeaders.TryGetValue(col, out string orig) && orig != null)
-                                col.HeaderText = orig;
                         }
                     }
                 }
@@ -377,6 +317,13 @@ namespace InventorySystem.Helpers
                 // Handle Docking Mirroring for all controls (Labels, Buttons, Panels, etc.)
                 if (control.Dock == DockStyle.Left || control.Dock == DockStyle.Right)
                 {
+                    // Title-bar icon strip keeps fixed dock; MainForm.ApplyLocalization sets sidebar dock.
+                    if (control.Name == "rightPanel")
+                    {
+                        // skip dock mirroring
+                    }
+                    else
+                    {
                     bool isSwapped = HasRtlState(control, "rtl_dock_swapped");
                     if (isAr && !isSwapped)
                     {
@@ -387,6 +334,7 @@ namespace InventorySystem.Helpers
                     {
                         control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
                         RemoveRtlState(control, "rtl_dock_swapped");
+                    }
                     }
                 }
             }
@@ -451,27 +399,27 @@ namespace InventorySystem.Helpers
 
                 if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
                 {
-                    if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
+                    if (!_originalAnchors.TryGetValue(control, out ValueBox<AnchorStyles> anchorBox))
                     {
-                        control.Anchor = (control.Anchor & ~AnchorStyles.Left) | AnchorStyles.Right;
+                        anchorBox = new ValueBox<AnchorStyles>(control.Anchor);
+                        _originalAnchors.Add(control, anchorBox);
+                    }
+                    AnchorStyles a = anchorBox.Value;
+                    if ((a & AnchorStyles.Left) == AnchorStyles.Left && (a & AnchorStyles.Right) != AnchorStyles.Right)
+                    {
+                        control.Anchor = (a & ~AnchorStyles.Left) | AnchorStyles.Right;
                         AddRtlState(control, "rtl_anchor_swapped");
                     }
-                    else if ((control.Anchor & AnchorStyles.Right) == AnchorStyles.Right && (control.Anchor & AnchorStyles.Left) != AnchorStyles.Left)
+                    else if ((a & AnchorStyles.Right) == AnchorStyles.Right && (a & AnchorStyles.Left) != AnchorStyles.Left)
                     {
-                        control.Anchor = (control.Anchor & ~AnchorStyles.Right) | AnchorStyles.Left;
+                        control.Anchor = (a & ~AnchorStyles.Right) | AnchorStyles.Left;
                         AddRtlState(control, "rtl_anchor_swapped");
                     }
                 }
                 else if (!isAr && isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
                 {
-                    if ((control.Anchor & AnchorStyles.Left) == AnchorStyles.Left && (control.Anchor & AnchorStyles.Right) != AnchorStyles.Right)
-                    {
-                        control.Anchor = (control.Anchor & ~AnchorStyles.Left) | AnchorStyles.Right;
-                    }
-                    else if ((control.Anchor & AnchorStyles.Right) == AnchorStyles.Right && (control.Anchor & AnchorStyles.Left) != AnchorStyles.Left)
-                    {
-                        control.Anchor = (control.Anchor & ~AnchorStyles.Right) | AnchorStyles.Left;
-                    }
+                    if (_originalAnchors.TryGetValue(control, out ValueBox<AnchorStyles> anchorBox))
+                        control.Anchor = anchorBox.Value;
                     RemoveRtlState(control, "rtl_anchor_swapped");
                 }
             }

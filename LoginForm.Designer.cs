@@ -165,7 +165,7 @@ namespace InventorySystem
             this.Name = "LoginForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Login";
-            this.WindowState = System.Windows.Forms.FormWindowState.Maximized; // Start full for responsiveness demo
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.tableLayoutPanel1.ResumeLayout(false);
             this.panelLoginCard.ResumeLayout(false);
             this.panelLoginCard.PerformLayout();

@@ -130,7 +130,7 @@ namespace InventorySystem.Forms
 
             btnAdd.Size = new Size(120, 35);
             btnAdd.Click += BtnAdd_Click;
-            ThemeConfig.ApplyStandardAddButton(btnAdd, "New");
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_New");
 
             btnAddCategory = new Button { Size = new Size(140, 35) };
             btnAddCategory.Click += BtnAddCategory_Click;
@@ -314,14 +314,14 @@ namespace InventorySystem.Forms
             txtCategorySearch = new ModernTextBox
             {
                 IsSearch = true, ShowLabel = false,
-                PlaceholderText = "Search Categories...",
+                PlaceholderText = LocalizationManager.GetString("Parts_SearchCategories"),
                 Dock = DockStyle.Fill,
                 Margin = new Padding(12, 0, 12, 8)
             };
             txtCategorySearch.TextChanged += (s, e) =>
             {
                 string text = txtCategorySearch.Text;
-                if (text != "Search Categories...")
+                if (text != LocalizationManager.GetString("Parts_SearchCategories"))
                     RefreshCategorySidebar();
             };
             tlpSidebar.Controls.Add(txtCategorySearch, 0, 1);
@@ -344,7 +344,7 @@ namespace InventorySystem.Forms
                 Dock = DockStyle.Fill,
                 Height = 38
             };
-            ThemeConfig.ApplyStandardAddButton(btnSidebarAddCat, LocalizationManager.GetString("Parts_AddCategory", "Add Category"));
+            ThemeConfig.ApplyStandardAddButton(btnSidebarAddCat, "Parts_AddCategory");
             btnSidebarAddCat.Click += BtnAddCategory_Click;
             pnlAddCatWrapper.Controls.Add(btnSidebarAddCat);
             tlpSidebar.Controls.Add(pnlAddCatWrapper, 0, 3);
@@ -380,11 +380,11 @@ namespace InventorySystem.Forms
             tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // pagination footer
 
             Panel pnlPagination = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            btnPrevPage = new InventorySystem.Controls.ModernButton { Text = "< Prev", Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
+            btnPrevPage = new InventorySystem.Controls.ModernButton { Text = LocalizationManager.GetString("Parts_Prev"), Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
             btnPrevPage.Click += (s, e) => { if (_currentPage > 1) { _currentPage--; RefreshAll(); } };
             ThemeConfig.ApplySecondaryButton(btnPrevPage);
 
-            btnNextPage = new InventorySystem.Controls.ModernButton { Text = "Next >", Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
+            btnNextPage = new InventorySystem.Controls.ModernButton { Text = LocalizationManager.GetString("Parts_Next"), Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
             btnNextPage.Click += (s, e) => { _currentPage++; RefreshAll(); };
             ThemeConfig.ApplySecondaryButton(btnNextPage);
 
@@ -494,22 +494,23 @@ namespace InventorySystem.Forms
             tlpContent.Controls.Add(pnlGridView, 0, 1);
 
             // Define Columns
+            Func<string, string> L = LocalizationManager.GetString;
             dgvParts.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colCheck", HeaderText = "", Width = 30, FillWeight = 1, ReadOnly = false });
-            var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = "Image", Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
+            var colImage = new DataGridViewImageColumn { Name = "colImage", HeaderText = L("Parts_GridImage"), Width = 60, ImageLayout = DataGridViewImageCellLayout.Zoom, FillWeight = 6, ReadOnly = true };
             colImage.DefaultCellStyle.Padding = new Padding(12);
             dgvParts.Columns.Add(colImage);
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU",      HeaderText = "SKU",      DataPropertyName = "part_number",          FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode",  HeaderText = "Barcode",  DataPropertyName = "barcode",              FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName",     HeaderText = "Product",  DataPropertyName = "part_name",            FillWeight = 18, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = "Category", DataPropertyName = "category_name",        FillWeight = 12, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colUom",      HeaderText = "UOM",      DataPropertyName = "unit_of_measure",      FillWeight = 7,  ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = "Location", DataPropertyName = "location",             FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf",    HeaderText = "Shelf",    DataPropertyName = "shelf",                FillWeight = 8,  ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock",    HeaderText = "Stock",    DataPropertyName = "quantity_in_stock",    FillWeight = 8,  ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "minimum_stock_level", HeaderText = "Min Stock", DataPropertyName = "minimum_stock_level", FillWeight = 8, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice",    HeaderText = "Price",    DataPropertyName = "selling_price",        FillWeight = 10, ReadOnly = true });
-            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",   HeaderText = "Status",   DataPropertyName = "status",               FillWeight = 9,  ReadOnly = true });
-            var colActions = new DataGridViewButtonColumn { Name = "colActions", HeaderText = "Actions", ReadOnly = true, MinimumWidth = 130, Width = 130, AutoSizeMode = DataGridViewAutoSizeColumnMode.None };
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSKU",      HeaderText = L("Parts_GridSKU"),      DataPropertyName = "part_number",          FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBarcode",  HeaderText = L("Parts_GridBarcode"),  DataPropertyName = "barcode",              FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName",     HeaderText = L("Parts_GridProduct"),  DataPropertyName = "part_name",            FillWeight = 18, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCategory", HeaderText = L("Parts_GridCategory"), DataPropertyName = "category_name",        FillWeight = 12, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colUom",      HeaderText = L("Parts_GridUom"),      DataPropertyName = "unit_of_measure",      FillWeight = 7,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colLocation", HeaderText = L("Parts_GridLocation"), DataPropertyName = "location",             FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colShelf",    HeaderText = L("Parts_GridShelf"),    DataPropertyName = "shelf",                FillWeight = 8,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStock",    HeaderText = L("Parts_GridStock"),    DataPropertyName = "quantity_in_stock",    FillWeight = 8,  ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "minimum_stock_level", HeaderText = L("Parts_GridMinStock"), DataPropertyName = "minimum_stock_level", FillWeight = 8, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrice",    HeaderText = L("Parts_GridPrice"),    DataPropertyName = "selling_price",        FillWeight = 10, ReadOnly = true });
+            dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",   HeaderText = L("Parts_GridStatus"),   DataPropertyName = "status",               FillWeight = 9,  ReadOnly = true });
+            var colActions = new DataGridViewButtonColumn { Name = "colActions", HeaderText = L("Parts_GridActions"), ReadOnly = true, MinimumWidth = 130, Width = 130, AutoSizeMode = DataGridViewAutoSizeColumnMode.None };
             dgvParts.Columns.Add(colActions);
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_id",     DataPropertyName = "part_id",    Visible = false });
             dgvParts.Columns.Add(new DataGridViewTextBoxColumn { Name = "part_image",  DataPropertyName = "part_image", Visible = false });
@@ -910,15 +911,12 @@ namespace InventorySystem.Forms
                     pe.Graphics.DrawPath(pen, path);
             };
 
-            string addText = LocalizationManager.GetString("Btn_Add", "Add");
-
-            // Use a proper standard add button centered in the card
             var btnAdd = new InventorySystem.Controls.ModernButton
             {
                 Size = new Size(CardW - 24, 40),
                 Location = new Point(12, (CardH - 40) / 2)
             };
-            ThemeConfig.ApplyStandardAddButton(btnAdd, addText);
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Btn_Add");
 
             EventHandler addClick = (s, e) =>
             {
@@ -1196,7 +1194,7 @@ namespace InventorySystem.Forms
             if (ctrlTitle.Length > 0) ctrlTitle[0].Text = L("Parts_Title");
             if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
 
-            if (btnAdd != null) ThemeConfig.ApplyStandardAddButton(btnAdd, L("Parts_New"));
+            if (btnAdd != null) { ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_New"); btnAdd.Invalidate(); }
             // if (btnFilter != null)  btnFilter.Invalidate();
             if (btnImport != null)  btnImport.Invalidate();
             if (btnExport != null)  btnExport.Invalidate();
@@ -1208,7 +1206,7 @@ namespace InventorySystem.Forms
             if (ctrlCatTitle.Length > 0) ctrlCatTitle[0].Text = L("Parts_Categories");
 
             var ctrlAddCat = this.Controls.Find("btnSidebarAddCat", true).FirstOrDefault() as Button;
-            if (ctrlAddCat != null) ThemeConfig.ApplyStandardAddButton(ctrlAddCat, L("Parts_AddCategory"));
+            if (ctrlAddCat != null) { ThemeConfig.ApplyStandardAddButton(ctrlAddCat, "Parts_AddCategory"); ctrlAddCat.Invalidate(); }
 
             if (txtCategorySearch != null) txtCategorySearch.PlaceholderText = L("Parts_SearchCategories");
             if (btnPrevPage != null) btnPrevPage.Text = L("Parts_Prev");
@@ -1218,6 +1216,7 @@ namespace InventorySystem.Forms
 
             if (dgvParts != null && dgvParts.Columns.Count > 0)
             {
+                if (dgvParts.Columns.Contains("colUom"))          dgvParts.Columns["colUom"].HeaderText          = L("Parts_GridUom");
                 if (dgvParts.Columns.Contains("colImage"))          dgvParts.Columns["colImage"].HeaderText          = L("Parts_GridImage");
                 if (dgvParts.Columns.Contains("colSKU"))            dgvParts.Columns["colSKU"].HeaderText            = L("Parts_GridSKU");
                 if (dgvParts.Columns.Contains("colBarcode"))        dgvParts.Columns["colBarcode"].HeaderText        = L("Parts_GridBarcode");

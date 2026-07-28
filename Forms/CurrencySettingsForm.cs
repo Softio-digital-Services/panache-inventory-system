@@ -23,6 +23,30 @@ namespace InventorySystem.Forms
         {
             this.Width = 800;
             InitializeForm();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+            LoadRates();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            this.TitleText = LocalizationManager.GetString("Curr_SettingsTitle");
+            SetFooterButtons(
+                LocalizationManager.GetString("Curr_SaveBtn"),
+                LocalizationManager.GetString("Popup_Cancel"),
+                BtnSave_Click,
+                (s, e) => this.Close()
+            );
+            if (dgvRates != null && dgvRates.Columns.Count > 0)
+            {
+                if (dgvRates.Columns.Contains("code")) dgvRates.Columns["code"].HeaderText = LocalizationManager.GetString("Curr_ColCode");
+                if (dgvRates.Columns.Contains("name")) dgvRates.Columns["name"].HeaderText = LocalizationManager.GetString("Curr_ColName");
+                if (dgvRates.Columns.Contains("symbol")) dgvRates.Columns["symbol"].HeaderText = LocalizationManager.GetString("Curr_ColSymbol");
+                if (dgvRates.Columns.Contains("rate_vs_usd")) dgvRates.Columns["rate_vs_usd"].HeaderText = LocalizationManager.GetString("Curr_ColRate");
+                if (dgvRates.Columns.Contains("last_updated")) dgvRates.Columns["last_updated"].HeaderText = LocalizationManager.GetString("Curr_ColUpdate");
+                if (dgvRates.Columns.Contains("colAction")) dgvRates.Columns["colAction"].HeaderText = LocalizationManager.GetString("Parts_GridActions");
+            }
             LoadRates();
         }
 
@@ -110,7 +134,7 @@ namespace InventorySystem.Forms
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "symbol", HeaderText = LocalizationManager.GetString("Curr_ColSymbol"), DataPropertyName = "symbol", Width = 70, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate_vs_usd", HeaderText = LocalizationManager.GetString("Curr_ColRate"), DataPropertyName = "rate_vs_usd", Width = 130, ReadOnly = false, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
             dgvRates.Columns.Add(new DataGridViewTextBoxColumn { Name = "last_updated", HeaderText = LocalizationManager.GetString("Curr_ColUpdate"), DataPropertyName = "last_updated", Width = 150, ReadOnly = true, DefaultCellStyle = new DataGridViewCellStyle { Format = "g" } });
-            dgvRates.Columns.Add(new DataGridViewImageColumn { Name = "colAction", HeaderText = LocalizationManager.GetString("Parts_GridActions", "Action"), Width = 60 });
+            dgvRates.Columns.Add(new DataGridViewImageColumn { Name = "colAction", HeaderText = LocalizationManager.GetString("Parts_GridActions"), Width = 60 });
 
             dgvRates.CellPainting += DgvRates_CellPainting;
             dgvRates.CellMouseClick += DgvRates_CellMouseClick;

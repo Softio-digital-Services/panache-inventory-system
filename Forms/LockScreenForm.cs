@@ -13,6 +13,8 @@ namespace InventorySystem.Forms
         private TextBox txtPassword;
         private Label lblUser;
         private Label lblError;
+        private Label _lblLocked;
+        private ModernButton _btnUnlock;
 
         public LockScreenForm()
         {
@@ -21,8 +23,18 @@ namespace InventorySystem.Forms
             this.TopMost = true;
             this.ShowInTaskbar = false;
 
-
             CreateUI();
+            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            ApplyLocalization();
+        }
+
+        private void ApplyLocalization()
+        {
+            LocalizationManager.ApplyRTL(this);
+            if (_lblLocked != null)
+                _lblLocked.Text = LocalizationManager.GetString("Lock_Title", "Session Locked");
+            if (_btnUnlock != null)
+                _btnUnlock.Text = LocalizationManager.GetString("Lock_Unlock", "Unlock");
         }
 
         private void CreateUI()
@@ -43,13 +55,13 @@ namespace InventorySystem.Forms
             };
 
             Label lblLocked = new Label { 
-                Text = LocalizationManager.GetString("Lock_Title", "Session Locked"), 
                 Font = new Font("Segoe UI", 24, FontStyle.Bold), 
                 ForeColor = ThemeConfig.TextColorDark, 
                 TextAlign = ContentAlignment.MiddleCenter, 
                 Dock = DockStyle.Top, 
                 Height = 100 
             };
+            _lblLocked = lblLocked;
             pnlCenter.Controls.Add(lblLocked);
 
             PictureBox picUser = new PictureBox { 
@@ -92,14 +104,13 @@ namespace InventorySystem.Forms
             };
             pnlCenter.Controls.Add(lblError);
 
-            Button btnUnlock = new ModernButton { 
-                Text = LocalizationManager.GetString("Lock_Unlock", "Unlock"), 
+            _btnUnlock = new ModernButton { 
                 Size = new Size(160, 45), 
                 Location = new Point(120, 420) 
             };
-            ThemeConfig.ApplyPrimaryButton(btnUnlock);
-            btnUnlock.Click += BtnUnlock_Click;
-            pnlCenter.Controls.Add(btnUnlock);
+            ThemeConfig.ApplyPrimaryButton(_btnUnlock);
+            _btnUnlock.Click += BtnUnlock_Click;
+            pnlCenter.Controls.Add(_btnUnlock);
 
             txtPassword.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) BtnUnlock_Click(s, e); };
             

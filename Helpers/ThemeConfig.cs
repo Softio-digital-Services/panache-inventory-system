@@ -747,7 +747,7 @@ namespace InventorySystem
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
-                    if (pb.Tag != null && (bool)pb.Tag)
+                    if (pb.Tag is bool hovered && hovered)
                     {
                         Rectangle r = new Rectangle(0, 0, pb.Width - 1, pb.Height - 1);
                         using (var path = GetRoundedPath(r, 6))
@@ -1393,7 +1393,7 @@ namespace InventorySystem
              btn.ForeColor = isActive ? PrimaryColor : Color.FromArgb(160, 174, 192); // Gray when inactive
              btn.Font = new Font("Segoe UI", 10F, isActive ? FontStyle.Bold : FontStyle.Regular);
              btn.Cursor = Cursors.Hand;
-             btn.TextAlign = ContentAlignment.MiddleLeft;
+             btn.TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
              
              btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(244, 247, 254);
              btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(230, 235, 245);
@@ -1407,10 +1407,11 @@ namespace InventorySystem
             Color tintColor = isActive ? PrimaryColor : Color.FromArgb(31, 41, 55); 
             btn.Image = TintImage(icon, tintColor);
             
-            btn.ImageAlign = ContentAlignment.MiddleLeft;
-            btn.TextImageRelation = TextImageRelation.ImageBeforeText;
-            int padLeft = LocalizationManager.IsArabic ? 0 : 15;
-            int padRight = LocalizationManager.IsArabic ? 15 : 0;
+            bool isAr = LocalizationManager.IsArabic;
+            btn.ImageAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            btn.TextImageRelation = isAr ? TextImageRelation.TextBeforeImage : TextImageRelation.ImageBeforeText;
+            int padLeft = isAr ? 0 : 15;
+            int padRight = isAr ? 15 : 0;
             btn.Padding = new Padding(padLeft, 0, padRight, 0);
         }
 
