@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Windows.Forms;
 using InventorySystem.Controls;
 using InventorySystem.Data;
@@ -26,6 +27,12 @@ namespace InventorySystem.Forms
         // -- LEFT PANEL CONTROLS ----------------------------------------------
         private FlowLayoutPanel pnlProducts;   // product card grid
         private FlowLayoutPanel pnlChips;      // category chip strip
+        private Panel pnlCatHeader;
+        private Panel pnlChipsWrapper;
+        private Label lblCatTitle;
+        private Label btnCatPrev;
+        private Label btnCatNext;
+        private Label _lblPageTitle;
         private InventorySystem.Controls.ModernTextBox txtProductSearch;
 
         // -- RIGHT PANEL CONTROLS ---------------------------------------------
@@ -138,7 +145,8 @@ namespace InventorySystem.Forms
 
             // -- Header -------------------------------------------------------
             string pageTitle = LocalizationManager.GetString("POS_PageTitle");
-            Label lblPageTitle = ThemeConfig.CreateStandardHeader(pageTitle == "POS_PageTitle" ? "Checkout" : pageTitle);
+            _lblPageTitle = ThemeConfig.CreateStandardHeader(pageTitle == "POS_PageTitle" ? "Point of Sale" : pageTitle);
+            _lblPageTitle.Name = "POS_PageTitle";
 
             txtProductSearch = new InventorySystem.Controls.ModernTextBox
             {
@@ -171,7 +179,7 @@ namespace InventorySystem.Forms
             };
 
             var actionButtons = new Control[] { btnManageDrafts, btnAddShipping };
-            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblPageTitle, txtProductSearch, actionButtons);
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(_lblPageTitle, txtProductSearch, actionButtons);
             tlpLeft.Controls.Add(tlpHeader, 0, 0);
 
             // -- Stat Cards ----------------------------------------------------
@@ -187,6 +195,9 @@ namespace InventorySystem.Forms
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
             tlpStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
+            // Without an explicit row style the single row is AutoSize, so it takes the
+            // card's own height and overflows the panel, clipping the bottom corners.
+            tlpStats.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             // Icons are tinted to each card's accent so the row reads as one set
             // instead of three unrelated multi-colour glyphs.
@@ -233,39 +244,48 @@ namespace InventorySystem.Forms
             };
             tlpLeft.Controls.Add(pnlCategorySection, 0, 2);
 
-            // Title row  "Menu" label + prev/next arrows
-            Panel pnlCatHeader = new Panel
+            // Title row: "Menu" + prev/next — docked so ApplyRTL can flip sides cleanly
+            pnlCatHeader = new Panel
             {
                 Height = 30,
                 Dock = DockStyle.Top,
                 BackColor = Color.Transparent
             };
             string menuTitleTrans = LocalizationManager.GetString("POS_MenuTitle");
-            Label lblCatTitle = new Label
+            lblCatTitle = new Label
             {
-                Text = menuTitleTrans == "POS_MenuTitle" ? "Categories" : menuTitleTrans,
+                Name = "POS_MenuTitle",
+                Text = menuTitleTrans == "POS_MenuTitle" ? "Menu" : menuTitleTrans,
                 Font = ThemeConfig.CardTitleFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
-                Location = new Point(2, 4),
+                Dock = DockStyle.Left,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(2, 4, 8, 0),
                 BackColor = Color.Transparent
             };
-            // Prev / Next scroll nav buttons, drawn as soft circular chips
-            Label btnCatNext = CreateChipNavButton("\u203A");
-            Label btnCatPrev = CreateChipNavButton("\u2039");
 
-            pnlCatHeader.Resize += (s, ev) =>
+            var pnlCatNav = new Panel
             {
-                // Align to the right edge with a small margin
-                btnCatNext.Location = new Point(pnlCatHeader.Width - 30, 1);
-                btnCatPrev.Location = new Point(pnlCatHeader.Width - 64, 1);
+                Name = "pnlPosCatNav",
+                Width = 68,
+                Dock = DockStyle.Right,
+                BackColor = Color.Transparent
             };
-            pnlCatHeader.Controls.AddRange(new Control[] { lblCatTitle, btnCatPrev, btnCatNext });
+            btnCatNext = CreateChipNavButton("\u203A");
+            btnCatPrev = CreateChipNavButton("\u2039");
+            btnCatPrev.Location = new Point(4, 1);
+            btnCatNext.Location = new Point(38, 1);
+            pnlCatNav.Controls.Add(btnCatPrev);
+            pnlCatNav.Controls.Add(btnCatNext);
+
+            pnlCatHeader.Controls.Add(lblCatTitle);
+            pnlCatHeader.Controls.Add(pnlCatNav);
             pnlCategorySection.Controls.Add(pnlCatHeader);
 
             // Clips the chip strip: the flow panel is deliberately taller than this
             // wrapper so its horizontal scrollbar falls outside the visible area.
-            Panel pnlChipsWrapper = new Panel
+            pnlChipsWrapper = new Panel
             {
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0),
@@ -281,7 +301,8 @@ namespace InventorySystem.Forms
                 AutoScroll = true,
                 Padding = new Padding(0, 2, 0, 0),
                 BackColor = Color.Transparent,
-                FlowDirection = FlowDirection.LeftToRight
+                FlowDirection = FlowDirection.LeftToRight,
+                RightToLeft = RightToLeft.No
             };
             pnlChipsWrapper.Controls.Add(pnlChips);
             pnlChipsWrapper.Resize += (s, e) => LayoutChipStrip(pnlChipsWrapper);
@@ -394,14 +415,20 @@ namespace InventorySystem.Forms
         // ---------------------------------------------------------------------
         private void BuildCategoryChips()
         {
+            if (pnlChips == null) return;
             pnlChips.SuspendLayout();
+            foreach (Control c in pnlChips.Controls)
+                c.Dispose();
             pnlChips.Controls.Clear();
 
             bool isRTL = LocalizationManager.IsArabic;
+            // Keep RightToLeft.No so ApplyRTL does not fight FlowDirection, and we
+            // control strip direction explicitly here.
+            pnlChips.RightToLeft = RightToLeft.No;
             pnlChips.FlowDirection = isRTL ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
             string allCatTrans = LocalizationManager.GetString("POS_AllCategories");
-            AddCategoryChip(allCatTrans, null);
+            AddCategoryChip(allCatTrans == "POS_AllCategories" ? "All Categories" : allCatTrans, null);
 
             try
             {
@@ -419,7 +446,9 @@ namespace InventorySystem.Forms
             pnlChips.ResumeLayout(true);
             pnlChips.VerticalScroll.Enabled = false;
             pnlChips.VerticalScroll.Visible = false;
+            pnlChips.AutoScrollPosition = new Point(0, 0);
             pnlChips.PerformLayout();
+            if (pnlChipsWrapper != null) LayoutChipStrip(pnlChipsWrapper);
         }
 
         /// <summary>
@@ -536,7 +565,9 @@ namespace InventorySystem.Forms
             }
             catch { }
 
-            string countText = $"{itemCount} items";
+            string itemsWord = LocalizationManager.GetString("POS_ItemsCount", "items");
+            if (itemsWord == "POS_ItemsCount") itemsWord = "items";
+            string countText = $"{itemCount} {itemsWord}";
 
             Image chipIcon = categoryKey == null ? ThemeConfig.GetNuricon("dashboard") : ThemeConfig.GetNuricon("category_placeholder");
             if (categoryKey != null)
@@ -569,11 +600,10 @@ namespace InventorySystem.Forms
             int cardW = Math.Max(nameW, cntW) + 76;  // icon + padding + textWidth + right-pad
             cardW = Math.Max(cardW, 148);
             const int CARD_H = 62;
-            // const int ICON_AREA = 32; // width reserved for the emoji circle
 
-            // Active border color  teal/primary on top edge (like reference)
             Color activeBorder = ThemeConfig.POS_ChipActiveBorder;
             Color inactiveBg = ThemeConfig.SurfaceColor;
+            bool rtl = LocalizationManager.IsArabic;
 
             var chip = new Panel
             {
@@ -581,9 +611,11 @@ namespace InventorySystem.Forms
                 Width = cardW,
                 Height = CARD_H,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 10, 0),
+                // Trailing gap follows reading direction so chips don't pile into each other in RTL.
+                Margin = rtl ? new Padding(10, 0, 0, 0) : new Padding(0, 0, 10, 0),
                 BackColor = Color.Transparent,
                 ForeColor = ThemeConfig.TextColorDark,
+                RightToLeft = RightToLeft.No,
                 Tag = categoryKey
             };
             bool hover = false;
@@ -598,7 +630,7 @@ namespace InventorySystem.Forms
                     g.FillRectangle(parentBrush, -1, -1, chip.Width + 2, chip.Height + 2);
 
                 var r = new Rectangle(0, 0, chip.Width - 1, chip.Height - 1);
-                const int cardRadius = 12;
+                const int cardRadius = 16;
 
                 Color bgFill = isActive
                     ? Color.FromArgb(18, activeBorder.R, activeBorder.G, activeBorder.B)
@@ -615,14 +647,13 @@ namespace InventorySystem.Forms
                 using (var pen = new Pen(borderColor, isActive ? 1.6f : 1f))
                     g.DrawPath(pen, path);
 
-                // -- Icon tile (left side) --------------------------------------
-                int cx = 9;
                 int iconSize = 38;
                 int cy = (CARD_H - iconSize) / 2;
+                int cx = rtl ? chip.Width - iconSize - 9 : 9;
                 Color tileFill = isActive
                     ? Color.FromArgb(38, activeBorder.R, activeBorder.G, activeBorder.B)
                     : Color.FromArgb(243, 245, 248);
-                using (var iconBgPath = RoundedPath(new Rectangle(cx, cy, iconSize, iconSize), 10))
+                using (var iconBgPath = RoundedPath(new Rectangle(cx, cy, iconSize, iconSize), 12))
                 using (var iconBr = new SolidBrush(tileFill))
                     g.FillPath(iconBr, iconBgPath);
 
@@ -636,21 +667,19 @@ namespace InventorySystem.Forms
                     g.DrawImage(chipIcon, new RectangleF(dx, dy, sw, sh));
                 }
 
-                // -- Text block (right of icon) --------------------------------
-                int textX = cx + iconSize + 10;
-                int textW = chip.Width - textX - 10;
+                int textX = rtl ? 10 : cx + iconSize + 10;
+                int textW = rtl ? Math.Max(20, cx - 10 - 8) : chip.Width - textX - 10;
                 int textBlockY = cy + 1;
+                var textFlags = (rtl ? TextFormatFlags.Right : TextFormatFlags.Left)
+                    | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis;
 
                 TextRenderer.DrawText(g, label, nameFont,
-                    new Rectangle(textX, textBlockY, textW, 17), ThemeConfig.TextColorDark,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding
-                    | TextFormatFlags.EndEllipsis);
+                    new Rectangle(textX, textBlockY, textW, 17), ThemeConfig.TextColorDark, textFlags);
 
                 using (var cf = new Font("Segoe UI", 7.5F))
                     TextRenderer.DrawText(g, countText, cf,
                         new Rectangle(textX, textBlockY + 19, textW, 16),
-                        isActive ? activeBorder : ThemeConfig.SecondaryColor,
-                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+                        isActive ? activeBorder : ThemeConfig.SecondaryColor, textFlags);
             };
 
             chip.MouseEnter += (s, e) => { hover = true; chip.Invalidate(); };
@@ -1316,6 +1345,15 @@ namespace InventorySystem.Forms
         private void ApplyLocalization()
         {
             Func<string, string> L = LocalizationManager.GetString;
+            bool isAr = LocalizationManager.IsArabic;
+
+            if (_lblPageTitle != null)
+            {
+                string title = L("POS_PageTitle");
+                _lblPageTitle.Text = title == "POS_PageTitle" ? "Point of Sale" : title;
+                _lblPageTitle.RightToLeft = RightToLeft.No;
+                _lblPageTitle.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            }
 
             if (txtProductSearch != null)
                 txtProductSearch.PlaceholderText = L("POS_SearchProducts");
@@ -1332,18 +1370,55 @@ namespace InventorySystem.Forms
             if (cardTodaySales != null) cardTodaySales.Title = L("POS_Sales");
             if (cardPending != null) cardPending.Title = L("POS_Pending");
 
+            // Menu title — always refresh text; dock handles LTR/RTL side after ApplyRTL.
+            if (lblCatTitle != null)
+            {
+                string menu = L("POS_MenuTitle");
+                lblCatTitle.Text = menu == "POS_MenuTitle" ? "Menu" : menu;
+                lblCatTitle.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            }
+            LayoutCatHeader();
+
             _orderPanel?.ApplyLocalization();
 
             if (pnlChips != null)
             {
-                pnlChips.FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
                 BuildCategoryChips();
             }
             if (pnlProducts != null)
             {
-                pnlProducts.FlowDirection = LocalizationManager.IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+                pnlProducts.RightToLeft = RightToLeft.No;
+                pnlProducts.FlowDirection = isAr ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
                 LoadProducts(txtProductSearch?.Text);
             }
+        }
+
+        /// <summary>
+        /// Re-assert Menu/nav docking after MainForm.ApplyRTL so absolute-location
+        /// mirroring cannot leave the header overlapping or stuck mid-strip.
+        /// </summary>
+        private void LayoutCatHeader()
+        {
+            if (pnlCatHeader == null || lblCatTitle == null) return;
+            bool isAr = LocalizationManager.IsArabic;
+
+            // Title stays on the content-start edge; nav on the content-end edge.
+            lblCatTitle.Dock = isAr ? DockStyle.Right : DockStyle.Left;
+            lblCatTitle.RightToLeft = RightToLeft.No;
+
+            var nav = pnlCatHeader.Controls.Find("pnlPosCatNav", false).FirstOrDefault();
+            if (nav != null)
+            {
+                nav.Dock = isAr ? DockStyle.Left : DockStyle.Right;
+                nav.RightToLeft = RightToLeft.No;
+                // Pin glyph buttons so ApplyRTL absolute mirroring cannot shuffle them.
+                if (btnCatPrev != null) btnCatPrev.Location = new Point(4, 1);
+                if (btnCatNext != null) btnCatNext.Location = new Point(38, 1);
+            }
+
+            pnlCatHeader.PerformLayout();
+            lblCatTitle.BringToFront();
+            if (nav != null) nav.BringToFront();
         }
 
         private void AddToCart(int id, string name, decimal price, int stock, int qtyToAdd = 1, bool isService = false)

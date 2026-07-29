@@ -75,26 +75,15 @@ namespace InventorySystem.Forms
             tlpRoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 0F));
             this.Controls.Add(tlpRoot);
 
-            // ---- Header ----
+            // ---- Header (title only — export lives on the filter row) ----
             Label lblTitle = ThemeConfig.CreateStandardHeader(LocalizationManager.GetString("Rep_Title"));
             lblTitle.Name = "lblMainTitle";
 
-            btnExport = new ModernButton
-            {
-                Name = "btnExport",
-                Text = LocalizationManager.GetString("Rep_Export"),
-                Width = 150,
-                Height = 36
-            };
-            ThemeConfig.ApplyPrimaryButton(btnExport);
-            btnExport.Click += (s, e) => ExportToExcel();
+            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblTitle, null, null);
+            tlpHeader.Margin = new Padding(0, 0, 0, 4);
 
-            TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblTitle, null, new Control[] { btnExport });
-            tlpRoot.Controls.Add(tlpHeader, 0, 0);
-
-            // Filter bar (sits under header inside a wrapper)
             Panel filterHost = BuildFilterBar();
-            // Insert filter into header area by wrapping
+
             var headerWrapper = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
@@ -106,7 +95,6 @@ namespace InventorySystem.Forms
             };
             headerWrapper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             headerWrapper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            tlpRoot.Controls.Remove(tlpHeader);
             headerWrapper.Controls.Add(tlpHeader, 0, 0);
             headerWrapper.Controls.Add(filterHost, 0, 1);
             tlpRoot.Controls.Add(headerWrapper, 0, 0);
@@ -122,6 +110,9 @@ namespace InventorySystem.Forms
             };
             for (int i = 0; i < 5; i++)
                 tlpKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+            // Explicit row style: an AutoSize row would take each card's own height and
+            // overflow the panel, clipping the bottom rounded corners.
+            tlpKpis.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             cardExpenses = CreateKpiCard("Monthly Expenses", "revenue", ThemeConfig.WarningColor);
             cardCost = CreateKpiCard("Product Cost", "inventory_dashboard", ThemeConfig.SecondaryColor);
@@ -168,10 +159,10 @@ namespace InventorySystem.Forms
             var panel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 56,
-                Margin = new Padding(0, 0, 0, 4),
+                Height = 48,
+                Margin = new Padding(0, 0, 0, 0),
                 BackColor = Color.Transparent,
-                Padding = new Padding(0, 4, 0, 4)
+                Padding = new Padding(0, 2, 0, 2)
             };
 
             var flow = new FlowLayoutPanel
@@ -181,14 +172,18 @@ namespace InventorySystem.Forms
                 WrapContents = false,
                 AutoScroll = true,
                 BackColor = Color.Transparent,
-                Padding = new Padding(0, 4, 0, 0)
+                Padding = new Padding(0),
+                // One baseline for every control in the row
             };
+
+            const int rowH = 36;
+            const int topPad = 4;
 
             cmbPeriod = new ModernComboBox
             {
                 Width = 160,
-                Height = 48,
-                Margin = new Padding(0, 0, 12, 0),
+                Height = rowH,
+                Margin = new Padding(0, topPad, 12, 0),
                 LabelText = "",
                 ShowLabel = false,
                 DropDownStyle = ComboBoxStyle.DropDownList
@@ -213,15 +208,15 @@ namespace InventorySystem.Forms
             dtpFrom = new FlatDateTimePicker
             {
                 Width = 150,
-                Height = 36,
-                Margin = new Padding(0, 4, 8, 0),
+                Height = rowH,
+                Margin = new Padding(0, topPad, 8, 0),
                 Value = DateTime.Today
             };
             dtpTo = new FlatDateTimePicker
             {
                 Width = 150,
-                Height = 36,
-                Margin = new Padding(0, 4, 12, 0),
+                Height = rowH,
+                Margin = new Padding(0, topPad, 12, 0),
                 Value = DateTime.Today
             };
 
@@ -249,8 +244,8 @@ namespace InventorySystem.Forms
                 Name = "btnApply",
                 Text = LocalizationManager.GetString("Rep_Apply"),
                 Width = 100,
-                Height = 36,
-                Margin = new Padding(0, 4, 12, 0)
+                Height = rowH,
+                Margin = new Padding(0, topPad, 8, 0)
             };
             ThemeConfig.ApplySecondaryButton(btnApply);
             btnApply.Click += (s, e) =>
@@ -267,11 +262,24 @@ namespace InventorySystem.Forms
                 LoadReport();
             };
 
+            btnExport = new ModernButton
+            {
+                Name = "btnExport",
+                Text = LocalizationManager.GetString("Rep_Export", "Export to Excel"),
+                Width = 150,
+                Height = rowH,
+                Margin = new Padding(0, topPad, 12, 0)
+            };
+            ThemeConfig.ApplySecondaryButton(btnExport);
+            // Red text only — keep the same light chip background as Apply.
+            btnExport.ForeColor = ThemeConfig.DangerColor;
+            btnExport.Click += (s, e) => ExportToExcel();
+
             lblDateRange = new Label
             {
                 Name = "lblDateRange",
                 AutoSize = true,
-                Margin = new Padding(8, 12, 0, 0),
+                Margin = new Padding(4, 12, 0, 0),
                 ForeColor = ThemeConfig.TextColorDark,
                 Font = ThemeConfig.StandardFont,
                 Text = ""
@@ -283,6 +291,7 @@ namespace InventorySystem.Forms
             flow.Controls.Add(lblTo);
             flow.Controls.Add(dtpTo);
             flow.Controls.Add(btnApply);
+            flow.Controls.Add(btnExport);
             flow.Controls.Add(lblDateRange);
             panel.Controls.Add(flow);
             return panel;
@@ -539,7 +548,12 @@ namespace InventorySystem.Forms
             var title = this.Controls.Find("lblMainTitle", true);
             if (title.Length > 0) title[0].Text = L("Rep_Title", "Sales Reports");
 
-            if (btnExport != null) btnExport.Text = L("Rep_Export", "Export to Excel");
+            if (btnExport != null)
+            {
+                btnExport.Text = L("Rep_Export", "Export to Excel");
+                btnExport.ForeColor = ThemeConfig.DangerColor;
+                btnExport.Invalidate();
+            }
             if (btnApply != null) btnApply.Text = L("Rep_Apply", "Apply");
 
             var lblFrom = this.Controls.Find("lblFrom", true);

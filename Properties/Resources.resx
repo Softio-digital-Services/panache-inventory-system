@@ -2127,6 +2127,15 @@ Accepted By: __________________________</value>
   <data name="AddPart_TaxRates" xml:space="preserve">
     <value>Tax Rates:</value>
   </data>
+  <data name="AddPart_TaxRateNA" xml:space="preserve">
+    <value>Rate 1 N/A (0%)</value>
+  </data>
+  <data name="AddPart_TaxRateStandard" xml:space="preserve">
+    <value>Standard (15%)</value>
+  </data>
+  <data name="AddPart_TaxRateReduced" xml:space="preserve">
+    <value>Reduced (5%)</value>
+  </data>
   <data name="AddPart_ExpiryDate" xml:space="preserve">
     <value>Expiry Date</value>
   </data>
@@ -2201,6 +2210,36 @@ Accepted By: __________________________</value>
   </data>
   <data name="Scale_ApplyStock" xml:space="preserve">
     <value>Apply Weight to Stock</value>
+  </data>
+  <data name="Scale_StatusConnected" xml:space="preserve">
+    <value>Status: Connected</value>
+  </data>
+  <data name="Scale_StatusDisconnected" xml:space="preserve">
+    <value>Status: Disconnected</value>
+  </data>
+  <data name="Scale_UnitPrice" xml:space="preserve">
+    <value>Unit Price (/{0}):</value>
+  </data>
+  <data name="Scale_Weight" xml:space="preserve">
+    <value>Weight: {0} {1}</value>
+  </data>
+  <data name="Scale_WeightMoving" xml:space="preserve">
+    <value>Weight: {0} {1} (Moving)</value>
+  </data>
+  <data name="Scale_CalcPrice" xml:space="preserve">
+    <value>Calc Price: {0}</value>
+  </data>
+  <data name="Scale_BarcodeDetected" xml:space="preserve">
+    <value>TM-A17 Scale Barcode Detected!</value>
+  </data>
+  <data name="Scale_BarcodeWeightMsg" xml:space="preserve">
+    <value>TM-A17 Scale Barcode Detected!{0}PLU: {1}{0}Weight: {2:N3} kg{0}{3}</value>
+  </data>
+  <data name="Scale_BarcodePriceMsg" xml:space="preserve">
+    <value>TM-A17 Scale Barcode Detected!{0}PLU: {1}{0}Total Price: {2}</value>
+  </data>
+  <data name="Common_NoDate" xml:space="preserve">
+    <value>No Date</value>
   </data>
   <data name="OrderDetails_Title" xml:space="preserve">
     <value>Order #{0} Details</value>

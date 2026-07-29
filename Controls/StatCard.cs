@@ -17,7 +17,11 @@ namespace InventorySystem.Controls
         public string Title 
         { 
             get => _lblTitle.Text; 
-            set => _lblTitle.Text = value; 
+            set
+            {
+                _lblTitle.Text = value;
+                RepositionForRTL();
+            }
         }
 
         public string Value 
@@ -105,7 +109,7 @@ namespace InventorySystem.Controls
                     _lblValue.Font = ValueFont(22F);
                 _lblSubtitle.Visible = !value;
                 _iconPadding = value ? 4 : 8;
-                _cornerRadius = value ? 16 : 15;
+                _cornerRadius = value ? 18 : 16;
                 MinimumSize = value ? new Size(100, 72) : new Size(120, 90);
                 RepositionForRTL();
                 ApplyRoundedRegion();
@@ -139,9 +143,10 @@ namespace InventorySystem.Controls
             // Labels
             _lblTitle = new Label
             {
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = ThemeConfig.MutedTextColor,
-                AutoSize = true,
+                AutoSize = false,
+                AutoEllipsis = false,
                 Location = new Point(20, 15),
                 BackColor = Color.Transparent
             };
@@ -187,13 +192,13 @@ namespace InventorySystem.Controls
 
         private void ApplyRoundedRegion()
         {
-            if (Width < 8 || Height < 8) return;
-            // Full bounds (not Width-1): a one-pixel shortfall leaves the bottom and
-            // right edges looking squared off once the region clips the card.
-            using var path = GetRoundedRect(new Rectangle(0, 0, Width, Height), _cornerRadius);
+            // A clipping Region cuts pixels on whole-pixel boundaries, which sanded the
+            // antialiased corners back into hard steps. OnPaint already paints the
+            // parent colour behind an antialiased rounded card, so no clipping is needed.
+            if (Region == null) return;
             var old = Region;
-            Region = new Region(path);
-            old?.Dispose();
+            Region = null;
+            old.Dispose();
         }
 
         private void RepositionForRTL()
@@ -211,40 +216,46 @@ namespace InventorySystem.Controls
                 return;
             }
 
-            // Icon Position
-            _iconPanel.Location = isRtl ? new Point(15, 25) : new Point(this.Width - 70, 25);
-            
-            // X-Coordinates and Sizing
-            int labelX, labelWidth;
-            if (isRtl)
-            {
-                // In RTL: icon is on the LEFT (15–65). Labels span from 75 to (Width - 15).
-                labelX    = 75;
-                labelWidth = Math.Max(0, this.Width - labelX - 15);
-                
-                _lblTitle.AutoSize    = false;
-                _lblValue.AutoSize    = false;
-                _lblSubtitle.AutoSize = false;
-                
-                _lblTitle.Size    = new Size(labelWidth, 25);
-                _lblValue.Size    = new Size(labelWidth, 45);
-                _lblSubtitle.Size = new Size(labelWidth, 20);
-            }
-            else
-            {
-                // In LTR: icon is on the RIGHT (Width-70). Labels start at 20.
-                labelX    = 20;
-                labelWidth = this.Width - 90;
-                
-                _lblTitle.AutoSize    = true;
-                _lblValue.AutoSize    = true;
-                _lblSubtitle.AutoSize = true;
-            }
+            // Resizing labels below raises layout events that come back here; without
+            // this guard a language switch can recurse until the fonts are disposed.
+            if (_repositioning) return;
+            _repositioning = true;
+            try { LayoutRegular(isRtl); }
+            finally { _repositioning = false; }
+        }
 
-            // Apply positions
-            _lblTitle.Location    = new Point(labelX, 15);
-            _lblValue.Location    = new Point(labelX - 2, 40);
-            _lblSubtitle.Location = new Point(labelX + 2, 85);
+        private void LayoutRegular(bool isRtl)
+        {
+            // Icon sits bottom-corner so titles can use the full card width.
+            int iconY = Math.Max(15, this.Height - 65);
+            _iconPanel.Location = isRtl ? new Point(15, iconY) : new Point(this.Width - 70, iconY);
+
+            int labelX = isRtl ? 20 : 20;
+            // Title spans nearly full width; value stays clear of the bottom icon.
+            int titleWidth = Math.Max(40, this.Width - 40);
+            int valueWidth = Math.Max(40, this.Width - 90);
+
+            _lblTitle.AutoSize = false;
+            _lblValue.AutoSize = false;
+            _lblSubtitle.AutoSize = false;
+            _lblTitle.AutoEllipsis = false;
+
+            int titleH = TextRenderer.MeasureText(
+                string.IsNullOrEmpty(_lblTitle.Text) ? "Ag" : _lblTitle.Text,
+                _lblTitle.Font,
+                new Size(titleWidth, 0),
+                TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl).Height;
+            titleH = Math.Clamp(titleH, 18, 44);
+
+            _lblTitle.Size = new Size(titleWidth, titleH);
+            _lblValue.Size = new Size(valueWidth, 45);
+            _lblSubtitle.Size = new Size(valueWidth, 20);
+
+            int titleY = 12;
+            int valueY = titleY + titleH + 2;
+            _lblTitle.Location = new Point(labelX, titleY);
+            _lblValue.Location = new Point(labelX - 2, valueY);
+            _lblSubtitle.Location = new Point(labelX + 2, Math.Max(valueY + 40, this.Height - 28));
 
             // ── TEXT ALIGNMENT ─────────────────────────────────────────────────────
             // WinForms mirrors ContentAlignment when a Label's RightToLeft == Yes.
@@ -257,7 +268,7 @@ namespace InventorySystem.Controls
             _lblValue.RightToLeft    = RightToLeft.No;
             _lblSubtitle.RightToLeft = RightToLeft.No;
 
-            _lblTitle.TextAlign    = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            _lblTitle.TextAlign    = isRtl ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
             _lblValue.TextAlign    = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
             _lblSubtitle.TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
         }
@@ -422,7 +433,9 @@ namespace InventorySystem.Controls
                 e.Graphics.FillRectangle(brush, -1, -1, this.Width + 2, this.Height + 2);
             }
 
-            Rectangle r = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
+            // Half-pixel inset keeps the 1px stroke centred on the path instead of
+            // straddling the card edge, which is what made the corners look chipped.
+            var r = new RectangleF(0.5f, 0.5f, this.Width - 1.5f, this.Height - 1.5f);
             using (var path = GetRoundedRect(r, _cornerRadius))
             {
                 // 2. Fill rounded card with surface color
@@ -439,10 +452,15 @@ namespace InventorySystem.Controls
             }
         }
 
-        private GraphicsPath GetRoundedRect(Rectangle rect, int radius)
+        private GraphicsPath GetRoundedRect(RectangleF rect, int radius)
         {
             var path = new GraphicsPath();
-            int d = radius * 2;
+            float d = Math.Min(radius * 2f, Math.Min(rect.Width, rect.Height));
+            if (d <= 0f)
+            {
+                path.AddRectangle(rect);
+                return path;
+            }
             path.AddArc(rect.X, rect.Y, d, d, 180, 90);
             path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
             path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);

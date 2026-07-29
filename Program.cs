@@ -113,29 +113,25 @@ namespace InventorySystem
 
         private static int RunI18nSmokeTest()
         {
-            const string logPath = @"c:\Users\Baraa\source\repos\panache-inventory-system\debug-1f5731.log";
+            string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "i18n-smoke.log");
             int failures = 0;
 
-            void AgentLog(string hypothesisId, string location, string message, Dictionary<string, object> data)
+            void AgentLog(string checkId, string location, string message, Dictionary<string, object> data)
             {
-                // #region agent log
                 try
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(logPath));
                     var payload = new Dictionary<string, object>
                     {
-                        ["sessionId"] = "1f5731",
-                        ["runId"] = "i18n-smoke",
-                        ["hypothesisId"] = hypothesisId,
+                        ["checkId"] = checkId,
                         ["location"] = location,
                         ["message"] = message,
                         ["data"] = data,
                         ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                     };
-                    string line = System.Text.Json.JsonSerializer.Serialize(payload) + Environment.NewLine;
-                    File.AppendAllText(logPath, line);
+                    File.AppendAllText(logPath, System.Text.Json.JsonSerializer.Serialize(payload) + Environment.NewLine);
                 }
                 catch { }
-                // #endregion
             }
 
             try

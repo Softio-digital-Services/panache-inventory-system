@@ -42,8 +42,10 @@ namespace InventorySystem.Forms
         private Panel          pnlGridView;        // wraps dgvParts
         private Panel          pnlCardView;        // wraps pnlCardFlow + header
         private Label          lblItemCount;       // "Desserts (19)"
-        private Panel          btnToggleGrid;
         private Panel          btnToggleCard;
+        private Panel          pnlContentHeader;
+        private FlowLayoutPanel pnlRightControls;
+        private TableLayoutPanel tlpBody;
 
         // ── State ─────────────────────────────────────────────────────────
         private InventoryService _inventoryService;
@@ -204,7 +206,7 @@ namespace InventorySystem.Forms
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 
             // ── Body: sidebar + content ───────────────────────────────────
-            TableLayoutPanel tlpBody = new TableLayoutPanel
+            tlpBody = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
                 Margin = new Padding(0, 8, 0, 0)
@@ -255,23 +257,25 @@ namespace InventorySystem.Forms
             {
                 Name = "lblCatTitle",
                 Text = LocalizationManager.GetString("Parts_Categories") == "Parts_Categories" ? "Categories" : LocalizationManager.GetString("Parts_Categories"),
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Font = ThemeConfig.CardTitleFont,
                 ForeColor = ThemeConfig.TextColorDark,
                 Dock = DockStyle.Left,
                 TextAlign = ContentAlignment.MiddleLeft,
                 BackColor = Color.Transparent,
-                Padding = new Padding(16, 0, 8, 0),
+                Padding = new Padding(16, 2, 8, 0),
                 AutoSize = true
             };
             pnlSidebarHeader.Controls.Add(lblCatTitle);
 
             Panel pbSortCat = new Panel
             {
+                Name = "pbSortCat",
                 Size = new Size(26, 26),
-                Location = new Point(230, 9),
+                Location = new Point(Math.Max(8, pnlSidebarHeader.Width - 26 - 12), 9),
                 Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Cursor = Cursors.Hand,
-                BackColor = Color.Transparent
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
             };
             pbSortCat.Paint += (s, e) =>
             {
@@ -309,6 +313,8 @@ namespace InventorySystem.Forms
                 menu.Show(pbSortCat, new Point(0, pbSortCat.Height));
             };
             pnlSidebarHeader.Controls.Add(pbSortCat);
+            pnlSidebarHeader.Resize += (s, e) => LayoutCategorySidebarHeader();
+            LayoutCategorySidebarHeader();
 
             // Category Search Box
             txtCategorySearch = new ModernTextBox
@@ -326,13 +332,13 @@ namespace InventorySystem.Forms
             };
             tlpSidebar.Controls.Add(txtCategorySearch, 0, 1);
 
-            // Scrollable category list
+            // Scrollable category list — soft background so white rows read as cards
             pnlCategoryList = new Panel
             {
                 Dock = DockStyle.Fill,
                 AutoScroll = true,
-                BackColor = Color.Transparent,
-                Padding = new Padding(8, 4, 8, 4)
+                BackColor = ThemeConfig.BackgroundColor,
+                Padding = new Padding(10, 6, 10, 6)
             };
             tlpSidebar.Controls.Add(pnlCategoryList, 0, 2);
 
@@ -397,8 +403,8 @@ namespace InventorySystem.Forms
 
             pnlContent.Controls.Add(tlpContent);
 
-            // Content sub-header (title + count + view toggles)
-            Panel pnlContentHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+            // Content sub-header (title + count + grid/filter toolbar)
+            pnlContentHeader = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
             tlpContent.Controls.Add(pnlContentHeader, 0, 0);
 
             lblItemCount = new Label
@@ -409,30 +415,32 @@ namespace InventorySystem.Forms
             };
             pnlContentHeader.Controls.Add(lblItemCount);
 
-            // ── Right toolbar: view toggles + filter button (matching green reference) ─────
-            // Combined right-side control panel (FlowLayoutPanel for easier alignment)
-            FlowLayoutPanel pnlRightControls = new FlowLayoutPanel
+            // Right toolbar: grid indicator + filter. Width fits two 26px buttons
+            // plus a 10px mid-gap from their symmetric 5px horizontal margins.
+            const int toolbarW = 72;
+            pnlRightControls = new FlowLayoutPanel
             {
-                Size = new Size(110, 30),
-                Location = new Point(pnlContentHeader.Width - 110 - 8, 4),
+                Name = "pnlPartsRightControls",
+                Size = new Size(toolbarW, 30),
+                Location = new Point(Math.Max(0, pnlContentHeader.Width - toolbarW - 8), 4),
                 Anchor = AnchorStyles.Right | AnchorStyles.Top,
-                BackColor = Color.Transparent, FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false
+                BackColor = Color.Transparent,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Padding = new Padding(0)
             };
 
-            // View toggle group (card ⊞ / list ≡)
             btnToggleCard = CreateToggleBtn("grid", true);
-            btnToggleGrid = CreateToggleBtn("list", false);
-            btnToggleCard.Click += (s, e) => SwitchView(true);
-            btnToggleGrid.Click += (s, e) => SwitchView(false);
+            // List-view toggle intentionally omitted — inventory stays in card view.
 
-            // Filter button — panel-based for true transparency
             Panel btnContentFilter = new Panel
             {
+                Name = "btnPartsContentFilter",
                 Size = new Size(26, 26),
                 BackColor = Color.Transparent,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(4, 1, 0, 0),
+                // Equal L/R margins keep a 10px gap in both LTR and RTL flow.
+                Margin = new Padding(5, 1, 5, 0),
                 Tag = ThemeConfig.SecondaryColor
             };
             btnContentFilter.Paint += (s, e) =>
@@ -454,10 +462,11 @@ namespace InventorySystem.Forms
             btnContentFilter.Click += BtnFilter_Click;
 
             pnlRightControls.Controls.Add(btnToggleCard);
-            pnlRightControls.Controls.Add(btnToggleGrid);
             pnlRightControls.Controls.Add(btnContentFilter);
 
             pnlContentHeader.Controls.Add(pnlRightControls);
+            pnlContentHeader.Resize += (s, e) => LayoutContentToolbar();
+            LayoutContentToolbar();
 
             // ── Card view ──────────────────────────────────────────────────
             pnlCardView = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
@@ -528,6 +537,29 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         // VIEW TOGGLE
         // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Pins the grid/filter toolbar to the trailing edge so EN (right) and AR (left)
+        /// keep the same 10px mid-gap after ApplyRTL flips FlowDirection.
+        /// </summary>
+        private void LayoutContentToolbar()
+        {
+            if (pnlRightControls == null || pnlContentHeader == null) return;
+
+            const int toolbarW = 72;
+            const int edge = 8;
+            pnlRightControls.Size = new Size(toolbarW, 30);
+
+            bool isAr = LocalizationManager.IsArabic;
+            pnlRightControls.FlowDirection = isAr ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            pnlRightControls.RightToLeft = RightToLeft.No;
+            pnlRightControls.Anchor = isAr
+                ? (AnchorStyles.Top | AnchorStyles.Left)
+                : (AnchorStyles.Top | AnchorStyles.Right);
+            pnlRightControls.Location = isAr
+                ? new Point(edge, 4)
+                : new Point(Math.Max(0, pnlContentHeader.ClientSize.Width - toolbarW - edge), 4);
+        }
+
         private Panel CreateToggleBtn(string iconName, bool startActive)
         {
             bool isActive = startActive;
@@ -536,7 +568,7 @@ namespace InventorySystem.Forms
                 Size = new Size(26, 26),
                 BackColor = Color.Transparent,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 1, 4, 0),
+                Margin = new Padding(5, 1, 5, 0),
                 Tag = isActive  // store active state in Tag
             };
 
@@ -579,11 +611,11 @@ namespace InventorySystem.Forms
             pnlCardView.Visible  = toCard;
             pnlGridView.Visible  = !toCard;
 
-            btnToggleCard.Tag = toCard;
-            btnToggleGrid.Tag = !toCard;
-
-            btnToggleCard.Invalidate();
-            btnToggleGrid.Invalidate();
+            if (btnToggleCard != null)
+            {
+                btnToggleCard.Tag = toCard;
+                btnToggleCard.Invalidate();
+            }
 
             if (toCard) LoadCards();
             else        LoadData(_searchText, _lowStockOnly, _activeOnly, _activeCategory);
@@ -649,32 +681,65 @@ namespace InventorySystem.Forms
             pnlCategoryList.ResumeLayout();
         }
 
+        private void LayoutCategorySidebarHeader()
+        {
+            var title = this.Controls.Find("lblCatTitle", true).FirstOrDefault() as Label;
+            var sort = this.Controls.Find("pbSortCat", true).FirstOrDefault() as Panel;
+            if (title == null || sort == null || title.Parent == null) return;
+
+            Panel header = title.Parent as Panel;
+            if (header == null) return;
+
+            bool isAr = LocalizationManager.IsArabic;
+            title.Font = ThemeConfig.CardTitleFont;
+            title.Dock = isAr ? DockStyle.Right : DockStyle.Left;
+            title.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+            title.RightToLeft = RightToLeft.No;
+            title.Padding = isAr ? new Padding(8, 2, 16, 0) : new Padding(16, 2, 8, 0);
+
+            sort.Anchor = isAr
+                ? (AnchorStyles.Top | AnchorStyles.Left)
+                : (AnchorStyles.Top | AnchorStyles.Right);
+            sort.Location = isAr
+                ? new Point(12, 9)
+                : new Point(Math.Max(8, header.ClientSize.Width - 26 - 12), 9);
+        }
+
         private Panel BuildCategoryRow(CategoryData cat, string displayName, int count)
         {
             bool isActive = (_activeCategory == (cat?.CategoryName));
+            bool isRtl = LocalizationManager.IsArabic;
 
-            // Wrapper for spacing
             Panel wrapper = new Panel
             {
-                Height = 52, Dock = DockStyle.Top,
-                Padding = new Padding(0, 0, 0, 8), BackColor = Color.Transparent
+                Height = 56,
+                Dock = DockStyle.Top,
+                Padding = new Padding(0, 0, 0, 8),
+                BackColor = Color.Transparent
             };
 
-            // The actual card
             Panel card = new Panel
             {
-                Dock = DockStyle.Fill, BackColor = ThemeConfig.SurfaceColor,
-                Cursor = Cursors.Hand, Tag = cat
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                Tag = cat,
+                RightToLeft = RightToLeft.No
             };
             wrapper.Controls.Add(card);
 
-            // Card custom painting (border & rounded corners)
+            const int cardRadius = 12;
             card.Paint += (s, pe) =>
             {
                 pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 8))
-                using (var brush = new SolidBrush(card.BackColor))
-                using (var pen = new Pen(isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, isActive ? 1.5f : 1f))
+                pe.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                using (var clear = new SolidBrush(ThemeConfig.BackgroundColor))
+                    pe.Graphics.FillRectangle(clear, -1, -1, card.Width + 2, card.Height + 2);
+
+                using (var path = ThemeConfig.GetRoundedPathPublic(
+                    new Rectangle(0, 0, Math.Max(1, card.Width - 1), Math.Max(1, card.Height - 1)), cardRadius))
+                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
+                using (var pen = new Pen(isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, isActive ? 1.6f : 1f))
                 {
                     pe.Graphics.FillPath(brush, path);
                     pe.Graphics.DrawPath(pen, path);
@@ -695,46 +760,50 @@ namespace InventorySystem.Forms
                         }
                     }
                 }
-                catch { /* fallback to placeholder */ }
+                catch { }
             }
 
-            // Fake Icon / Image placeholder on the left
             PictureBox pbIcon = new PictureBox
             {
-                Size = new Size(24, 24), Location = new Point(12, 10),
-                SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Transparent,
+                Size = new Size(24, 24),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.Transparent,
                 Image = iconImage
             };
-            if (pbIcon.Image == null) { pbIcon.BackColor = ThemeConfig.BorderColor; }
+            if (pbIcon.Image == null) pbIcon.BackColor = ThemeConfig.BorderColor;
             card.Controls.Add(pbIcon);
 
-            // Category name
             Label lblName = new Label
             {
                 Text = displayName,
-                Font = isActive ? new Font("Segoe UI", 9F, FontStyle.Bold) : new Font("Segoe UI", 9F),
+                Font = isActive
+                    ? new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold)
+                    : new Font(ThemeConfig.AppFontFamily, 9F),
                 ForeColor = ThemeConfig.TextColorDark,
-                AutoSize = false, Size = new Size(160, 44),
-                Location = new Point(44, 0), TextAlign = ContentAlignment.MiddleLeft,
+                AutoSize = false,
+                TextAlign = isRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft,
+                RightToLeft = RightToLeft.No,
                 BackColor = Color.Transparent
             };
             card.Controls.Add(lblName);
 
-            // Circular Count badge
             Label lblCount = new Label
             {
                 Text = count.ToString(),
-                Font = new Font("Segoe UI", 8F, FontStyle.Bold),
+                Font = new Font(ThemeConfig.AppFontFamily, 8F, FontStyle.Bold),
                 ForeColor = isActive ? Color.White : ThemeConfig.TextColorDark,
-                AutoSize = false, Size = new Size(24, 24),
-                Location = new Point(214, 10), TextAlign = ContentAlignment.MiddleCenter,
+                AutoSize = false,
+                Size = new Size(24, 24),
+                TextAlign = ContentAlignment.MiddleCenter,
+                RightToLeft = RightToLeft.No,
                 BackColor = isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BackgroundColor
             };
             lblCount.Paint += (s, pe) =>
             {
                 pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                pe.Graphics.Clear(card.BackColor);
-                using (var path = RoundedPath(new Rectangle(0, 0, lblCount.Width - 1, lblCount.Height - 1), lblCount.Width / 2))
+                pe.Graphics.Clear(ThemeConfig.SurfaceColor);
+                using (var path = ThemeConfig.GetRoundedPathPublic(
+                    new Rectangle(0, 0, lblCount.Width - 1, lblCount.Height - 1), lblCount.Width / 2f))
                 using (var brush = new SolidBrush(lblCount.BackColor))
                     pe.Graphics.FillPath(brush, path);
                 TextRenderer.DrawText(pe.Graphics, lblCount.Text, lblCount.Font,
@@ -743,7 +812,26 @@ namespace InventorySystem.Forms
             };
             card.Controls.Add(lblCount);
 
-            // Click — filter by category
+            void LayoutRow()
+            {
+                if (card.Width < 40) return;
+                int iconY = Math.Max(0, (card.Height - 24) / 2);
+                if (isRtl)
+                {
+                    pbIcon.Location = new Point(card.Width - 36, iconY);
+                    lblCount.Location = new Point(12, iconY);
+                    lblName.Bounds = new Rectangle(40, 0, Math.Max(40, card.Width - 40 - 44), card.Height);
+                }
+                else
+                {
+                    pbIcon.Location = new Point(12, iconY);
+                    lblCount.Location = new Point(card.Width - 36, iconY);
+                    lblName.Bounds = new Rectangle(44, 0, Math.Max(40, card.Width - 44 - 40), card.Height);
+                }
+            }
+            card.Resize += (s, e) => LayoutRow();
+            LayoutRow();
+
             EventHandler select = (s, e) =>
             {
                 _activeCategory = cat?.CategoryName;
@@ -756,7 +844,6 @@ namespace InventorySystem.Forms
             lblName.Click += select;
             lblCount.Click += select;
 
-            // Right-click on real categories → Edit
             if (cat != null)
             {
                 Action editCategory = () =>
@@ -775,10 +862,10 @@ namespace InventorySystem.Forms
                 Action deleteCategory = () =>
                 {
                     int itemCount = CategoryData.GetItemCount(cat.CategoryName);
-                    string warningMsg = itemCount > 0 
+                    string warningMsg = itemCount > 0
                         ? $"Warning: There are {itemCount} items in this category.\n\nAre you sure you want to delete the category \"{cat.CategoryName}\"?"
                         : $"Delete category \"{cat.CategoryName}\"?";
-                        
+
                     if (MessageHelper.ConfirmAction(warningMsg))
                     {
                         try { CategoryData.DeleteCategory(cat.Id); }
@@ -788,10 +875,9 @@ namespace InventorySystem.Forms
                     }
                 };
 
-                // Add Edit / Delete buttons that appear on hover
-                PictureBox pbEdit = new PictureBox { Size = new Size(18, 18), Location = new Point(116, 13), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
-                PictureBox pbDelete = new PictureBox { Size = new Size(18, 18), Location = new Point(140, 13), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
-                
+                PictureBox pbEdit = new PictureBox { Size = new Size(18, 18), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
+                PictureBox pbDelete = new PictureBox { Size = new Size(18, 18), Cursor = Cursors.Hand, Visible = false, BackColor = Color.Transparent };
+
                 pbEdit.Paint += (s, e) => {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                     var img = ThemeConfig.TintImage(ThemeConfig.GetNuricon("edit"), ThemeConfig.SecondaryColor);
@@ -805,30 +891,42 @@ namespace InventorySystem.Forms
 
                 pbEdit.Click += (s, e) => editCategory();
                 pbDelete.Click += (s, e) => deleteCategory();
-
                 card.Controls.Add(pbEdit);
                 card.Controls.Add(pbDelete);
                 pbEdit.BringToFront();
                 pbDelete.BringToFront();
 
+                void LayoutHoverActions()
+                {
+                    int y = Math.Max(0, (card.Height - 18) / 2);
+                    if (isRtl)
+                    {
+                        pbEdit.Location = new Point(40, y);
+                        pbDelete.Location = new Point(62, y);
+                    }
+                    else
+                    {
+                        pbDelete.Location = new Point(Math.Max(0, card.Width - 64), y);
+                        pbEdit.Location = new Point(Math.Max(0, card.Width - 88), y);
+                    }
+                }
+                card.Resize += (s, e) => LayoutHoverActions();
+                LayoutHoverActions();
+
                 void ShowActions(object s, EventArgs e) { pbEdit.Visible = true; pbDelete.Visible = true; }
-                void HideActions(object s, EventArgs e) 
-                { 
+                void HideActions(object s, EventArgs e)
+                {
                     if (!card.ClientRectangle.Contains(card.PointToClient(Cursor.Position)))
                     {
-                        pbEdit.Visible = false; pbDelete.Visible = false; 
+                        pbEdit.Visible = false; pbDelete.Visible = false;
                     }
                 }
 
-                card.MouseEnter += ShowActions;
-                pbIcon.MouseEnter += ShowActions;
-                lblName.MouseEnter += ShowActions;
-                lblCount.MouseEnter += ShowActions;
-                
-                card.MouseLeave += HideActions;
-                pbIcon.MouseLeave += HideActions;
-                lblName.MouseLeave += HideActions;
-                lblCount.MouseLeave += HideActions;
+                foreach (Control c in new Control[] { card, pbIcon, lblName, lblCount, pbEdit, pbDelete })
+                {
+                    c.MouseEnter += ShowActions;
+                    c.MouseLeave += HideActions;
+                }
 
                 void ShowCatMenu(object s, EventArgs e)
                 {
@@ -847,7 +945,7 @@ namespace InventorySystem.Forms
             return wrapper;
         }
 
-        // ─────────────────────────────────────────────────────────────────
+
         // CARD VIEW — LoadCards
         // ─────────────────────────────────────────────────────────────────
         private async void LoadCards()
@@ -1188,6 +1286,9 @@ namespace InventorySystem.Forms
         private void ApplyLocalization()
         {
             InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
+            LayoutContentToolbar();
+            LayoutCategorySidebarHeader();
+
             Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             var ctrlTitle = this.Controls.Find("lblInventoryTitle", true);
@@ -1195,7 +1296,6 @@ namespace InventorySystem.Forms
             if (txtSearch != null) txtSearch.PlaceholderText = L("Parts_Search");
 
             if (btnAdd != null) { ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_New"); btnAdd.Invalidate(); }
-            // if (btnFilter != null)  btnFilter.Invalidate();
             if (btnImport != null)  btnImport.Invalidate();
             if (btnExport != null)  btnExport.Invalidate();
 
@@ -1203,7 +1303,11 @@ namespace InventorySystem.Forms
             if (ctrlDel.Length > 0 && ctrlDel[0] is Button bDel) ThemeConfig.ApplyStandardDeleteButton(bDel, "Parts_Delete");
 
             var ctrlCatTitle = this.Controls.Find("lblCatTitle", true);
-            if (ctrlCatTitle.Length > 0) ctrlCatTitle[0].Text = L("Parts_Categories");
+            if (ctrlCatTitle.Length > 0)
+            {
+                ctrlCatTitle[0].Text = L("Parts_Categories");
+                ctrlCatTitle[0].Font = ThemeConfig.CardTitleFont;
+            }
 
             var ctrlAddCat = this.Controls.Find("btnSidebarAddCat", true).FirstOrDefault() as Button;
             if (ctrlAddCat != null) { ThemeConfig.ApplyStandardAddButton(ctrlAddCat, "Parts_AddCategory"); ctrlAddCat.Invalidate(); }
@@ -1235,6 +1339,7 @@ namespace InventorySystem.Forms
             {
                 RefreshAll();
             }
+
         }
 
         protected override void OnVisibleChanged(EventArgs e)
@@ -1499,13 +1604,16 @@ namespace InventorySystem.Forms
         // ─────────────────────────────────────────────────────────────────
         // DRAWING HELPERS
         // ─────────────────────────────────────────────────────────────────
-        private static GraphicsPath RoundedPath(Rectangle r, int rad)
+        private static GraphicsPath RoundedPath(Rectangle r, int radius)
         {
+            // radius is the visual corner radius; AddArc needs diameter.
+            int d = Math.Min(radius * 2, Math.Min(r.Width, r.Height));
+            if (d < 1) d = 1;
             var p = new GraphicsPath();
-            p.AddArc(r.X,             r.Y,              rad, rad, 180, 90);
-            p.AddArc(r.Right - rad,   r.Y,              rad, rad, 270, 90);
-            p.AddArc(r.Right - rad,   r.Bottom - rad,   rad, rad,   0, 90);
-            p.AddArc(r.X,             r.Bottom - rad,   rad, rad,  90, 90);
+            p.AddArc(r.X,           r.Y,            d, d, 180, 90);
+            p.AddArc(r.Right - d,   r.Y,            d, d, 270, 90);
+            p.AddArc(r.Right - d,   r.Bottom - d,   d, d,   0, 90);
+            p.AddArc(r.X,           r.Bottom - d,   d, d,  90, 90);
             p.CloseFigure();
             return p;
         }

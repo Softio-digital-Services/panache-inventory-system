@@ -134,6 +134,7 @@ namespace InventorySystem.Forms
             if (chkPurchase != null) chkPurchase.Text = L("AddPart_PurchaseItem", "Purchase item");
             if (chkInactive != null) chkInactive.Text = L("AddPart_Inactive", "Inactive");
             if (cmbTaxRate != null) cmbTaxRate.LabelText = L("AddPart_TaxRates", "Tax Rates:");
+            ReloadTaxRates();
             if (cmbCategory != null) cmbCategory.LabelText = L("AddPart_Category", "Category");
             if (lblExp != null) lblExp.Text = L("AddPart_ExpiryDate", "Expiry Date");
             
@@ -176,6 +177,13 @@ namespace InventorySystem.Forms
             if (btnReadScale != null) btnReadScale.Text = L("Scale_ReadWeight", "Read Weight");
             if (btnApplyScalePrice != null) btnApplyScalePrice.Text = L("Scale_ApplyPrice1", "Apply to Price 1");
             if (btnApplyScaleWeight != null) btnApplyScaleWeight.Text = L("Scale_ApplyStock", "Apply Weight to Stock");
+            if (lblScaleStatus != null)
+            {
+                lblScaleStatus.RightToLeft = RightToLeft.No;
+                lblScaleStatus.Text = ScaleService.Instance.IsConnected
+                    ? L("Scale_StatusConnected", "Status: Connected")
+                    : L("Scale_StatusDisconnected", "Status: Disconnected");
+            }
 
             SetFooterButtons(
                 _editPartId.HasValue ? L("AddPart_UpdateBtn", "Update") : L("AddPart_Save", "Save"),
@@ -283,13 +291,18 @@ namespace InventorySystem.Forms
                     if (parsed.IsSuccess) {
                         if (parsed.BarcodeType == ScaleBarcodeType.WeightBased) {
                             _currentScaleWeight = parsed.WeightKg;
-                            lblWeightReadout.Text = $"Weight: {parsed.WeightKg:N3} kg";
-                            CalculateScalePrice();
-                            MessageHelper.ShowInfo($"TM-A17 Scale Barcode Detected!\nPLU: {parsed.ProductCode}\nWeight: {parsed.WeightKg:N3} kg\nCalc Price: {lblCalculatedPrice.Text}");
+                            UpdateScaleUnitDisplay();
+                            MessageHelper.ShowInfo(string.Format(
+                                LocalizationManager.GetString("Scale_BarcodeWeightMsg",
+                                    "TM-A17 Scale Barcode Detected!{0}PLU: {1}{0}Weight: {2:N3} kg{0}{3}"),
+                                Environment.NewLine, parsed.ProductCode, parsed.WeightKg, lblCalculatedPrice.Text));
                         } else if (parsed.BarcodeType == ScaleBarcodeType.PriceBased) {
                             numPrices[0].Value = parsed.TotalPrice;
                             CalculateMargins(null, null);
-                            MessageHelper.ShowInfo($"TM-A17 Scale Barcode Detected!\nPLU: {parsed.ProductCode}\nTotal Price: ${parsed.TotalPrice:N2}");
+                            MessageHelper.ShowInfo(string.Format(
+                                LocalizationManager.GetString("Scale_BarcodePriceMsg",
+                                    "TM-A17 Scale Barcode Detected!{0}PLU: {1}{0}Total Price: {2}"),
+                                Environment.NewLine, parsed.ProductCode, CurrencyService.Format(parsed.TotalPrice)));
                         }
                         if (string.IsNullOrWhiteSpace(txtSku.Text)) txtSku.Text = "PLU-" + parsed.ProductCode;
                     }
@@ -365,11 +378,14 @@ namespace InventorySystem.Forms
 
             lblScaleStatus = new Label {
                 Name = "lblScaleStatus",
-                Text = ScaleService.Instance.IsConnected ? "Status: Connected" : "Status: Disconnected",
+                Text = ScaleService.Instance.IsConnected
+                    ? LocalizationManager.GetString("Scale_StatusConnected", "Status: Connected")
+                    : LocalizationManager.GetString("Scale_StatusDisconnected", "Status: Disconnected"),
                 ForeColor = ScaleService.Instance.IsConnected ? Color.Green : Color.Red,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 AutoSize = true,
-                Margin = new Padding(0, 14, 15, 0)
+                Margin = new Padding(0, 14, 15, 0),
+                RightToLeft = RightToLeft.No
             };
 
             btnConfigScale = new ModernButton { Name = "btnConfigScale", Text = "Scale Settings", Width = 110, Height = 35, Margin = new Padding(0, 5, 10, 0) };
@@ -392,11 +408,14 @@ namespace InventorySystem.Forms
 
             lblUnitPriceTitle = new Label {
                 Name = "lblUnitPriceTitle",
-                Text = $"Unit Price (/{ScaleService.Instance.Config.DefaultUnit}):",
+                Text = string.Format(
+                    LocalizationManager.GetString("Scale_UnitPrice", "Unit Price (/{0}):"),
+                    ScaleService.Instance.Config.DefaultUnit),
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 AutoSize = true,
-                Margin = new Padding(0, 14, 5, 0)
+                Margin = new Padding(0, 14, 5, 0),
+                RightToLeft = RightToLeft.No
             };
 
             numUnitPricePerKg = new ModernNumericUpDown { ShowLabel = false, Width = 120, DecimalPlaces = 2, Maximum = 1000000, Margin = new Padding(0, 5, 10, 0) };
@@ -406,20 +425,26 @@ namespace InventorySystem.Forms
 
             lblWeightReadout = new Label {
                 Name = "lblWeightReadout",
-                Text = "Weight: 0.000 kg",
+                Text = string.Format(
+                    LocalizationManager.GetString("Scale_Weight", "Weight: {0} {1}"),
+                    "0.000", "kg"),
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.DarkBlue,
                 AutoSize = true,
-                Margin = new Padding(0, 10, 15, 0)
+                Margin = new Padding(0, 10, 15, 0),
+                RightToLeft = RightToLeft.No
             };
 
             lblCalculatedPrice = new Label {
                 Name = "lblCalculatedPrice",
-                Text = "Calc Price: $0.00",
+                Text = string.Format(
+                    LocalizationManager.GetString("Scale_CalcPrice", "Calc Price: {0}"),
+                    CurrencyService.Format(0)),
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.DarkGreen,
                 AutoSize = true,
-                Margin = new Padding(0, 10, 20, 0)
+                Margin = new Padding(0, 10, 20, 0),
+                RightToLeft = RightToLeft.No
             };
 
             btnApplyScalePrice = new ModernButton { Name = "btnApplyScalePrice", Text = "Apply to Price 1", Width = 130, Height = 35, Margin = new Padding(0, 2, 10, 0) };
@@ -467,7 +492,9 @@ namespace InventorySystem.Forms
                 this.BeginInvoke(new Action(() => Scale_StatusChanged(isConnected, statusText)));
                 return;
             }
-            lblScaleStatus.Text = $"Status: {(isConnected ? "Connected" : "Disconnected")}";
+            lblScaleStatus.Text = isConnected
+                ? LocalizationManager.GetString("Scale_StatusConnected", "Status: Connected")
+                : LocalizationManager.GetString("Scale_StatusDisconnected", "Status: Disconnected");
             lblScaleStatus.ForeColor = isConnected ? Color.Green : Color.Red;
             UpdateScaleUnitDisplay();
         }
@@ -479,8 +506,21 @@ namespace InventorySystem.Forms
                 : ScaleService.Instance.Config.DefaultUnit;
             if (string.IsNullOrWhiteSpace(unit)) unit = "kg";
 
-            if (lblUnitPriceTitle != null) lblUnitPriceTitle.Text = $"Unit Price (/{unit}):";
-            if (lblWeightReadout != null) lblWeightReadout.Text = $"Weight: {_currentScaleWeight:N3} {unit} {(isStable ? "" : "(Moving)")}";
+            if (lblUnitPriceTitle != null)
+            {
+                lblUnitPriceTitle.RightToLeft = RightToLeft.No;
+                lblUnitPriceTitle.Text = string.Format(
+                    LocalizationManager.GetString("Scale_UnitPrice", "Unit Price (/{0}):"), unit);
+            }
+            if (lblWeightReadout != null)
+            {
+                lblWeightReadout.RightToLeft = RightToLeft.No;
+                string weightKey = isStable ? "Scale_Weight" : "Scale_WeightMoving";
+                string weightFallback = isStable ? "Weight: {0} {1}" : "Weight: {0} {1} (Moving)";
+                lblWeightReadout.Text = string.Format(
+                    LocalizationManager.GetString(weightKey, weightFallback),
+                    _currentScaleWeight.ToString("N3"), unit);
+            }
             
             // Sync unit in UOM dropdown if empty
             if (cmbUom != null && string.IsNullOrWhiteSpace(cmbUom.Text)) cmbUom.Text = unit;
@@ -492,8 +532,14 @@ namespace InventorySystem.Forms
         {
             decimal unitPrice = numUnitPricePerKg.Value;
             decimal calcPrice = Math.Round(_currentScaleWeight * unitPrice, 2);
-            lblCalculatedPrice.Text = $"Calc Price: ${calcPrice:N2}";
-            lblCalculatedPrice.Tag = calcPrice;
+            if (lblCalculatedPrice != null)
+            {
+                lblCalculatedPrice.RightToLeft = RightToLeft.No;
+                lblCalculatedPrice.Text = string.Format(
+                    LocalizationManager.GetString("Scale_CalcPrice", "Calc Price: {0}"),
+                    CurrencyService.Format(calcPrice));
+                lblCalculatedPrice.Tag = calcPrice;
+            }
         }
 
         private void LoadDropdowns()
@@ -514,16 +560,51 @@ namespace InventorySystem.Forms
                 cmbSupplier.DataSource = dtSup;
 
                 // Taxes
-                cmbTaxRate.Items.Add(new { Text = "Rate 1 N/A (0%)", Value = 0m });
-                cmbTaxRate.Items.Add(new { Text = "Standard (15%)", Value = 15m });
-                cmbTaxRate.Items.Add(new { Text = "Reduced (5%)", Value = 5m });
-                cmbTaxRate.DisplayMember = "Text"; cmbTaxRate.ValueMember = "Value";
-                cmbTaxRate.SelectedIndex = 0;
+                ReloadTaxRates();
 
                 // Units of Measure
                 cmbUom.Items.Clear();
                 cmbUom.Items.AddRange(new object[] { "g", "kg", "pcs", "pack", "box", "meter", "liter" });
             } catch (Exception ex) { MessageHelper.ShowError("Error loading data: " + ex.Message); }
+        }
+
+        private void ReloadTaxRates()
+        {
+            if (cmbTaxRate == null) return;
+
+            decimal selected = 0m;
+            if (cmbTaxRate.SelectedItem != null)
+            {
+                try { selected = (decimal)((dynamic)cmbTaxRate.SelectedItem).Value; }
+                catch { selected = 0m; }
+            }
+
+            cmbTaxRate.Items.Clear();
+            cmbTaxRate.Items.Add(new
+            {
+                Text = LocalizationManager.GetString("AddPart_TaxRateNA", "Rate 1 N/A (0%)"),
+                Value = 0m
+            });
+            cmbTaxRate.Items.Add(new
+            {
+                Text = LocalizationManager.GetString("AddPart_TaxRateStandard", "Standard (15%)"),
+                Value = 15m
+            });
+            cmbTaxRate.Items.Add(new
+            {
+                Text = LocalizationManager.GetString("AddPart_TaxRateReduced", "Reduced (5%)"),
+                Value = 5m
+            });
+            cmbTaxRate.DisplayMember = "Text";
+            cmbTaxRate.ValueMember = "Value";
+
+            int idx = 0;
+            for (int i = 0; i < cmbTaxRate.Items.Count; i++)
+            {
+                dynamic item = cmbTaxRate.Items[i];
+                if (item.Value == selected) { idx = i; break; }
+            }
+            cmbTaxRate.SelectedIndex = idx;
         }
 
         public void LoadPartData(PartData part)

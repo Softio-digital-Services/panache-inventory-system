@@ -2189,6 +2189,15 @@
   <data name="AddPart_TaxRates" xml:space="preserve">
     <value>نسب الضريبة:</value>
   </data>
+  <data name="AddPart_TaxRateNA" xml:space="preserve">
+    <value>المعدل 1 غير متاح (0%)</value>
+  </data>
+  <data name="AddPart_TaxRateStandard" xml:space="preserve">
+    <value>قياسي (15%)</value>
+  </data>
+  <data name="AddPart_TaxRateReduced" xml:space="preserve">
+    <value>مخفّض (5%)</value>
+  </data>
   <data name="AddPart_ExpiryDate" xml:space="preserve">
     <value>تاريخ الصلاحية</value>
   </data>
@@ -2263,6 +2272,36 @@
   </data>
   <data name="Scale_ApplyStock" xml:space="preserve">
     <value>تطبيق الوزن على المخزون</value>
+  </data>
+  <data name="Scale_StatusConnected" xml:space="preserve">
+    <value>الحالة: متصل</value>
+  </data>
+  <data name="Scale_StatusDisconnected" xml:space="preserve">
+    <value>الحالة: غير متصل</value>
+  </data>
+  <data name="Scale_UnitPrice" xml:space="preserve">
+    <value>سعر الوحدة (/{0}):</value>
+  </data>
+  <data name="Scale_Weight" xml:space="preserve">
+    <value>الوزن: {0} {1}</value>
+  </data>
+  <data name="Scale_WeightMoving" xml:space="preserve">
+    <value>الوزن: {0} {1} (متحرك)</value>
+  </data>
+  <data name="Scale_CalcPrice" xml:space="preserve">
+    <value>السعر المحسوب: {0}</value>
+  </data>
+  <data name="Scale_BarcodeDetected" xml:space="preserve">
+    <value>تم اكتشاف باركود ميزان TM-A17!</value>
+  </data>
+  <data name="Scale_BarcodeWeightMsg" xml:space="preserve">
+    <value>تم اكتشاف باركود ميزان TM-A17!{0}رمز المنتج: {1}{0}الوزن: {2:N3} كغ{0}{3}</value>
+  </data>
+  <data name="Scale_BarcodePriceMsg" xml:space="preserve">
+    <value>تم اكتشاف باركود ميزان TM-A17!{0}رمز المنتج: {1}{0}السعر الإجمالي: {2}</value>
+  </data>
+  <data name="Common_NoDate" xml:space="preserve">
+    <value>بدون تاريخ</value>
   </data>
   <data name="OrderDetails_Title" xml:space="preserve">
     <value>تفاصيل الطلب #{0}</value>

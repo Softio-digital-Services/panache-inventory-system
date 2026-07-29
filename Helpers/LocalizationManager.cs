@@ -58,26 +58,6 @@ namespace InventorySystem.Helpers
             catch { }
 
             ResetTranslationCaches();
-            // #region agent log
-            try
-            {
-                int loginVisible = 0;
-                foreach (Form f in Application.OpenForms)
-                    if (f is LoginForm lf && lf.Visible) loginVisible++;
-                string line = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
-                {
-                    ["sessionId"] = "1f5731",
-                    ["runId"] = "lang-switch",
-                    ["hypothesisId"] = "H6",
-                    ["location"] = "LocalizationManager.SetLanguage",
-                    ["message"] = "language set",
-                    ["data"] = new Dictionary<string, object> { ["culture"] = cultureCode, ["loginFormsVisible"] = loginVisible },
-                    ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                }) + Environment.NewLine;
-                File.AppendAllText(@"c:\Users\Baraa\source\repos\panache-inventory-system\debug-1f5731.log", line);
-            }
-            catch { }
-            // #endregion
             LanguageChanged?.Invoke(null, EventArgs.Empty);
         }
 

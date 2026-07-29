@@ -55,6 +55,12 @@ namespace InventorySystem.Controls
             if (Helpers.LocalizationManager.IsArabic) this.RightToLeft = RightToLeft.Yes;
             
             InitializeControls();
+            Helpers.LocalizationManager.LanguageChanged += (s, e) =>
+            {
+                if (Helpers.LocalizationManager.IsArabic) this.RightToLeft = RightToLeft.Yes;
+                else this.RightToLeft = RightToLeft.No;
+                UpdateLabel();
+            };
         }
 
         private void InitializeControls()
@@ -69,7 +75,9 @@ namespace InventorySystem.Controls
             lblDate.Dock = DockStyle.Fill;
             lblDate.TextAlign = ContentAlignment.MiddleLeft;
             lblDate.Font = new Font("Segoe UI", 10F);
-            lblDate.Text = _value.HasValue ? _value.Value.ToShortDateString() : "No Date";
+            lblDate.Text = _value.HasValue
+                ? _value.Value.ToShortDateString()
+                : Helpers.LocalizationManager.GetString("Common_NoDate", "No Date");
             lblDate.Click += OpenCalendar;
             
             Label lblIcon = new Label();
@@ -126,8 +134,10 @@ namespace InventorySystem.Controls
 
         private void UpdateLabel()
         {
-            if(lblDate != null)
-                lblDate.Text = _value.HasValue ? _value.Value.ToShortDateString() : "No Date";
+            if (lblDate != null)
+                lblDate.Text = _value.HasValue
+                    ? _value.Value.ToShortDateString()
+                    : Helpers.LocalizationManager.GetString("Common_NoDate", "No Date");
         }
     }
 }

@@ -432,16 +432,16 @@ namespace InventorySystem
             {
                 Name = "pnlFooter",
                 Dock = DockStyle.Bottom,
-                Height = 22,
+                Height = 30,
                 BackColor = ThemeConfig.SurfaceColor,
-                Padding = new Padding(10, 0, 10, 0)
+                Padding = new Padding(15, 0, 15, 0)
             };
 
             lblVersion = new Label
             {
                 Text = string.Format(LocalizationManager.GetString("Nav_VersionFooter"), LocalizationManager.GetString("Nav_MainTitle")),
                 AutoSize = true,
-                Font = new Font("Segoe UI", 7.25f),
+                Font = new Font("Segoe UI", 8.5f),
                 ForeColor = ThemeConfig.TextColorDark,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Left
@@ -452,7 +452,7 @@ namespace InventorySystem
             {
                 Text = LocalizationManager.GetString("Msg_DevelopedBy", "Developed by Softio"),
                 AutoSize = true,
-                Font = new Font("Segoe UI", 7.25f, FontStyle.Italic),
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
                 ForeColor = ThemeConfig.PrimaryColor,
                 TextAlign = ContentAlignment.MiddleRight,
                 Dock = DockStyle.Right

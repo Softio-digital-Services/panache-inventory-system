@@ -40,6 +40,10 @@ namespace InventorySystem.Forms
         private static readonly Color SoftBg = Color.FromArgb(246, 248, 251);
         private static readonly Color Line = Color.FromArgb(226, 232, 240);
         private static readonly Color Muted = Color.FromArgb(100, 116, 139);
+        // Cart rows sit on a white rail, so the divider grey used elsewhere is too
+        // faint to read as an edge. These are a couple of steps darker.
+        private static readonly Color CardBorder = Color.FromArgb(209, 217, 228);
+        private static readonly Color PillBorder = Color.FromArgb(190, 201, 216);
 
         private sealed class OrderSession
         {
@@ -771,7 +775,7 @@ namespace InventorySystem.Forms
                 Cursor = Cursors.Hand,
                 Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold)
             };
-            ThemeConfig.ApplySecondaryButton(_btnPrint);
+            ThemeConfig.ApplyPaletteButton(_btnPrint, ThemeConfig.SuccessColor);
             _btnPrint.Click += (s, e) => PrintClick?.Invoke(this, EventArgs.Empty);
 
             _btnCheckout = new ModernButton
@@ -782,7 +786,7 @@ namespace InventorySystem.Forms
                 Cursor = Cursors.Hand,
                 Font = new Font(ThemeConfig.AppFontFamily, 9.5F, FontStyle.Bold)
             };
-            ThemeConfig.ApplyPrimaryButton(_btnCheckout);
+            ThemeConfig.ApplyPaletteButton(_btnCheckout, ThemeConfig.SuccessColor);
             _btnCheckout.Click += (s, e) => CheckoutClick?.Invoke(this, EventArgs.Empty);
 
             row.Controls.Add(_btnPrint, 0, 0);
@@ -883,19 +887,21 @@ namespace InventorySystem.Forms
             {
                 Text = CurrencyService.GetSymbol("USD"),
                 AutoSize = false,
-                Font = new Font(ThemeConfig.AppFontFamily, 8.5F, FontStyle.Bold),
+                Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
                 ForeColor = Muted,
                 BackColor = Color.White,
-                TextAlign = ContentAlignment.MiddleCenter
+                TextAlign = ContentAlignment.MiddleCenter,
+                RightToLeft = RightToLeft.No
             };
             var txtPrice = new TextBox
             {
                 Text = price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
                 BorderStyle = BorderStyle.None,
-                Font = new Font(ThemeConfig.AppFontFamily, 8.5F, FontStyle.Bold),
+                Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
                 ForeColor = ThemeConfig.TextColorDark,
                 BackColor = Color.White,
-                TextAlign = rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left
+                TextAlign = rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+                RightToLeft = RightToLeft.No
             };
             priceBox.Controls.Add(lblCurrency);
             priceBox.Controls.Add(txtPrice);
@@ -924,9 +930,10 @@ namespace InventorySystem.Forms
                 Text = qty.ToString(),
                 BorderStyle = BorderStyle.None,
                 TextAlign = HorizontalAlignment.Center,
-                Font = new Font(ThemeConfig.AppFontFamily, 10F, FontStyle.Bold),
+                Font = new Font(ThemeConfig.AppFontFamily, 9.5F, FontStyle.Bold),
                 ForeColor = QtyAccent,
-                BackColor = Color.White
+                BackColor = Color.White,
+                RightToLeft = RightToLeft.No
             };
             var btnPlus = CreateStepButton("+");
             btnMinus.Click += (s, e) => AdjustQty(partId, -1);
@@ -968,9 +975,13 @@ namespace InventorySystem.Forms
 
                 int rowH = Math.Min(PillControlH, h);
                 int top = Math.Max(0, (h - rowH) / 2);
-                int textTop = top + Math.Max(0, (rowH - 18) / 2);
                 int qtyGroupW = step + qtyW + step;
                 int priceW = Math.Max(72, w - qtyGroupW - trashW - gap * 3);
+
+                // A borderless single-line TextBox clamps its own height to the font,
+                // so centre on that value instead of a fixed guess.
+                int qtyH = txtQty.PreferredHeight;
+                int priceH = txtPrice.PreferredHeight;
 
                 // Mirrors every x-position for Arabic without duplicating the math.
                 int MirrorX(int x, int width) => rtl ? w - x - width : x;
@@ -978,16 +989,18 @@ namespace InventorySystem.Forms
                 int cursor = 0;
                 btnMinus.SetBounds(MirrorX(cursor, step), top, step, rowH);
                 cursor += step;
-                txtQty.SetBounds(MirrorX(cursor, qtyW), textTop, qtyW, 18);
+                txtQty.SetBounds(MirrorX(cursor, qtyW), top + Math.Max(0, (rowH - qtyH) / 2), qtyW, qtyH);
                 cursor += qtyW;
                 btnPlus.SetBounds(MirrorX(cursor, step), top, step, rowH);
                 cursor += step + gap;
 
                 priceBox.SetBounds(MirrorX(cursor, priceW), top, priceW, rowH);
-                int symX = rtl ? priceW - symW - 4 : 4;
-                int valX = rtl ? 4 : symX + symW;
-                lblCurrency.SetBounds(symX, Math.Max(0, (rowH - 18) / 2), symW, 18);
-                txtPrice.SetBounds(valX, Math.Max(0, (rowH - 18) / 2), Math.Max(30, priceW - symW - 8), 18);
+                int symX = rtl ? priceW - symW - 6 : 6;
+                int valX = rtl ? 6 : symX + symW;
+                // Currency label spans the pill so its glyph centres on the same
+                // optical line as the editable amount.
+                lblCurrency.SetBounds(symX, 0, symW, rowH);
+                txtPrice.SetBounds(valX, Math.Max(0, (rowH - priceH) / 2), Math.Max(30, priceW - symW - 12), priceH);
                 cursor += priceW + gap;
 
                 btnDelete.SetBounds(MirrorX(cursor, trashW), top + Math.Max(0, (rowH - btnDelete.Height) / 2),
@@ -1021,27 +1034,45 @@ namespace InventorySystem.Forms
             return btn;
         }
 
+        /// <summary>
+        /// Rounded path on float coordinates. Insetting by half a pixel centres an
+        /// anti-aliased 1px stroke on a single pixel column instead of smearing it
+        /// across two at half opacity, which is what made these borders vanish.
+        /// </summary>
+        private static GraphicsPath RoundedPathF(RectangleF r, float radius)
+        {
+            var path = new GraphicsPath();
+            float d = Math.Min(radius * 2f, Math.Min(r.Width, r.Height));
+            if (d <= 0.1f) d = 1f;
+            path.AddArc(r.X, r.Y, d, d, 180, 90);
+            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
         private static void PaintRoundedCard(Graphics g, Rectangle bounds)
         {
-            if (bounds.Width < 2 || bounds.Height < 2) return;
+            if (bounds.Width < 3 || bounds.Height < 3) return;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            var rect = new Rectangle(0, 0, bounds.Width - 1, bounds.Height - 1);
-            using var path = ThemeConfig.GetRoundedPathPublic(rect, CardCornerRadius);
+            var rect = new RectangleF(0.5f, 0.5f, bounds.Width - 1.5f, bounds.Height - 1.5f);
+            using var path = RoundedPathF(rect, CardCornerRadius);
             using var br = new SolidBrush(Color.White);
-            using var pen = new Pen(Line, 1f);
+            using var pen = new Pen(CardBorder, 1.2f);
             g.FillPath(br, path);
             g.DrawPath(pen, path);
         }
 
         private static void PaintItemPill(Graphics g, Rectangle bounds)
         {
-            if (bounds.Width < 2 || bounds.Height < 2) return;
+            if (bounds.Width < 3 || bounds.Height < 3) return;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            var rect = new Rectangle(0, 0, bounds.Width - 1, bounds.Height - 1);
-            float r = Math.Min(PillCornerRadius, Math.Max(4f, (rect.Height - 2) / 2f));
-            using var path = ThemeConfig.GetRoundedPathPublic(rect, r);
+            var rect = new RectangleF(0.5f, 0.5f, bounds.Width - 1.5f, bounds.Height - 1.5f);
+            float r = Math.Min(PillCornerRadius, Math.Max(4f, rect.Height / 2f));
+            using var path = RoundedPathF(rect, r);
             using var br = new SolidBrush(Color.White);
-            using var pen = new Pen(Line, 1f);
+            using var pen = new Pen(PillBorder, 1.3f);
             g.FillPath(br, path);
             g.DrawPath(pen, path);
         }
