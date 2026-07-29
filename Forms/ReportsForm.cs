@@ -18,6 +18,9 @@ namespace InventorySystem.Forms
         private ModernButton btnApply;
         private ModernButton btnExport;
         private Label lblDateRange;
+        private Panel pnlFilterBar;
+        private Label lblFrom;
+        private Label lblTo;
 
         private StatCard cardExpenses;
         private StatCard cardCost;
@@ -165,16 +168,7 @@ namespace InventorySystem.Forms
                 Padding = new Padding(0, 2, 0, 2)
             };
 
-            var flow = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                AutoScroll = true,
-                BackColor = Color.Transparent,
-                Padding = new Padding(0),
-                // One baseline for every control in the row
-            };
+            pnlFilterBar = panel;
 
             const int rowH = 36;
             const int topPad = 4;
@@ -220,7 +214,7 @@ namespace InventorySystem.Forms
                 Value = DateTime.Today
             };
 
-            var lblFrom = new Label
+            lblFrom = new Label
             {
                 Name = "lblFrom",
                 Text = LocalizationManager.GetString("Rep_From"),
@@ -229,7 +223,7 @@ namespace InventorySystem.Forms
                 ForeColor = ThemeConfig.SecondaryColor,
                 Font = ThemeConfig.StandardFont
             };
-            var lblTo = new Label
+            lblTo = new Label
             {
                 Name = "lblTo",
                 Text = LocalizationManager.GetString("Rep_To"),
@@ -285,16 +279,82 @@ namespace InventorySystem.Forms
                 Text = ""
             };
 
-            flow.Controls.Add(cmbPeriod);
-            flow.Controls.Add(lblFrom);
-            flow.Controls.Add(dtpFrom);
-            flow.Controls.Add(lblTo);
-            flow.Controls.Add(dtpTo);
-            flow.Controls.Add(btnApply);
-            flow.Controls.Add(btnExport);
-            flow.Controls.Add(lblDateRange);
-            panel.Controls.Add(flow);
+            panel.Controls.Add(cmbPeriod);
+            panel.Controls.Add(lblFrom);
+            panel.Controls.Add(dtpFrom);
+            panel.Controls.Add(lblTo);
+            panel.Controls.Add(dtpTo);
+            panel.Controls.Add(btnApply);
+            panel.Controls.Add(btnExport);
+            panel.Controls.Add(lblDateRange);
+
+            panel.Resize += (s, e) => LayoutFilterBar();
+            panel.HandleCreated += (s, e) => LayoutFilterBar();
+            LayoutFilterBar();
             return panel;
+        }
+
+        /// <summary>
+        /// Positions the filter bar by hand instead of flowing it: Arabic needs the
+        /// date filters pinned to the right edge and the actions to the left, which a
+        /// single FlowLayoutPanel cannot express in either direction.
+        /// </summary>
+        private void LayoutFilterBar()
+        {
+            if (pnlFilterBar == null || cmbPeriod == null || btnExport == null) return;
+
+            int w = pnlFilterBar.ClientSize.Width;
+            if (w <= 0) return;
+
+            bool ar = LocalizationManager.IsArabic;
+            const int rowH = 36;
+            const int topPad = 4;
+            const int gap = 8;
+            const int groupGap = 16;
+
+            int Top(Control c) => topPad + Math.Max(0, (rowH - c.Height) / 2);
+
+            // Both arrays read left to right on screen.
+            Control[] filters = ar
+                ? new Control[] { dtpTo, lblTo, dtpFrom, lblFrom, cmbPeriod }
+                : new Control[] { cmbPeriod, lblFrom, dtpFrom, lblTo, dtpTo };
+            Control[] actions = ar
+                ? new Control[] { btnExport, btnApply, lblDateRange }
+                : new Control[] { btnApply, btnExport, lblDateRange };
+
+            if (ar)
+            {
+                int x = 0;
+                foreach (Control c in actions)
+                {
+                    c.SetBounds(x, Top(c), c.Width, c.Height);
+                    x += c.Width + gap;
+                }
+
+                int right = w;
+                for (int i = filters.Length - 1; i >= 0; i--)
+                {
+                    Control c = filters[i];
+                    right -= c.Width;
+                    c.SetBounds(right, Top(c), c.Width, c.Height);
+                    right -= gap;
+                }
+            }
+            else
+            {
+                int x = 0;
+                foreach (Control c in filters)
+                {
+                    c.SetBounds(x, Top(c), c.Width, c.Height);
+                    x += c.Width + gap;
+                }
+                x += groupGap - gap;
+                foreach (Control c in actions)
+                {
+                    c.SetBounds(x, Top(c), c.Width, c.Height);
+                    x += c.Width + gap;
+                }
+            }
         }
 
         private Panel BuildTableCard(out Label titleLabel, out DataGridView grid, string title, string titleName)
@@ -556,10 +616,12 @@ namespace InventorySystem.Forms
             }
             if (btnApply != null) btnApply.Text = L("Rep_Apply", "Apply");
 
-            var lblFrom = this.Controls.Find("lblFrom", true);
-            if (lblFrom.Length > 0) lblFrom[0].Text = L("Rep_From", "From");
-            var lblTo = this.Controls.Find("lblTo", true);
-            if (lblTo.Length > 0) lblTo[0].Text = L("Rep_To", "To");
+            if (lblFrom != null) lblFrom.Text = L("Rep_From", "From");
+            if (lblTo != null) lblTo.Text = L("Rep_To", "To");
+
+            // Captions change width with the language, so re-place the row.
+            LayoutFilterBar();
+            if (IsHandleCreated) BeginInvoke((Action)LayoutFilterBar);
 
             if (lblProductsTitle != null)
                 lblProductsTitle.Text = L("Rep_TopProductsTitle", "Best-Selling Products");

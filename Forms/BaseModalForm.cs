@@ -10,10 +10,14 @@ namespace InventorySystem.Forms
 {
     public class BaseModalForm : Form
     {
+        /// <summary>Pixels reserved around the client so the gold outline is never covered.</summary>
+        private const int BorderGutter = 4;
+
         private Label lblTitle;
         private Button btnClose;
         private Button btnMaximize;
         private Panel pnlHeader;
+        private ModalBorderRing _borderRing;
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public Controls.ModernScrollPanel ContentPanel { get; private set; }
         public Panel FooterPanel { get; private set; }
@@ -31,7 +35,17 @@ namespace InventorySystem.Forms
             } 
         }
         public bool EnforceMinWidth { get; set; } = true;
-        public Color BorderColor { get; set; } = ThemeConfig.PrimaryColor;
+        private Color _borderColor = ThemeConfig.PrimaryColor;
+        public Color BorderColor
+        {
+            get => _borderColor;
+            set
+            {
+                _borderColor = value;
+                if (_borderRing != null) { _borderRing.RingColor = value; _borderRing.Invalidate(); }
+                Invalidate();
+            }
+        }
 
         public BaseModalForm()
         {
@@ -40,7 +54,10 @@ namespace InventorySystem.Forms
             this.BackColor = ThemeConfig.SurfaceColor;
             this.StartPosition = FormStartPosition.CenterParent;
 
-            this.Padding = new Padding(0);
+            // Leave a ring around the docked layout so Fill children cannot paint over
+            // the gold outline. Without this, only corners stayed visible and the left
+            // edge looked broken wherever content/header/footer covered it.
+            this.Padding = new Padding(BorderGutter);
 
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
@@ -56,6 +73,7 @@ namespace InventorySystem.Forms
         {
             base.OnResize(e);
             UpdateRegion();
+            SyncBorderRing();
             if (pnlHeader != null)
             {
                 bool isAr = LocalizationManager.IsArabic;
@@ -103,7 +121,7 @@ namespace InventorySystem.Forms
 
                 int radius = 16;
                 int d = radius * 2;
-                Rectangle r = new Rectangle(0, 0, this.Width, this.Height);
+                Rectangle r = new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height);
                 
                 path.AddArc(r.X, r.Y, d, d, 180, 90);
                 path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
@@ -136,7 +154,7 @@ namespace InventorySystem.Forms
             // 1. Header Panel
             pnlHeader = new Panel {
                 Dock = DockStyle.Fill,
-
+                BackColor = ThemeConfig.SurfaceColor,
                 Margin = new Padding(0)
             };
             pnlHeader.MouseDown += Header_MouseDown;
@@ -195,19 +213,42 @@ namespace InventorySystem.Forms
 
                 Dock = DockStyle.Fill,
                 Padding = new Padding(30, 10, 30, 10),
-                Margin = new Padding(0, 0, 5, 0) // Inset from right to avoid border overlap
+                Margin = new Padding(0)
             };
             tlpRoot.Controls.Add(ContentPanel, 0, 1);
 
             // 3. Footer Panel
             FooterPanel = new Panel {
                 Dock = DockStyle.Fill,
-                BackColor = Color.Transparent, // Match parent
+                BackColor = ThemeConfig.SurfaceColor,
                 Padding = new Padding(30, 15, 30, 15), 
-                Margin = new Padding(0, 0, 5, 0) // Align with content panel
+                Margin = new Padding(0)
             };
 
             tlpRoot.Controls.Add(FooterPanel, 0, 2);
+
+            // Topmost ring: paints after siblings (WS_EX_TRANSPARENT) so opaque
+            // content can never punch holes through the gold outline.
+            _borderRing = new ModalBorderRing { RingColor = BorderColor };
+            this.Controls.Add(_borderRing);
+            _borderRing.BringToFront();
+            SyncBorderRing();
+        }
+
+        private void SyncBorderRing()
+        {
+            if (_borderRing == null || _borderRing.IsDisposed) return;
+            _borderRing.RingColor = BorderColor;
+            _borderRing.Bounds = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
+            _borderRing.BringToFront();
+            _borderRing.Invalidate();
+        }
+
+        protected override void OnControlAdded(ControlEventArgs e)
+        {
+            base.OnControlAdded(e);
+            if (_borderRing != null && e.Control != _borderRing)
+                _borderRing.BringToFront();
         }
 
         public void ApplyGoldenRatio(int baseDimension, bool horizontal = false)
@@ -356,41 +397,11 @@ namespace InventorySystem.Forms
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            
-            // Region handles the sharp corner clipping, so we just clear and draw
-            e.Graphics.Clear(this.BackColor);
+
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality; // Ensure smooth edges
-            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-
-            float radius = 16f;
-            Rectangle rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
-            
-            // 1. Draw the Solid Background (The Form itself)
-            using (GraphicsPath path = GetRoundedPath(rect, radius))
-            {
-                using (SolidBrush brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                {
-                    e.Graphics.FillPath(brush, path);
-                }
-
-                // 2. Neon Border with Glow (Color depends on BorderColor)
-                Color neonColor = BorderColor;
-                
-                // Outer glow layer (Subtle spread)
-                using (Pen glow1 = new Pen(Color.FromArgb(25, neonColor), 5f))
-                    e.Graphics.DrawPath(glow1, path);
-                
-                // Mid glow layer (Condensed)
-                using (Pen glow2 = new Pen(Color.FromArgb(55, neonColor), 3f))
-                    e.Graphics.DrawPath(glow2, path);
-                    
-                // Main Sharp Neon Border (Refined 1.5px for crispness)
-                using (Pen mainPen = new Pen(neonColor, 1.5f))
-                {
-                    e.Graphics.DrawPath(mainPen, path);
-                }
-            }
+            Rectangle bounds = new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height);
+            ThemeConfig.FillRoundedBackground(e.Graphics, bounds, 16f, ThemeConfig.SurfaceColor);
+            // Stroke is painted by ModalBorderRing on top of children.
         }
 
         
@@ -425,20 +436,6 @@ namespace InventorySystem.Forms
            FitToContent();
            
            CenterOnScreen();
-        }
-
-        private GraphicsPath GetRoundedPath(Rectangle rect, float radius)
-        {
-            GraphicsPath path = new GraphicsPath();
-            float d = radius * 2;
-            RectangleF r = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
-            
-            path.AddArc(r.X, r.Y, d, d, 180, 90);
-            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-            path.CloseFigure();
-            return path;
         }
 
         // Drag Logic
@@ -487,6 +484,59 @@ namespace InventorySystem.Forms
             }
 
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        /// <summary>
+        /// Full-client overlay that draws the rounded gold outline after every sibling.
+        /// Mouse hits return HTTRANSPARENT so close/maximize/content keep working —
+        /// WS_EX_TRANSPARENT alone is not enough for WinForms hit-testing.
+        /// </summary>
+        private sealed class ModalBorderRing : Control
+        {
+            private const int WM_NCHITTEST = 0x0084;
+            private const int HTTRANSPARENT = -1;
+
+            public Color RingColor { get; set; } = ThemeConfig.PrimaryColor;
+
+            public ModalBorderRing()
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint |
+                         ControlStyles.UserPaint |
+                         ControlStyles.OptimizedDoubleBuffer |
+                         ControlStyles.SupportsTransparentBackColor, true);
+                BackColor = Color.Transparent;
+                TabStop = false;
+            }
+
+            protected override CreateParams CreateParams
+            {
+                get
+                {
+                    CreateParams cp = base.CreateParams;
+                    cp.ExStyle |= 0x20; // WS_EX_TRANSPARENT — paint after siblings
+                    return cp;
+                }
+            }
+
+            protected override void WndProc(ref Message m)
+            {
+                if (m.Msg == WM_NCHITTEST)
+                {
+                    m.Result = (IntPtr)HTTRANSPARENT;
+                    return;
+                }
+                base.WndProc(ref m);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                Rectangle bounds = ClientRectangle;
+                const float radius = 16f;
+                ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, radius, Color.FromArgb(45, RingColor), 3f, extraInset: 0.5f);
+                ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, radius, RingColor, 1.6f, extraInset: 0.5f);
+            }
         }
     }
 }

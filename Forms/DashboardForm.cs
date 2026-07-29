@@ -34,6 +34,9 @@ namespace InventorySystem.Forms
         private Label lblDashboardTitle;
         private Label _lblTop;
         private Label _lblTrend;
+        private Panel _pnlHeaderActions;
+        private Label _lblServerUrl;
+        private ModernButton _btnScan;
         private System.ComponentModel.IContainer components = null;
 
         public DashboardForm()
@@ -68,6 +71,9 @@ namespace InventorySystem.Forms
             // Re-detect controls if they were created dynamically
             var btnScan = this.Controls.Find("btnScan", true).FirstOrDefault() as Button;
             if (btnScan != null) btnScan.Text = L("Dash_ScanToConnect");
+            LayoutHeaderActions();
+            // The form-wide RTL pass may mirror these absolute positions afterwards.
+            if (IsHandleCreated) BeginInvoke((Action)LayoutHeaderActions);
 
             if (_cardInventory != null) _cardInventory.Title = L("Dash_TotalInventory");
             if (_cardRevenue != null) _cardRevenue.Title = L("Dash_TotalRevenue");
@@ -96,6 +102,40 @@ namespace InventorySystem.Forms
         public void RefreshDashboard()
         {
             LoadData();
+        }
+
+        /// <summary>
+        /// Arabic puts the scan button at the left edge with the address to its right;
+        /// English keeps the address first. Positions are set by hand so the pair never
+        /// depends on flow or column mirroring.
+        /// </summary>
+        private void LayoutHeaderActions()
+        {
+            if (_pnlHeaderActions == null || _lblServerUrl == null || _btnScan == null) return;
+
+            _pnlHeaderActions.RightToLeft = RightToLeft.No;
+            _lblServerUrl.RightToLeft = RightToLeft.No;
+
+            const int gap = 12;
+            int urlW = _lblServerUrl.PreferredSize.Width;
+            int urlH = _lblServerUrl.PreferredSize.Height;
+            int h = _pnlHeaderActions.Height;
+
+            _pnlHeaderActions.Width = _btnScan.Width + gap + urlW;
+
+            int urlY = Math.Max(0, (h - urlH) / 2);
+            int btnY = Math.Max(0, (h - _btnScan.Height) / 2);
+
+            if (LocalizationManager.IsArabic)
+            {
+                _btnScan.Location = new Point(0, btnY);
+                _lblServerUrl.Location = new Point(_btnScan.Width + gap, urlY);
+            }
+            else
+            {
+                _lblServerUrl.Location = new Point(0, urlY);
+                _btnScan.Location = new Point(urlW + gap, btnY);
+            }
         }
 
 
@@ -132,10 +172,12 @@ namespace InventorySystem.Forms
                 Font = new Font("Segoe UI", 10f),
                 ForeColor = ThemeConfig.PrimaryColor,
                 AutoSize = true,
-                TextAlign = ContentAlignment.MiddleRight,
-                Padding = new Padding(0, 10, 8, 0),
-                Cursor = Cursors.Hand
+                TextAlign = ContentAlignment.MiddleLeft,
+                Cursor = Cursors.Hand,
+                // The address is always latin text, so keep it out of the RTL mirror.
+                RightToLeft = RightToLeft.No
             };
+            _lblServerUrl = lblServerUrl;
             
             lblServerUrl.Click += (s, e) => {
                 Clipboard.SetText(serverUrl);
@@ -164,8 +206,24 @@ namespace InventorySystem.Forms
             ThemeConfig.ApplyPrimaryButton(btnScan);
             btnScan.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnScan.Click += (s, e) => new ScanToConnectForm().ShowDialog();
+            _btnScan = btnScan;
 
-            var headerControls = new Control[] { lblServerUrl, btnScan };
+            // Both pieces live in one manually positioned host: the header helper puts its
+            // children in a FlowLayoutPanel whose direction gets mirrored for Arabic, which
+            // reversed link/button independently of what we want.
+            _pnlHeaderActions = new Panel
+            {
+                Name = "pnlHeaderActions",
+                AutoSize = false,
+                Height = 35,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0, 6, 0, 0)
+            };
+            _pnlHeaderActions.Controls.Add(lblServerUrl);
+            _pnlHeaderActions.Controls.Add(btnScan);
+            LayoutHeaderActions();
+
+            var headerControls = new Control[] { _pnlHeaderActions };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblDashboardTitle, null, headerControls);
             _mainLayout.Controls.Add(tlpHeader, 0, 0);
 

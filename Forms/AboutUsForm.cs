@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using InventorySystem.Helpers;
 using InventorySystem.Controls;
@@ -8,6 +9,12 @@ namespace InventorySystem.Forms
 {
     public class AboutUsForm : BaseModalForm
     {
+        private const int LogoTile = 118;
+        private const int CardWidth = 520;
+        private const int CardHeight = 640;
+
+        private Panel _pnlLogo;
+        private Image _logo;
         private Label _lblName;
         private Label _lblVer;
         private Label _lblDesc;
@@ -20,106 +27,236 @@ namespace InventorySystem.Forms
             InitializeAboutLayout();
             LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
             ApplyLocalization();
-            this.Size = new Size(500, 580);
+            this.Size = new Size(CardWidth, CardHeight);
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+            // The base form fits itself to its content; this card is a fixed poster,
+            // so restore the intended proportions and re-centre afterwards.
+            this.Size = new Size(CardWidth, CardHeight);
+            Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+            this.Location = new Point(
+                wa.Left + (wa.Width - this.Width) / 2,
+                wa.Top + (wa.Height - this.Height) / 2);
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            base.OnFormClosed(e);
+            _logo?.Dispose();
+            _logo = null;
         }
 
         private void ApplyLocalization()
         {
             LocalizationManager.ApplyRTL(this);
             this.TitleText = LocalizationManager.GetString("Nav_AboutUs");
-            if (_lblName != null) _lblName.Text = LocalizationManager.GetString("AboutUs_AppName");
-            if (_lblVer != null) _lblVer.Text = LocalizationManager.GetString("AboutUs_Version");
-            if (_lblDesc != null) _lblDesc.Text = LocalizationManager.GetString("AboutUs_Desc");
-            if (_lblDev != null) _lblDev.Text = LocalizationManager.GetString("AboutUs_DevInfo");
-            if (_btnContact != null) _btnContact.Text = "  " + LocalizationManager.GetString("AboutUs_ContactSupport");
-            if (_lblCopyright != null) _lblCopyright.Text = LocalizationManager.GetString("AboutUs_Copyright");
+            if (_lblName != null)
+            {
+                _lblName.Text = LocalizationManager.GetString("AboutUs_AppName");
+                PinCentered(_lblName);
+            }
+            if (_lblVer != null)
+            {
+                _lblVer.Text = LocalizationManager.GetString("AboutUs_Version");
+                PinCentered(_lblVer);
+            }
+            if (_lblDesc != null)
+            {
+                _lblDesc.Text = LocalizationManager.GetString("AboutUs_Desc");
+                PinCentered(_lblDesc);
+            }
+            if (_lblDev != null)
+            {
+                _lblDev.Text = LocalizationManager.GetString("AboutUs_DevInfo");
+                PinCentered(_lblDev);
+            }
+            if (_btnContact != null)
+            {
+                _btnContact.Text = LocalizationManager.GetString("AboutUs_ContactSupport");
+                // ApplyRTL would mirror the icon to the far side; keep it leading the label.
+                _btnContact.RightToLeft = RightToLeft.No;
+                _btnContact.ImageAlign = ContentAlignment.MiddleLeft;
+            }
+            if (_lblCopyright != null)
+            {
+                _lblCopyright.Text = LocalizationManager.GetString("AboutUs_Copyright");
+                PinCentered(_lblCopyright);
+            }
+        }
+
+        private static void PinCentered(Label lbl)
+        {
+            lbl.RightToLeft = RightToLeft.No;
+            lbl.TextAlign = ContentAlignment.MiddleCenter;
         }
 
         private void InitializeAboutLayout()
         {
-            Panel container = new Panel { Dock = DockStyle.Fill, Padding = new Padding(30) };
-            
-            PictureBox pbLogo = new PictureBox {
-                Size = new Size(120, 120),
-                Location = new Point(160, 20),
-                SizeMode = PictureBoxSizeMode.Zoom,
+            // One column of stacked rows: every row centres itself, so nothing depends on
+            // hand-picked coordinates that RTL mirroring would shift off-centre.
+            TableLayoutPanel stack = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 9,
+                Margin = new Padding(0),
+                Padding = new Padding(0, 6, 0, 0),
                 BackColor = Color.Transparent
             };
-            try { 
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
-                if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
-            } catch { }
-            container.Controls.Add(pbLogo);
+            stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-            _lblName = new Label {
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                ForeColor = ThemeConfig.PrimaryColor,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(440, 35),
-                Location = new Point(0, 150)
+            _pnlLogo = new Panel
+            {
+                Size = new Size(LogoTile, LogoTile),
+                Anchor = AnchorStyles.None,
+                Margin = new Padding(0, 0, 0, 18),
+                BackColor = Color.Transparent
             };
-            container.Controls.Add(_lblName);
+            _pnlLogo.Paint += PaintLogoTile;
+            LoadLogo();
 
-            _lblVer = new Label {
-                Font = new Font("Segoe UI", 10, FontStyle.Italic),
-                ForeColor = ThemeConfig.MutedTextColor,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(440, 25),
-                Location = new Point(0, 190)
-            };
-            container.Controls.Add(_lblVer);
+            // AutoSize + Anchor.None so each label measures its own glyphs. Fixed
+            // Absolute rows were shorter than the font (especially with bottom margins),
+            // which clipped descenders and made Arabic look "glitched".
+            _lblName = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 16F, FontStyle.Bold),
+                ThemeConfig.PrimaryColor, new Padding(10, 0, 10, 4));
 
-            _lblDesc = new Label {
-                Font = new Font("Segoe UI", 10.5f),
-                ForeColor = ThemeConfig.TextColorDark,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(380, 80),
-                Location = new Point(30, 230)
-            };
-            container.Controls.Add(_lblDesc);
+            _lblVer = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 10F, FontStyle.Regular),
+                ThemeConfig.MutedTextColor, new Padding(10, 0, 10, 10));
 
-            Panel divider = new Panel {
+            _lblDesc = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 10.5F, FontStyle.Regular),
+                ThemeConfig.TextColorDark, new Padding(24, 0, 24, 14), wrap: true, maxWidth: 420);
+
+            Panel divider = new Panel
+            {
                 Size = new Size(300, 1),
-                BackColor = Color.FromArgb(230, 230, 230),
-                Location = new Point(70, 320)
+                Anchor = AnchorStyles.None,
+                BackColor = Color.FromArgb(232, 234, 238),
+                Margin = new Padding(0, 4, 0, 14)
             };
-            container.Controls.Add(divider);
 
-            _lblDev = new Label {
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                ForeColor = ThemeConfig.TextColorDark,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(440, 25),
-                Location = new Point(0, 340)
-            };
-            container.Controls.Add(_lblDev);
+            _lblDev = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 9.5F, FontStyle.Bold),
+                ThemeConfig.TextColorDark, new Padding(10, 0, 10, 14));
 
-            _btnContact = new ModernButton {
-                Size = new Size(200, 45),
-                Location = new Point(150, 385),
+            _btnContact = new ModernButton
+            {
+                Size = new Size(210, 44),
+                Anchor = AnchorStyles.None,
+                Margin = new Padding(0, 0, 0, 14),
                 Cursor = Cursors.Hand,
                 Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("contact_us"), Color.White),
                 ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleCenter,
                 TextImageRelation = TextImageRelation.ImageBeforeText,
-                Padding = new Padding(10, 0, 0, 0)
+                Padding = new Padding(14, 0, 14, 0),
+                RightToLeft = RightToLeft.No
             };
             ThemeConfig.ApplyPrimaryButton(_btnContact);
-            _btnContact.Click += (s, e) => {
+            _btnContact.Font = new Font(ThemeConfig.AppFontFamily, 10F, FontStyle.Bold);
+            _btnContact.Click += (s, e) =>
+            {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:softioservices@gmail.com") { UseShellExecute = true }); }
                 catch { MessageHelper.ShowInfo(LocalizationManager.GetString("Msg_ContactSupport")); }
             };
-            container.Controls.Add(_btnContact);
 
-            _lblCopyright = new Label {
-                Font = new Font("Segoe UI", 8.5f),
-                ForeColor = ThemeConfig.MutedTextColor,
+            _lblCopyright = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 8.5F, FontStyle.Regular),
+                ThemeConfig.MutedTextColor, new Padding(10, 0, 10, 4));
+
+            for (int i = 0; i < 8; i++)
+                stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            stack.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // filler
+
+            stack.Controls.Add(_pnlLogo, 0, 0);
+            stack.Controls.Add(_lblName, 0, 1);
+            stack.Controls.Add(_lblVer, 0, 2);
+            stack.Controls.Add(_lblDesc, 0, 3);
+            stack.Controls.Add(divider, 0, 4);
+            stack.Controls.Add(_lblDev, 0, 5);
+            stack.Controls.Add(_btnContact, 0, 6);
+            stack.Controls.Add(_lblCopyright, 0, 7);
+
+            this.ContentPanel.Controls.Add(stack);
+        }
+
+        private static Label MakeCenteredLabel(Font font, Color color, Padding margin,
+            bool wrap = false, int maxWidth = 0)
+        {
+            var lbl = new Label
+            {
+                Font = font,
+                ForeColor = color,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(440, 20),
-                Location = new Point(0, 450)
+                AutoSize = true,
+                Anchor = AnchorStyles.None,
+                Margin = margin,
+                // Mixed Arabic + Latin must not flip; TextAlign already centres the run.
+                RightToLeft = RightToLeft.No,
+                UseCompatibleTextRendering = true
             };
-            container.Controls.Add(_lblCopyright);
+            if (wrap && maxWidth > 0)
+            {
+                lbl.MaximumSize = new Size(maxWidth, 0);
+                lbl.AutoSize = true;
+            }
+            return lbl;
+        }
 
-            this.ContentPanel.Controls.Add(container);
+        private void LoadLogo()
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_arrow_logo.png");
+                if (!System.IO.File.Exists(path))
+                    path = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
+                if (System.IO.File.Exists(path))
+                {
+                    using var raw = Image.FromFile(path);
+                    _logo = new Bitmap(raw);
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Paints the logo as a rounded tile: the artwork has its own dark backdrop, so
+        /// it is cropped to fill the square rather than letterboxed on white.
+        /// </summary>
+        private void PaintLogoTile(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+            using (var parent = new SolidBrush(ThemeConfig.GetParentColor(_pnlLogo)))
+                g.FillRectangle(parent, -1, -1, _pnlLogo.Width + 2, _pnlLogo.Height + 2);
+
+            var bounds = _pnlLogo.ClientRectangle;
+            const float radius = 26f;
+
+            if (_logo == null)
+            {
+                ThemeConfig.DrawRoundedBorder(g, bounds, radius, ThemeConfig.BorderColor, 1f);
+                return;
+            }
+
+            using (var clip = ThemeConfig.GetRoundedPathF(new RectangleF(0, 0, bounds.Width, bounds.Height), radius))
+            {
+                var saved = g.Save();
+                g.SetClip(clip);
+
+                // Cover-scale: fill the tile completely, trimming the longer axis.
+                float scale = Math.Max((float)bounds.Width / _logo.Width, (float)bounds.Height / _logo.Height);
+                float w = _logo.Width * scale;
+                float h = _logo.Height * scale;
+                g.DrawImage(_logo, new RectangleF((bounds.Width - w) / 2f, (bounds.Height - h) / 2f, w, h));
+
+                g.Restore(saved);
+            }
         }
     }
 }

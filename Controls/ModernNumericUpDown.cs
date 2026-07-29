@@ -220,12 +220,9 @@ namespace InventorySystem.Controls
             using (var brush = new SolidBrush(parentColor))
                 e.Graphics.FillRectangle(brush, -1, -1, pnlContainer.Width + 2, pnlContainer.Height + 2);
 
-            Rectangle rect = new Rectangle(0, 0, pnlContainer.Width - 1, pnlContainer.Height - 1);
-            using (var path = ThemeConfig.GetRoundedPathPublic(rect, 12))
-            {
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor)) e.Graphics.FillPath(brush, path);
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f)) e.Graphics.DrawPath(pen, path);
-            }
+            Rectangle bounds = new Rectangle(0, 0, pnlContainer.Width, pnlContainer.Height);
+            ThemeConfig.FillRoundedBackground(e.Graphics, bounds, 12f, ThemeConfig.SurfaceColor);
+            ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, 12f, ThemeConfig.BorderColor, 1.5f);
 
             // Separator for buttons
             bool isAr = LocalizationManager.IsArabic;

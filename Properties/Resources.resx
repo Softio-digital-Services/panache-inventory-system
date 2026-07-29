@@ -2340,6 +2340,12 @@ Accepted By: __________________________</value>
   <data name="Scale_Disconnect" xml:space="preserve">
     <value>Disconnect</value>
   </data>
+  <data name="Scale_StateConnected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="Scale_StateDisconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
   <data name="Return_TotalRefund" xml:space="preserve">
     <value>Total Refund: {0}</value>
   </data>

@@ -33,13 +33,7 @@ namespace InventorySystem.Controls
 
             // Rounded Corners & Shadow Effect
             pnlCard.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, pnlCard.Width - 1, pnlCard.Height - 1);
-                using (var path = ThemeConfig.GetRoundedPathPublic(r, 24))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.DrawRoundedBorder(e.Graphics, pnlCard.ClientRectangle, 24f, ThemeConfig.BorderColor, 1f);
             };
 
             // Icon

@@ -298,37 +298,23 @@ namespace InventorySystem.Controls
             }
 
             // 2. Draw Rounded Surface (White)
-            Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
-            float radius = 12f;
+            const float radius = 12f;
+            Rectangle bounds = new Rectangle(0, 0, pnl.Width, pnl.Height);
+            ThemeConfig.FillRoundedBackground(e.Graphics, bounds, radius, ThemeConfig.SurfaceColor);
 
-            using (var path = GetRoundedPath(rect, radius))
+            // 3. Draw Border & Neon Glow — inset so no part of the stroke falls
+            // outside the panel and gets cut off.
+            Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
+
+            if (_isFocused)
             {
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                {
-                    e.Graphics.FillPath(brush, path);
-                }
-
-                // 3. Draw Border & Neon Glow
-                Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
-                
-                if (_isFocused)
-                {
-                    // Add subtle neon glow when focused
-                    using (var glow1 = new Pen(Color.FromArgb(30, borderColor), 4f)) e.Graphics.DrawPath(glow1, path);
-                    using (var glow2 = new Pen(Color.FromArgb(60, borderColor), 2f)) e.Graphics.DrawPath(glow2, path);
-                    
-                    using (var pen = new Pen(borderColor, 2f))
-                    {
-                        e.Graphics.DrawPath(pen, path);
-                    }
-                }
-                else
-                {
-                    using (var pen = new Pen(borderColor, 1.5f))
-                    {
-                        e.Graphics.DrawPath(pen, path);
-                    }
-                }
+                ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, radius, Color.FromArgb(30, borderColor), 4f);
+                ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, radius, Color.FromArgb(60, borderColor), 2f);
+                ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, radius, borderColor, 2f);
+            }
+            else
+            {
+                ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, radius, borderColor, 1.5f);
             }
 
             // Draw Search Icon

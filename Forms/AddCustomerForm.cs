@@ -216,15 +216,8 @@ namespace InventorySystem.Forms
             // Reminder Card
             Panel cardReminders = new Panel { Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(15), Margin = new Padding(0, 5, 0, 15) };
             cardReminders.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle rect = new Rectangle(0, 0, cardReminders.Width - 1, cardReminders.Height - 1);
-                using (var path = ThemeConfig.GetRoundedPathPublic(rect, 12))
-                using (var brush = new SolidBrush(Color.FromArgb(252, 253, 255)))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                {
-                    e.Graphics.FillPath(brush, path);
-                    e.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(e.Graphics, cardReminders.ClientRectangle, 12f, Color.FromArgb(252, 253, 255));
+                ThemeConfig.DrawRoundedBorder(e.Graphics, cardReminders.ClientRectangle, 12f, ThemeConfig.BorderColor, 1f);
             };
 
             TableLayoutPanel tlpRemContent = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 2, RowCount = 2, AutoSize = true };

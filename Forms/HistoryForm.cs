@@ -556,12 +556,7 @@ namespace InventorySystem.Forms
             string text = LocalizationManager.GetString("Hist_Refresh");
             g.SmoothingMode = SmoothingMode.AntiAlias;
             
-            Rectangle r = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
-            using (var path = ThemeConfig.GetRoundedPathPublic(r, 12))
-            {
-                using (Pen pen = new Pen(ThemeConfig.SuccessColor, 1.5f))
-                    g.DrawPath(pen, path);
-            }
+            ThemeConfig.DrawRoundedBorder(g, btn.ClientRectangle, 12f, ThemeConfig.SuccessColor, 1.5f);
 
             Image img = ThemeConfig.GetNuricon("refresh");
             int iconSize = 24;

@@ -91,6 +91,7 @@ namespace InventorySystem.Forms
         private NumericUpDown _numShipping, _numDiscount;
         private Panel _pnlShipAmount, _pnlDiscAmount;
         private Label _lblCurrency;
+        private readonly List<Action> _summaryDirectionAppliers = new List<Action>();
         private ModernComboBox _cmbCurrency;
         private ModernButton _btnReturn, _btnDraft, _btnQuote, _btnBill;
         private ModernButton _btnPrint, _btnCheckout;
@@ -173,8 +174,21 @@ namespace InventorySystem.Forms
             if (_btnCheckout != null) _btnCheckout.Text = L("POS_PlaceOrder", "Checkout");
 
             ApplyFlowDirections();
+            ApplySummaryDirection();
             RefreshCartDisplay();
             LoadCustomers();
+        }
+
+        /// <summary>
+        /// Re-asserts the summary column order and label alignment. Deferred once as
+        /// well because the form-wide ApplyRTL pass runs after this and would set
+        /// RightToLeft back to Yes on these rows.
+        /// </summary>
+        private void ApplySummaryDirection()
+        {
+            foreach (var apply in _summaryDirectionAppliers) apply();
+            if (IsHandleCreated)
+                BeginInvoke((Action)(() => { foreach (var apply in _summaryDirectionAppliers) apply(); }));
         }
 
         public void LoadCustomers()
@@ -358,15 +372,10 @@ namespace InventorySystem.Forms
 
         private void PaintShell(object sender, PaintEventArgs e)
         {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            var r = _shell.ClientRectangle;
-            r.Width = Math.Max(1, r.Width - 1);
-            r.Height = Math.Max(1, r.Height - 1);
-            using var path = ThemeConfig.GetRoundedPathPublic(r, ShellCornerRadius);
-            using var br = new SolidBrush(RailBg);
-            using var pen = new Pen(Line, 1f);
-            e.Graphics.FillPath(br, path);
-            e.Graphics.DrawPath(pen, path);
+            // The shell is Region-clipped, so fill the full bounds and inset the stroke.
+            Rectangle bounds = _shell.ClientRectangle;
+            ThemeConfig.FillRoundedBackground(e.Graphics, bounds, ShellCornerRadius, RailBg);
+            ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, ShellCornerRadius, Line, 1f);
         }
 
         private Control BuildTopBlock()
@@ -688,7 +697,7 @@ namespace InventorySystem.Forms
             _lblCurrency = TinyLabel(LocalizationManager.GetString("POS_Currency", "Currency"));
             _lblCurrency.AutoSize = false;
             _lblCurrency.Dock = DockStyle.Fill;
-            _lblCurrency.TextAlign = ContentAlignment.MiddleLeft;
+            PinLeftToRight(_lblCurrency);
             _cmbCurrency = new ModernComboBox
             {
                 Dock = DockStyle.Fill,
@@ -715,6 +724,26 @@ namespace InventorySystem.Forms
             };
             curr.Controls.Add(_lblCurrency, 0, 0);
             curr.Controls.Add(_cmbCurrency, 1, 0);
+
+            void ApplyCurrencyDirection()
+            {
+                bool ar = LocalizationManager.IsArabic;
+                curr.SuspendLayout();
+                curr.RightToLeft = RightToLeft.No;
+                // Caption hugs the outer edge of the card, selector takes the rest.
+                curr.ColumnStyles[0] = new ColumnStyle(SizeType.Percent, ar ? 64F : 36F);
+                curr.ColumnStyles[1] = new ColumnStyle(SizeType.Percent, ar ? 36F : 64F);
+                curr.SetColumn(_cmbCurrency, ar ? 0 : 1);
+                curr.SetColumn(_lblCurrency, ar ? 1 : 0);
+                _lblCurrency.RightToLeft = RightToLeft.No;
+                _lblCurrency.TextAlign = ar ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                _lblCurrency.Margin = ar ? new Padding(6, 0, 0, 0) : new Padding(0, 0, 6, 0);
+                curr.ResumeLayout(true);
+            }
+
+            ApplyCurrencyDirection();
+            _summaryDirectionAppliers.Add(ApplyCurrencyDirection);
+            curr.RightToLeftChanged += (s, e) => { if (curr.RightToLeft != RightToLeft.No) ApplyCurrencyDirection(); };
             grid.Controls.Add(curr, 0, 6);
 
             card.Controls.Add(grid);
@@ -1324,40 +1353,84 @@ namespace InventorySystem.Forms
         }
 
         /// <summary>
-        /// One summary line: optional toggle, caption, optional inline amount editor,
-        /// and a fixed-width value column so every figure stays right-aligned.
+        /// Keeps a label out of the RTL mirror for good. A Label with RightToLeft.Yes
+        /// renders TextAlign on the opposite side, so the alignment we pick here would
+        /// otherwise invert as soon as the form-wide RTL pass touches it.
         /// </summary>
-        private static TableLayoutPanel MoneyRow(Label title, Label value, CheckBox chk, Panel amount)
+        private static void PinLeftToRight(Control c)
         {
-            bool ar = LocalizationManager.IsArabic;
+            c.RightToLeft = RightToLeft.No;
+            c.RightToLeftChanged += (s, e) =>
+            {
+                if (c.RightToLeft != RightToLeft.No) c.RightToLeft = RightToLeft.No;
+            };
+        }
+
+        /// <summary>
+        /// One summary line: optional toggle, caption, optional inline amount editor,
+        /// and a fixed-width value column so every figure shares one edge.
+        /// Columns are ordered visually rather than left to RightToLeft mirroring,
+        /// because mirroring also flips each label's TextAlign and pushed the Arabic
+        /// captions to the inside of the card.
+        /// </summary>
+        private TableLayoutPanel MoneyRow(Label title, Label value, CheckBox chk, Panel amount)
+        {
             var row = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 4,
                 RowCount = 1,
                 Margin = new Padding(0),
-                BackColor = Color.Transparent,
-                RightToLeft = ar ? RightToLeft.Yes : RightToLeft.No
+                BackColor = Color.Transparent
             };
-            row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, chk == null ? 0F : 22F));
-            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SummaryValueW));
-
-            if (chk != null) row.Controls.Add(chk, 0, 0);
+            for (int i = 0; i < 4; i++) row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0F));
 
             title.AutoSize = false;
             title.Dock = DockStyle.Fill;
-            title.TextAlign = ar ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
-            row.Controls.Add(title, 1, 0);
-
-            if (amount != null) row.Controls.Add(amount, 2, 0);
-
             value.AutoSize = false;
             value.Dock = DockStyle.Fill;
-            value.TextAlign = ar ? ContentAlignment.MiddleLeft : ContentAlignment.MiddleRight;
-            value.Margin = new Padding(4, 0, 0, 0);
+            PinLeftToRight(title);
+            PinLeftToRight(value);
+
+            if (chk != null) row.Controls.Add(chk, 0, 0);
+            row.Controls.Add(title, 1, 0);
+            if (amount != null) row.Controls.Add(amount, 2, 0);
             row.Controls.Add(value, 3, 0);
+
+            void Apply()
+            {
+                bool ar = LocalizationManager.IsArabic;
+                row.SuspendLayout();
+                row.RightToLeft = RightToLeft.No;
+
+                int cValue = ar ? 0 : 3;
+                int cAmount = ar ? 1 : 2;
+                int cTitle = ar ? 2 : 1;
+                int cCheck = ar ? 3 : 0;
+
+                row.ColumnStyles[cValue] = new ColumnStyle(SizeType.Absolute, SummaryValueW);
+                row.ColumnStyles[cAmount] = new ColumnStyle(SizeType.AutoSize);
+                row.ColumnStyles[cTitle] = new ColumnStyle(SizeType.Percent, 100F);
+                row.ColumnStyles[cCheck] = new ColumnStyle(SizeType.Absolute, chk == null ? 0F : 22F);
+
+                if (chk != null) row.SetColumn(chk, cCheck);
+                row.SetColumn(title, cTitle);
+                if (amount != null) row.SetColumn(amount, cAmount);
+                row.SetColumn(value, cValue);
+
+                title.RightToLeft = RightToLeft.No;
+                title.TextAlign = ar ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                value.RightToLeft = RightToLeft.No;
+                value.TextAlign = ar ? ContentAlignment.MiddleLeft : ContentAlignment.MiddleRight;
+                value.Margin = ar ? new Padding(0, 0, 4, 0) : new Padding(4, 0, 0, 0);
+                row.ResumeLayout(true);
+            }
+
+            Apply();
+            _summaryDirectionAppliers.Add(Apply);
+            // The form-wide RTL pass sets RightToLeft.Yes on every control, which mirrors
+            // these columns straight back. Re-assert whenever that happens.
+            row.RightToLeftChanged += (s, e) => { if (row.RightToLeft != RightToLeft.No) Apply(); };
             return row;
         }
 
@@ -1418,14 +1491,8 @@ namespace InventorySystem.Forms
 
         private static void PaintSummaryCard(Graphics g, Rectangle bounds)
         {
-            if (bounds.Width < 4 || bounds.Height < 4) return;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            var rect = new Rectangle(0, 0, bounds.Width - 1, bounds.Height - 1);
-            using var path = ThemeConfig.GetRoundedPathPublic(rect, CardCornerRadius);
-            using var br = new SolidBrush(SoftBg);
-            using var pen = new Pen(Line, 1f);
-            g.FillPath(br, path);
-            g.DrawPath(pen, path);
+            ThemeConfig.FillRoundedBackground(g, bounds, CardCornerRadius, SoftBg);
+            ThemeConfig.DrawRoundedBorder(g, bounds, CardCornerRadius, Line, 1f);
         }
 
         private static ModernButton ActionBtn(string text, Color color)

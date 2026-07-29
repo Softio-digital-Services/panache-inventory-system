@@ -182,13 +182,11 @@ namespace InventorySystem
             var pnlHeaderIcons = this.Controls.Find("rightPanel", true).FirstOrDefault() as Panel;
             if (pnlHeaderIcons != null)
             {
-                pnlHeaderIcons.Dock = DockStyle.Right;
+                // Arabic mirrors the whole chrome to the left, matching the modal windows.
+                pnlHeaderIcons.Dock = isAr ? DockStyle.Left : DockStyle.Right;
                 pnlHeaderIcons.RightToLeft = RightToLeft.No;
                 LayoutHeaderChrome(pnlHeaderIcons);
-                if (isAr)
-                    panel2.Dock = DockStyle.Right;
-                else
-                    panel2.Dock = DockStyle.Left;
+                panel2.Dock = isAr ? DockStyle.Right : DockStyle.Left;
             }
             label2.Visible = false; // Forced hide to prevent clipping
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 10, (panel1.Height - label2.Height) / 2) : new Point(10, (panel1.Height - label2.Height) / 2);
@@ -197,23 +195,76 @@ namespace InventorySystem
             ResumeLayout(true);
         }
 
+        // Title-bar chrome metrics. Kept in one place so the bar height, the icon
+        // pitch and the strip width can never drift apart.
+        private const int HeaderBarHeight = 44;
+        private const int HeaderIconSize = 30;
+        private const int HeaderWinBtnW = 38;
+        private const int HeaderWinBtnH = 28;
+        private const int HeaderIconGap = 2;
+        private const int HeaderGroupGap = 14;
+        private const int HeaderEdgePad = 8;
+        private bool _layingOutHeader;
+
+        /// <summary>
+        /// Places the title-bar controls in one pass, starting from the window edge the
+        /// current language sits on: window buttons outermost, then the tool icons.
+        /// Positions are absolute (the strip is pinned to RightToLeft.No) so switching
+        /// language cannot mirror an icon into the wrong slot.
+        /// </summary>
         private void LayoutHeaderChrome(Panel rightPanel)
         {
-            if (rightPanel == null) return;
-            const int w = 550;
-            foreach (Control c in rightPanel.Controls)
+            if (rightPanel == null || _layingOutHeader) return;
+            _layingOutHeader = true;
+            try
             {
-                if (c.Name == "btnWinClose") c.Location = new Point(w - 45, 6);
-                else if (c.Name == "btnWinMax") c.Location = new Point(w - 90, 6);
-                else if (c.Name == "btnWinMin") c.Location = new Point(w - 135, 6);
-                else if (c == pbUserAvatar) c.Location = new Point(w - 185, 4);
-                else if (c == pbNotification) c.Location = new Point(w - 235, 4);
-                else if (c == btnLock) c.Location = new Point(w - 285, 4);
-                else if (c == pbLanguage) c.Location = new Point(w - 535, 4);
-                else if (c.Name == "headerIcon_calc") c.Location = new Point(w - 335, 4);
-                else if (c.Name == "headerIcon_backup") c.Location = new Point(w - 385, 4);
-                else if (c.Name == "headerIcon_currencies") c.Location = new Point(w - 435, 4);
-                else if (c.Name == "headerIcon_about") c.Location = new Point(w - 485, 4);
+                Control Find(string name) => rightPanel.Controls.Find(name, false).FirstOrDefault();
+
+                // Outer edge first, then inward.
+                var winButtons = new[] { Find("btnWinClose"), Find("btnWinMax"), Find("btnWinMin") };
+                var toolIcons = new Control[]
+                {
+                    pbUserAvatar, pbNotification, btnLock,
+                    Find("headerIcon_calc"), Find("headerIcon_backup"),
+                    Find("headerIcon_currencies"), Find("headerIcon_about"), pbLanguage
+                };
+
+                int total = HeaderEdgePad * 2 + HeaderGroupGap;
+                foreach (var b in winButtons)
+                    if (b != null) total += HeaderWinBtnW;
+                foreach (var t in toolIcons)
+                    if (t != null) total += HeaderIconSize + HeaderIconGap;
+
+                rightPanel.Width = total;
+                int h = rightPanel.ClientSize.Height > 0 ? rightPanel.ClientSize.Height : HeaderBarHeight;
+                bool isAr = LocalizationManager.IsArabic;
+
+                // cursor walks inward from the outer edge in both directions
+                int cursor = isAr ? HeaderEdgePad : rightPanel.Width - HeaderEdgePad;
+
+                void Place(Control c, int cw, int ch)
+                {
+                    if (c == null) return;
+                    c.Size = new Size(cw, ch);
+                    int x = isAr ? cursor : cursor - cw;
+                    c.Location = new Point(x, Math.Max(0, (h - ch) / 2));
+                    cursor += isAr ? cw : -cw;
+                }
+
+                foreach (var b in winButtons)
+                    Place(b, HeaderWinBtnW, HeaderWinBtnH);
+
+                cursor += isAr ? HeaderGroupGap : -HeaderGroupGap;
+
+                foreach (var t in toolIcons)
+                {
+                    Place(t, HeaderIconSize, HeaderIconSize);
+                    cursor += isAr ? HeaderIconGap : -HeaderIconGap;
+                }
+            }
+            finally
+            {
+                _layingOutHeader = false;
             }
         }
 
@@ -235,12 +286,13 @@ namespace InventorySystem
 
             if (button3 != null)
             {
-                button3.TextAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
-                button3.ImageAlign = LocalizationManager.IsArabic ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
-                button3.TextImageRelation = LocalizationManager.IsArabic ? TextImageRelation.TextBeforeImage : TextImageRelation.ImageBeforeText;
-                int padLeft = LocalizationManager.IsArabic ? 0 : 15;
-                int padRight = LocalizationManager.IsArabic ? 15 : 0;
-                button3.Padding = new Padding(padLeft, 0, padRight, 0);
+                // Same RTL rule as ApplySidebarButtonIcon — avoid flipping danger-styled logout colors.
+                bool isAr = LocalizationManager.IsArabic;
+                button3.RightToLeft = RightToLeft.No;
+                button3.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                button3.ImageAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                button3.TextImageRelation = isAr ? TextImageRelation.TextBeforeImage : TextImageRelation.ImageBeforeText;
+                button3.Padding = new Padding(isAr ? 0 : 15, 0, isAr ? 15 : 0, 0);
             }
 
             var pnlNav = Controls.Find("pnlNav", true).FirstOrDefault() as Panel;
@@ -470,61 +522,71 @@ namespace InventorySystem
 
         private void SetupHeaderIcons()
         {
-            // Use Dock=Right so the panel always stretches correctly at any screen width.
-            // We position icons from the right edge using fixed offsets.
-            const int iconAreaWidth = 550;
-            Panel rightPanel = new Panel { Name = "rightPanel", Width = iconAreaWidth, BackColor = Color.Transparent, Dock = DockStyle.Right };
-            int w = iconAreaWidth;
-            AddHeaderButton(rightPanel, w - 45, "Close", "btnWinClose", () => Application.Exit());
-            AddHeaderButton(rightPanel, w - 90, "Maximize", "btnWinMax", () => { this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; });
-            AddHeaderButton(rightPanel, w - 135, "Minimize", "btnWinMin", () => this.WindowState = FormWindowState.Minimized);
+            // The strip docks to whichever side the language wants; LayoutHeaderChrome
+            // owns every size and position so both directions stay in step.
+            Panel rightPanel = new Panel
+            {
+                Name = "rightPanel",
+                BackColor = Color.Transparent,
+                Dock = LocalizationManager.IsArabic ? DockStyle.Left : DockStyle.Right,
+                RightToLeft = RightToLeft.No
+            };
 
-            pbUserAvatar = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 185, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("user"), Color.White) };
+            AddHeaderButton(rightPanel, "Close", "btnWinClose", () => Application.Exit());
+            AddHeaderButton(rightPanel, "Maximize", "btnWinMax", () => { this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; });
+            AddHeaderButton(rightPanel, "Minimize", "btnWinMin", () => this.WindowState = FormWindowState.Minimized);
+
+            pbUserAvatar = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("user"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbUserAvatar);
             pbUserAvatar.Click += (s, e) => menuUser.Show(pbUserAvatar, new Point(0, pbUserAvatar.Height));
             rightPanel.Controls.Add(pbUserAvatar);
 
-            pbNotification = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 235, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("bell"), Color.White) };
+            pbNotification = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("bell"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbNotification);
-            pbNotification.Paint += (s, e) => { if (_alertCount > 0) { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; using (SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright)) e.Graphics.FillEllipse(b, 24, 6, 8, 8); } };
+            pbNotification.Paint += (s, e) =>
+            {
+                if (_alertCount <= 0) return;
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using SolidBrush b = new SolidBrush(ThemeConfig.DangerColorBright);
+                e.Graphics.FillEllipse(b, pbNotification.Width - 12, 4, 7, 7);
+            };
             pbNotification.Click += (s, e) => ShowNotifications(s, e);
             rightPanel.Controls.Add(pbNotification);
 
-            btnLock.Location = new Point(w - 285, 4);
-            btnLock.Size = new Size(42, 42);
             btnLock.Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("lock"), Color.White);
             btnLock.SizeMode = PictureBoxSizeMode.Zoom;
+            btnLock.Anchor = AnchorStyles.None;
             ThemeConfig.ApplyHeaderIconStyle(btnLock);
             btnLock.Click += (s, e) => BtnLock_Click(s, e);
             rightPanel.Controls.Add(btnLock);
 
             // Calculator
-            PictureBox pbCalc = new PictureBox { Name = "headerIcon_calc", Size = new Size(42, 42), Location = new Point(w - 335, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
+            PictureBox pbCalc = new PictureBox { Name = "headerIcon_calc", SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("calculator"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCalc);
             pbCalc.Click += (s, e) => ShowInPopup(new Plugins.CalculatorPanel(), LocalizationManager.GetString("Plugins_CalcTitle", "Calculator"), 380, 580);
             rightPanel.Controls.Add(pbCalc);
 
             // Backup
-            PictureBox pbBackup = new PictureBox { Name = "headerIcon_backup", Size = new Size(42, 42), Location = new Point(w - 385, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
+            PictureBox pbBackup = new PictureBox { Name = "headerIcon_backup", SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("backup"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbBackup);
             pbBackup.Click += (s, e) => ShowInPopup(new Plugins.BackupPanel(_pluginContext), LocalizationManager.GetString("Plugins_BackupRestore", "Backup & Restore"), 520, 500);
             rightPanel.Controls.Add(pbBackup);
 
             // Currencies
-            PictureBox pbCurrencies = new PictureBox { Name = "headerIcon_currencies", Size = new Size(42, 42), Location = new Point(w - 435, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("currencies"), Color.White) };
+            PictureBox pbCurrencies = new PictureBox { Name = "headerIcon_currencies", SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("currencies"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbCurrencies);
             pbCurrencies.Click += (s, e) => { using (var f = new Forms.CurrencySettingsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbCurrencies);
 
             // About Us
-            PictureBox pbAbout = new PictureBox { Name = "headerIcon_about", Size = new Size(42, 42), Location = new Point(w - 485, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
-            ThemeConfig.ApplyHeaderIconStyle(pbAbout, 0.55f);
+            PictureBox pbAbout = new PictureBox { Name = "headerIcon_about", SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("info"), Color.White) };
+            ThemeConfig.ApplyHeaderIconStyle(pbAbout, 0.62f);
             ToolTip ttAbout = new ToolTip(); ttAbout.SetToolTip(pbAbout, LocalizationManager.GetString("Nav_AboutUs", "About Us"));
             pbAbout.Click += (s, e) => { using (var f = new Forms.AboutUsForm()) f.ShowDialog(this); };
             rightPanel.Controls.Add(pbAbout);
 
             // Language Switcher
-            pbLanguage = new PictureBox { Size = new Size(42, 42), Location = new Point(w - 535, 4), SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("language"), Color.White) };
+            pbLanguage = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("language"), Color.White) };
             ThemeConfig.ApplyHeaderIconStyle(pbLanguage);
             pbLanguage.Click += (s, e) =>
             {
@@ -533,7 +595,9 @@ namespace InventorySystem
             };
             rightPanel.Controls.Add(pbLanguage);
 
+            rightPanel.SizeChanged += (s, e) => LayoutHeaderChrome(rightPanel);
             panel1.Controls.Add(rightPanel);
+            LayoutHeaderChrome(rightPanel);
         }
 
         private void ShowInPopup(UserControl control, string title, int width, int height)
@@ -552,9 +616,9 @@ namespace InventorySystem
             }
         }
 
-        private void AddHeaderButton(Panel p, int x, string type, string name, Action click)
+        private void AddHeaderButton(Panel p, string type, string name, Action click)
         {
-            Button b = new Button { Name = name, Size = new Size(45, 38), Location = new Point(x, 6) };
+            Button b = new Button { Name = name, Size = new Size(HeaderWinBtnW, HeaderWinBtnH) };
             ThemeConfig.ApplyWindowControl(b, type); b.Click += (s, e) => click();
             p.Controls.Add(b);
         }
@@ -633,7 +697,7 @@ namespace InventorySystem
             label2.Font = ThemeConfig.HeaderFont;
             label2.ForeColor = Color.White; // New: White on Blue
             label2.Visible = false; // Explicitly hide the title
-            panel1.Height = 60; // Decreased height
+            panel1.Height = HeaderBarHeight;
             panel1.Padding = Padding.Empty;
             panel1.Margin = Padding.Empty;
             panel1.BorderStyle = BorderStyle.None; // Remove border that adds padding

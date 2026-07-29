@@ -45,13 +45,7 @@ namespace InventorySystem.Forms
 
             // Rounded corners for center panel using Paint event
             pnlCenter.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                Rectangle r = new Rectangle(0, 0, pnlCenter.Width - 1, pnlCenter.Height - 1);
-                using (var path = ThemeConfig.GetRoundedPathPublic(r, 20))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1))
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.DrawRoundedBorder(e.Graphics, pnlCenter.ClientRectangle, 20f, ThemeConfig.BorderColor, 1f);
             };
 
             Label lblLocked = new Label { 

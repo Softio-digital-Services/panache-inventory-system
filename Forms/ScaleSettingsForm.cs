@@ -67,6 +67,7 @@ namespace InventorySystem.Forms
             if (btnSimulate != null) btnSimulate.Text = L("btnSimulate");
             if (btnConnectToggle != null)
                 btnConnectToggle.Text = ScaleService.Instance.IsConnected ? L("Scale_Disconnect") : L("btnConnectToggle");
+            UpdateStatusLabel(ScaleService.Instance.IsConnected);
 
             SetFooterButtons(L("Scale_SaveSettings"), L("Scale_Close"), btnSave_Click, btnCancel_Click);
         }
@@ -142,7 +143,6 @@ namespace InventorySystem.Forms
             lblStatus = new Label
             {
                 Name = "lblStatus",
-                Text = ScaleService.Instance.IsConnected ? "● Connected" : "● Disconnected",
                 ForeColor = ScaleService.Instance.IsConnected ? Color.Green : Color.Red,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 Location = new Point(280, 34),
@@ -244,9 +244,20 @@ namespace InventorySystem.Forms
                 this.BeginInvoke(new Action(() => Instance_StatusChanged(isConnected, statusText)));
                 return;
             }
-            lblStatus.Text = isConnected ? "● Connected" : "● Disconnected";
+            UpdateStatusLabel(isConnected);
+            btnConnectToggle.Text = isConnected
+                ? LocalizationManager.GetString("Scale_Disconnect")
+                : LocalizationManager.GetString("btnConnectToggle");
+        }
+
+        private void UpdateStatusLabel(bool isConnected)
+        {
+            if (lblStatus == null) return;
+            string state = isConnected
+                ? LocalizationManager.GetString("Scale_StateConnected", "Connected")
+                : LocalizationManager.GetString("Scale_StateDisconnected", "Disconnected");
+            lblStatus.Text = "● " + state;
             lblStatus.ForeColor = isConnected ? Color.Green : Color.Red;
-            btnConnectToggle.Text = isConnected ? "Disconnect" : "Connect";
         }
 
         private void btnSave_Click(object sender, EventArgs e)

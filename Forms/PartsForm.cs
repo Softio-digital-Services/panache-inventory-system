@@ -55,11 +55,6 @@ namespace InventorySystem.Forms
         private bool   _lowStockOnly    = false;
         private bool   _activeOnly      = false;
         private int    _categorySortMode = 0; // 0=Default, 1=NameAsc, 2=NameDesc, 3=CountDesc, 4=CountAsc
-        private int    _currentPage = 1;
-        private int    _pageSize = 50;
-        private Label  lblPageInfo;
-        private InventorySystem.Controls.ModernButton btnPrevPage;
-        private InventorySystem.Controls.ModernButton btnNextPage;
 
         // ── Card layout constants ─────────────────────────────────────────
         private const int CardW = 160;
@@ -224,14 +219,8 @@ namespace InventorySystem.Forms
             };
             pnlSidebarOuter.Paint += (s, pe) =>
             {
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = RoundedPath(new Rectangle(0, 0, pnlSidebarOuter.Width - 1, pnlSidebarOuter.Height - 1), 14))
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                {
-                    pe.Graphics.FillPath(brush, path);
-                    pe.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(pe.Graphics, pnlSidebarOuter.ClientRectangle, 14f, ThemeConfig.SurfaceColor);
+                ThemeConfig.DrawRoundedBorder(pe.Graphics, pnlSidebarOuter.ClientRectangle, 14f, ThemeConfig.BorderColor, 1f);
             };
             tlpBody.Controls.Add(pnlSidebarOuter, 0, 0);
 
@@ -279,10 +268,7 @@ namespace InventorySystem.Forms
             };
             pbSortCat.Paint += (s, e) =>
             {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = ThemeConfig.GetRoundedPathPublic(new Rectangle(0, 0, pbSortCat.Width - 1, pbSortCat.Height - 1), 6))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                    e.Graphics.DrawPath(pen, path);
+                ThemeConfig.DrawRoundedBorder(e.Graphics, pbSortCat.ClientRectangle, 6f, ThemeConfig.BorderColor, 1f);
                 
                 Image img = ThemeConfig.GetNuricon("filter") ?? ThemeConfig.GetNuricon("sort");
                 if (img != null)
@@ -364,42 +350,19 @@ namespace InventorySystem.Forms
             };
             pnlContent.Paint += (s, pe) =>
             {
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = RoundedPath(new Rectangle(0, 0, pnlContent.Width - 1, pnlContent.Height - 1), 14))
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                {
-                    pe.Graphics.FillPath(brush, path);
-                    pe.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(pe.Graphics, pnlContent.ClientRectangle, 14f, ThemeConfig.SurfaceColor);
+                ThemeConfig.DrawRoundedBorder(pe.Graphics, pnlContent.ClientRectangle, 14f, ThemeConfig.BorderColor, 1f);
             };
             tlpBody.Controls.Add(pnlContent, 1, 0);
 
             // Content layout
             TableLayoutPanel tlpContent = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent,
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent,
                 Padding = new Padding(16)
             };
             tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));  // sub-header
             tlpContent.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // cards / grid
-            tlpContent.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));  // pagination footer
-
-            Panel pnlPagination = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
-            btnPrevPage = new InventorySystem.Controls.ModernButton { Text = LocalizationManager.GetString("Parts_Prev"), Size = new Size(80, 30), Location = new Point(0, 10), Cursor = Cursors.Hand };
-            btnPrevPage.Click += (s, e) => { if (_currentPage > 1) { _currentPage--; RefreshAll(); } };
-            ThemeConfig.ApplySecondaryButton(btnPrevPage);
-
-            btnNextPage = new InventorySystem.Controls.ModernButton { Text = LocalizationManager.GetString("Parts_Next"), Size = new Size(80, 30), Location = new Point(200, 10), Cursor = Cursors.Hand };
-            btnNextPage.Click += (s, e) => { _currentPage++; RefreshAll(); };
-            ThemeConfig.ApplySecondaryButton(btnNextPage);
-
-            lblPageInfo = new Label { Text = "Page 1", AutoSize = false, Size = new Size(100, 30), Location = new Point(90, 10), TextAlign = ContentAlignment.MiddleCenter, Font = ThemeConfig.StandardFont, ForeColor = ThemeConfig.TextColorDark };
-
-            pnlPagination.Controls.Add(btnPrevPage);
-            pnlPagination.Controls.Add(lblPageInfo);
-            pnlPagination.Controls.Add(btnNextPage);
-            tlpContent.Controls.Add(pnlPagination, 0, 2);
 
             pnlContent.Controls.Add(tlpContent);
 
@@ -445,10 +408,7 @@ namespace InventorySystem.Forms
             };
             btnContentFilter.Paint += (s, e) =>
             {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = ThemeConfig.GetRoundedPathPublic(new Rectangle(0, 0, btnContentFilter.Width - 1, btnContentFilter.Height - 1), 6))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                    e.Graphics.DrawPath(pen, path);
+                ThemeConfig.DrawRoundedBorder(e.Graphics, btnContentFilter.ClientRectangle, 6f, ThemeConfig.BorderColor, 1f);
                 Image img = ThemeConfig.GetNuricon("filter");
                 if (img != null)
                 {
@@ -577,19 +537,10 @@ namespace InventorySystem.Forms
                 bool active = pnl.Tag is bool b && b;
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-                using (var path = ThemeConfig.GetRoundedPathPublic(new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1), 6))
-                {
-                    if (active)
-                    {
-                        using (var brush = new SolidBrush(ThemeConfig.PrimaryColor))
-                            e.Graphics.FillPath(brush, path);
-                    }
-                    else
-                    {
-                        using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                            e.Graphics.DrawPath(pen, path);
-                    }
-                }
+                if (active)
+                    ThemeConfig.FillRoundedBackground(e.Graphics, pnl.ClientRectangle, 6f, ThemeConfig.PrimaryColor);
+                else
+                    ThemeConfig.DrawRoundedBorder(e.Graphics, pnl.ClientRectangle, 6f, ThemeConfig.BorderColor, 1f);
 
                 Image img = ThemeConfig.GetNuricon(iconName);
                 if (img != null)
@@ -736,14 +687,9 @@ namespace InventorySystem.Forms
                 using (var clear = new SolidBrush(ThemeConfig.BackgroundColor))
                     pe.Graphics.FillRectangle(clear, -1, -1, card.Width + 2, card.Height + 2);
 
-                using (var path = ThemeConfig.GetRoundedPathPublic(
-                    new Rectangle(0, 0, Math.Max(1, card.Width - 1), Math.Max(1, card.Height - 1)), cardRadius))
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                using (var pen = new Pen(isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, isActive ? 1.6f : 1f))
-                {
-                    pe.Graphics.FillPath(brush, path);
-                    pe.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(pe.Graphics, card.ClientRectangle, cardRadius, ThemeConfig.SurfaceColor);
+                ThemeConfig.DrawRoundedBorder(pe.Graphics, card.ClientRectangle, cardRadius,
+                    isActive ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor, isActive ? 1.6f : 1f);
             };
 
             Image iconImage = cat == null ? ThemeConfig.GetNuricon("dashboard") : ThemeConfig.GetNuricon("category_placeholder");
@@ -960,17 +906,9 @@ namespace InventorySystem.Forms
             try
             {
                 int totalCount = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetPartsCount(_searchText, _lowStockOnly, _activeOnly, _activeCategory));
-                int totalPages = (int)Math.Ceiling(totalCount / (double)_pageSize);
-                if (totalPages == 0) totalPages = 1;
-                if (_currentPage > totalPages) _currentPage = totalPages;
 
-                if (lblPageInfo != null) lblPageInfo.Text = $"{LocalizationManager.GetString("Parts_Page", "Page")} {_currentPage} {LocalizationManager.GetString("Parts_Of", "of")} {totalPages}";
-                if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
-                if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
-
-                int offset = (_currentPage - 1) * _pageSize;
-
-                DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory, _pageSize, offset));
+                // Limit 0 means no LIMIT clause: the whole filtered list loads at once.
+                DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(_searchText, _lowStockOnly, _activeOnly, _activeCategory, 0, 0));
 
                 // Update count label
                 string catLabel = _activeCategory ?? LocalizationManager.GetString("Parts_AllItems", "All Items");
@@ -1004,7 +942,9 @@ namespace InventorySystem.Forms
             card.Paint += (s, pe) =>
             {
                 pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 14))
+                // Inset like every other outline so the dashes reach the corners.
+                var r = new RectangleF(1.25f, 1.25f, card.Width - 2.5f, card.Height - 2.5f);
+                using (var path = ThemeConfig.GetRoundedPathF(r, 12.75f))
                 using (var pen = new Pen(ThemeConfig.PrimaryColor, 1.5f) { DashStyle = DashStyle.Dash })
                     pe.Graphics.DrawPath(pen, path);
             };
@@ -1014,7 +954,7 @@ namespace InventorySystem.Forms
                 Size = new Size(CardW - 24, 40),
                 Location = new Point(12, (CardH - 40) / 2)
             };
-            ThemeConfig.ApplyStandardAddButton(btnAdd, "Btn_Add");
+            ThemeConfig.ApplyStandardAddButton(btnAdd, "Parts_AddProduct");
 
             EventHandler addClick = (s, e) =>
             {
@@ -1049,14 +989,8 @@ namespace InventorySystem.Forms
             };
             card.Paint += (s, pe) =>
             {
-                pe.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = RoundedPath(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 14))
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                {
-                    pe.Graphics.FillPath(brush, path);
-                    pe.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(pe.Graphics, card.ClientRectangle, 14f, ThemeConfig.SurfaceColor);
+                ThemeConfig.DrawRoundedBorder(pe.Graphics, card.ClientRectangle, 14f, ThemeConfig.BorderColor, 1f);
             };
 
             // Circular image
@@ -1253,17 +1187,8 @@ namespace InventorySystem.Forms
                 dgvParts.DataSource = null;
 
                 int totalCount = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetPartsCount(search, lowStockOnly, activeOnly, category));
-                int totalPages = (int)Math.Ceiling(totalCount / (double)_pageSize);
-                if (totalPages == 0) totalPages = 1;
-                if (_currentPage > totalPages) _currentPage = totalPages;
 
-                if (lblPageInfo != null) lblPageInfo.Text = $"{LocalizationManager.GetString("Parts_Page", "Page")} {_currentPage} {LocalizationManager.GetString("Parts_Of", "of")} {totalPages}";
-                if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
-                if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
-
-                int offset = (_currentPage - 1) * _pageSize;
-
-                DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(search, lowStockOnly, activeOnly, category, _pageSize, offset));
+                DataTable dt = await System.Threading.Tasks.Task.Run(() => _inventoryService.GetAllParts(search, lowStockOnly, activeOnly, category, 0, 0));
                 
                 dgvParts.DataSource = dt;
 
@@ -1313,8 +1238,6 @@ namespace InventorySystem.Forms
             if (ctrlAddCat != null) { ThemeConfig.ApplyStandardAddButton(ctrlAddCat, "Parts_AddCategory"); ctrlAddCat.Invalidate(); }
 
             if (txtCategorySearch != null) txtCategorySearch.PlaceholderText = L("Parts_SearchCategories");
-            if (btnPrevPage != null) btnPrevPage.Text = L("Parts_Prev");
-            if (btnNextPage != null) btnNextPage.Text = L("Parts_Next");
 
             InventorySystem.Helpers.LocalizationManager.TranslateControl(this);
 

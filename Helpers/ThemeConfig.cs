@@ -191,72 +191,84 @@ namespace InventorySystem
 
             if (hasActions)
             {
-                bool isRTL = LocalizationManager.IsArabic;
-
-                TableLayoutPanel tlpActions = new TableLayoutPanel
+                // The row is positioned by hand rather than with a mirrored TableLayoutPanel:
+                // RTL mirroring flips anchors as well as columns, which parked a lone action
+                // button next to the search box instead of at the far edge of the page.
+                Panel pnlActions = new Panel
                 {
                     Dock = DockStyle.Fill,
                     Margin = new Padding(0),
-                    ColumnCount = 2,
-                    RowCount = 1
+                    BackColor = Color.Transparent
                 };
 
-                // In RTL: col-0 appears on the RIGHT, col-1 on the LEFT.
-                // We always put search in the "outer" column and buttons in the "inner" column
-                // so the search sits flush at the content-start edge.
-                if (isRTL)
+                var buttons = new List<Control>();
+                if (actionButtons != null)
                 {
-                    // RTL: search RIGHT (col-0 = rightmost), buttons LEFT (col-1 = leftmost)
-                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // col-0 = search (right)
-                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // col-1 = buttons (left)
-                }
-                else
-                {
-                    // LTR: search LEFT (col-0 = leftmost), buttons RIGHT (col-1 = rightmost)
-                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 350F)); // col-0 = search (left)
-                    tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));  // col-1 = buttons (right)
-                }
-
-
-                if (searchBox != null)
-                {
-                    // In RTL, anchor RIGHT so the search box hugs the physical right edge of its column
-                    // (which is the outer edge of the form). In LTR, anchor LEFT for the same reason.
-                    searchBox.Anchor = isRTL
-                        ? (AnchorStyles.Right | AnchorStyles.Top)
-                        : (AnchorStyles.Left  | AnchorStyles.Top);
-                    searchBox.Margin = new Padding(0, 6, 0, 0);
-                    tlpActions.Controls.Add(searchBox, 0, 0);
-                }
-
-                if (actionButtons != null && actionButtons.Length > 0)
-                {
-                    FlowLayoutPanel panelButtons = new FlowLayoutPanel
-                    {
-                        FlowDirection = FlowDirection.LeftToRight,
-                        AutoSize = true,
-                        // In RTL, buttons are in col-1 (left side) — anchor LEFT to hug the left edge.
-                        // In LTR, buttons are in col-1 (right side) — anchor RIGHT to hug the right edge.
-                        Anchor = isRTL
-                            ? (AnchorStyles.Left  | AnchorStyles.Top)
-                            : (AnchorStyles.Right | AnchorStyles.Top),
-                        WrapContents = false,
-                        Padding = new Padding(0),
-                        Margin = new Padding(0, 6, 0, 0)
-                    };
-
                     foreach (var btn in actionButtons)
                     {
                         if (btn == null) continue;
-                        btn.Margin = isRTL
-                            ? new Padding(10, 0, 0, 0)  // RTL: gap on left side of each button
-                            : new Padding(0, 0, 10, 0); // LTR: gap on right side
-                        panelButtons.Controls.Add(btn);
+                        btn.Margin = new Padding(0);
+                        buttons.Add(btn);
+                        pnlActions.Controls.Add(btn);
                     }
-                    tlpActions.Controls.Add(panelButtons, 1, 0);
                 }
 
-                tlpHeader.Controls.Add(tlpActions, 0, 1);
+                if (searchBox != null)
+                {
+                    searchBox.Margin = new Padding(0);
+                    pnlActions.Controls.Add(searchBox);
+                }
+
+                void LayoutActionsRow()
+                {
+                    if (pnlActions.IsDisposed) return;
+                    int w = pnlActions.ClientSize.Width;
+                    int h = pnlActions.ClientSize.Height;
+                    if (w <= 0) return;
+
+                    const int gap = 10;
+                    int Top(Control c) => Math.Max(0, (h - c.Height) / 2);
+
+                    int groupW = 0;
+                    for (int i = 0; i < buttons.Count; i++)
+                        groupW += buttons[i].Width + (i > 0 ? gap : 0);
+
+                    // Arabic keeps the actions at the left edge and the search at the right;
+                    // English is the mirror. Buttons always read in their declared order.
+                    bool ar = LocalizationManager.IsArabic;
+                    int groupX = ar ? 0 : Math.Max(0, w - groupW);
+                    for (int i = 0; i < buttons.Count; i++)
+                    {
+                        buttons[i].Location = new Point(groupX, Top(buttons[i]));
+                        groupX += buttons[i].Width + gap;
+                    }
+
+                    if (searchBox != null)
+                    {
+                        int searchX = ar ? Math.Max(0, w - searchBox.Width) : 0;
+                        searchBox.Location = new Point(searchX, Top(searchBox));
+                    }
+                }
+
+                // ApplyRTL mirrors child locations, so re-place the row once every
+                // localization handler has run.
+                void DeferLayout()
+                {
+                    if (pnlActions.IsDisposed) return;
+                    if (pnlActions.IsHandleCreated) pnlActions.BeginInvoke((Action)LayoutActionsRow);
+                    else LayoutActionsRow();
+                }
+
+                pnlActions.Resize += (s, e) => LayoutActionsRow();
+                pnlActions.RightToLeftChanged += (s, e) => DeferLayout();
+                pnlActions.HandleCreated += (s, e) => { LayoutActionsRow(); DeferLayout(); };
+
+                EventHandler onLanguageChanged = (s, e) => DeferLayout();
+                LocalizationManager.LanguageChanged += onLanguageChanged;
+                pnlActions.Disposed += (s, e) => LocalizationManager.LanguageChanged -= onLanguageChanged;
+
+                LayoutActionsRow();
+                tlpHeader.Controls.Add(pnlActions, 0, 1);
             }
 
             return tlpHeader;
@@ -622,12 +634,8 @@ namespace InventorySystem
 
             p.Paint += (s, e) =>
             {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedPath(new Rectangle(0, 0, p.Width - 1, p.Height - 1), 12))
-                using (var pen = new Pen(BorderColor, 1.5f))
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
+                // Panel is Region-clipped to the same radius, so inset the stroke.
+                DrawRoundedBorder(e.Graphics, new Rectangle(0, 0, p.Width, p.Height), 12f, BorderColor, 1.5f);
             };
 
             p.Controls.Add(innerControl);
@@ -812,7 +820,7 @@ namespace InventorySystem
             bool isDarkHeader = (btn.FindForm() is MainForm);
             Color iconColor = isDarkHeader ? Color.White : ThemeConfig.TextColorDark;
             using (var p = new Pen(iconColor, 1.5f) { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round })
-                g.DrawLine(p, cx - lineW, cy + 2, cx + lineW, cy + 2);
+                g.DrawLine(p, cx - lineW, cy, cx + lineW, cy);
         }
 
         private static void WinCtrl_PaintMaximize(object sender, PaintEventArgs e)
@@ -1055,6 +1063,60 @@ namespace InventorySystem
             return GetRoundedPathPublic(rect, radius);
         }
 
+        /// <summary>
+        /// Rounded path on float bounds, so a stroke can be centred on a half-pixel.
+        /// </summary>
+        public static GraphicsPath GetRoundedPathF(RectangleF r, float radius)
+        {
+            var path = new GraphicsPath();
+            float d = radius * 2f;
+            if (d > r.Width) d = r.Width;
+            if (d > r.Height) d = r.Height;
+            if (d <= 0.1f) d = 1f;
+
+            path.AddArc(r.X, r.Y, d, d, 180, 90);
+            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        /// <summary>
+        /// Fills a control's full bounds with a rounded background. Use with
+        /// <see cref="DrawRoundedBorder"/> so the fill reaches the edge while the
+        /// stroke stays inside it.
+        /// </summary>
+        public static void FillRoundedBackground(Graphics g, Rectangle bounds, float radius, Color color)
+        {
+            if (bounds.Width < 2 || bounds.Height < 2) return;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using var path = GetRoundedPathF(new RectangleF(0, 0, bounds.Width, bounds.Height), radius);
+            using var brush = new SolidBrush(color);
+            g.FillPath(brush, path);
+        }
+
+        /// <summary>
+        /// Draws a rounded outline that fits entirely within a control's bounds.
+        /// A stroke centred on the bounds loses its outer half to the control edge
+        /// (and to any rounded Region, whose clip is hard-edged), which is what makes
+        /// borders look thin, broken, or disconnected at the corners. Insetting by
+        /// half the pen width plus a half-pixel keeps the whole stroke visible.
+        /// </summary>
+        public static void DrawRoundedBorder(Graphics g, Rectangle bounds, float radius, Color color,
+            float penWidth = 1f, float extraInset = 0f)
+        {
+            if (bounds.Width < 3 || bounds.Height < 3) return;
+            float inset = penWidth / 2f + 0.5f + extraInset;
+            var r = new RectangleF(inset, inset, bounds.Width - inset * 2f, bounds.Height - inset * 2f);
+            if (r.Width < 1f || r.Height < 1f) return;
+
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using var path = GetRoundedPathF(r, Math.Max(1f, radius - inset));
+            using var pen = new Pen(color, penWidth);
+            g.DrawPath(pen, path);
+        }
+
         public static void ApplyPrintPreviewTheme(PrintPreviewDialog preview)
         {
             if (preview == null) return;
@@ -1165,25 +1227,25 @@ namespace InventorySystem
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.White);
 
-                Rectangle rect = new Rectangle(0, 0, preview.Width - 1, preview.Height - 1);
-                int radius = 16;
+                Rectangle bounds = new Rectangle(0, 0, preview.Width, preview.Height);
+                const float radius = 16f;
 
-                using (var path = GetRoundedPathPublic(rect, radius))
+                // Clip the form to the rounded shape, then keep every stroke inside it.
+                using (var clip = GetRoundedPathF(new RectangleF(0, 0, bounds.Width, bounds.Height), radius))
                 {
-                    // Clip the form
-                    preview.Region = new Region(path);
-
-                    // Neon Border with Glow
-                    Color neonColor = PrimaryColor;
-                    using (Pen glow1 = new Pen(Color.FromArgb(40, neonColor), 4f)) g.DrawPath(glow1, path);
-                    using (Pen glow2 = new Pen(Color.FromArgb(70, neonColor), 2f)) g.DrawPath(glow2, path);
-                    // Main Sharp Neon Border (Refined 1.8px)
-                    using (Pen mainPen = new Pen(neonColor, 1.8f)) g.DrawPath(mainPen, path);
-
-                    // Header Separator line - Darker and more obvious
-                    using (Pen sep = new Pen(Color.FromArgb(220, 225, 235), 1.5f))
-                        g.DrawLine(sep, 1, 90, preview.Width - 2, 90);
+                    var oldRegion = preview.Region;
+                    preview.Region = new Region(clip);
+                    oldRegion?.Dispose();
                 }
+
+                Color neonColor = PrimaryColor;
+                DrawRoundedBorder(g, bounds, radius, Color.FromArgb(40, neonColor), 4f);
+                DrawRoundedBorder(g, bounds, radius, Color.FromArgb(70, neonColor), 2f);
+                DrawRoundedBorder(g, bounds, radius, neonColor, 1.8f);
+
+                // Header Separator line - Darker and more obvious
+                using (Pen sep = new Pen(Color.FromArgb(220, 225, 235), 1.5f))
+                    g.DrawLine(sep, 3, 90, preview.Width - 3, 90);
             };
 
             // Support dragging
@@ -1408,6 +1470,10 @@ namespace InventorySystem
             btn.Image = TintImage(icon, tintColor);
             
             bool isAr = LocalizationManager.IsArabic;
+            // Keep RightToLeft.No: Button mirrors TextAlign/TextImageRelation when RTL is Yes,
+            // which put Arabic labels on the left even after we asked for MiddleRight.
+            btn.RightToLeft = RightToLeft.No;
+            btn.TextAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
             btn.ImageAlign = isAr ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
             btn.TextImageRelation = isAr ? TextImageRelation.TextBeforeImage : TextImageRelation.ImageBeforeText;
             int padLeft = isAr ? 0 : 15;
@@ -1672,12 +1738,7 @@ namespace InventorySystem
             ComboBox cbo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Font = StandardFont, ForeColor = TextColorDark, BackColor = SurfaceColor, FlatStyle = FlatStyle.Flat, Dock = DockStyle.Fill };
             Panel wrapper = new Panel { Size = new Size(width, height), BackColor = SurfaceColor, Padding = new Padding(4, 4, 4, 0) };
             wrapper.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (var path = GetRoundedPath(new Rectangle(0, 0, wrapper.Width - 1, wrapper.Height - 1), 8))
-                using (var pen = new Pen(BorderColor, 1.5f))
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
+                DrawRoundedBorder(e.Graphics, wrapper.ClientRectangle, 8f, BorderColor, 1.5f);
             };
             wrapper.Controls.Add(cbo);
             return (wrapper, cbo);
@@ -1692,13 +1753,8 @@ namespace InventorySystem
                 Color parentColor = GetParentColor(card);
                 using (var bgBrush = new SolidBrush(parentColor))
                     e.Graphics.FillRectangle(bgBrush, -1, -1, card.Width + 2, card.Height + 2);
-                Rectangle rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
-                using (var cardBrush = new SolidBrush(SurfaceColor))
-                using (var path = GetRoundedPath(rect, 15))
-                {
-                    e.Graphics.FillPath(cardBrush, path);
-                    using (var pen = new Pen(BorderColor, 1f)) e.Graphics.DrawPath(pen, path);
-                }
+                FillRoundedBackground(e.Graphics, card.ClientRectangle, 15f, SurfaceColor);
+                DrawRoundedBorder(e.Graphics, card.ClientRectangle, 15f, BorderColor, 1f);
             };
             card.Controls.Add(inner);
             inner.Dock = DockStyle.Fill;
@@ -1932,14 +1988,8 @@ namespace InventorySystem
                 Color parentBg = ThemeConfig.GetParentColor(p);
                 using (var brush = new System.Drawing.SolidBrush(parentBg))
                     g.FillRectangle(brush, -1, -1, p.Width + 2, p.Height + 2);
-                var rect = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = RoundedPath(rect, radius))
-                {
-                    using (var fill = new System.Drawing.SolidBrush(bgColor))
-                        g.FillPath(fill, path);
-                    using (var pen = new System.Drawing.Pen(bdColor, 1f))
-                        g.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(g, p.ClientRectangle, radius, bgColor);
+                ThemeConfig.DrawRoundedBorder(g, p.ClientRectangle, radius, bdColor, 1f);
             };
             return p;
         }

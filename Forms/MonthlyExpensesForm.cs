@@ -61,10 +61,11 @@ namespace InventorySystem.Forms
             txtSearch.TextChanged += (s, e) => LoadData(txtSearch.Text);
 
             lblTotal = new Label { 
-                Font = new Font("Segoe UI", 22F, FontStyle.Bold), 
+                Font = new Font(ThemeConfig.AppFontFamily, 11F, FontStyle.Bold), 
                 ForeColor = ThemeConfig.PrimaryColor, 
                 AutoSize = true, 
-                TextAlign = ContentAlignment.MiddleRight
+                TextAlign = ContentAlignment.MiddleRight,
+                RightToLeft = RightToLeft.No
             };
 
             var headerControls = new Control[] { lblTotal };

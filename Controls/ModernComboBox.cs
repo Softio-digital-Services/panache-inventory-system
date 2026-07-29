@@ -215,22 +215,12 @@ namespace InventorySystem.Controls
             }
 
             // 2. Draw Rounded Surface (White)
-            Rectangle rect = new Rectangle(0, 0, pnl.Width - 1, pnl.Height - 1);
-            using (var path = GetRoundedPath(rect, 12))
-            {
-                using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                {
-                    e.Graphics.FillPath(brush, path);
-                }
+            Rectangle bounds = new Rectangle(0, 0, pnl.Width, pnl.Height);
+            ThemeConfig.FillRoundedBackground(e.Graphics, bounds, 12f, ThemeConfig.SurfaceColor);
 
-                // 3. Draw Border (Primary if focused, else BorderColor)
-                Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
-                float borderSize = _isFocused ? 2f : 1.5f;
-                using (var pen = new Pen(borderColor, borderSize))
-                {
-                    e.Graphics.DrawPath(pen, path);
-                }
-            }
+            // 3. Draw Border (Primary if focused, else BorderColor)
+            Color borderColor = _isFocused ? ThemeConfig.PrimaryColor : ThemeConfig.BorderColor;
+            ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, 12f, borderColor, _isFocused ? 2f : 1.5f);
         }
 
         private GraphicsPath GetRoundedPath(Rectangle rect, int radius)

@@ -2402,6 +2402,12 @@
   <data name="Scale_Disconnect" xml:space="preserve">
     <value>قطع الاتصال</value>
   </data>
+  <data name="Scale_StateConnected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="Scale_StateDisconnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
   <data name="Return_TotalRefund" xml:space="preserve">
     <value>إجمالي الاسترداد: {0}</value>
   </data>

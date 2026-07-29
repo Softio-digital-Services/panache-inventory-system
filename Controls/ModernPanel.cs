@@ -33,19 +33,19 @@ namespace InventorySystem.Controls
                 e.Graphics.FillRectangle(brush, -1, -1, this.Width + 2, this.Height + 2);
             }
 
-            // 2. Draw Rounded Surface (Gradient)
-            Rectangle rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
-            using (LinearGradientBrush brush = new LinearGradientBrush(rect, this.GradientTopColor, this.GradientBottomColor, this.GradientAngle))
-            using (GraphicsPath graphicsPath = GetRoundedPath(rect, BorderRadius))
+            // 2. Draw Rounded Surface (Gradient) over the full bounds
+            Rectangle bounds = new Rectangle(0, 0, this.Width, this.Height);
+            if (bounds.Width > 1 && bounds.Height > 1)
             {
-                e.Graphics.FillPath(brush, graphicsPath);
-                
-                // 3. Draw Rounded Border
-                using (var pen = new Pen(ThemeConfig.BorderColor, 1.5f))
+                using (LinearGradientBrush brush = new LinearGradientBrush(bounds, this.GradientTopColor, this.GradientBottomColor, this.GradientAngle))
+                using (GraphicsPath graphicsPath = ThemeConfig.GetRoundedPathF(new RectangleF(0, 0, bounds.Width, bounds.Height), BorderRadius))
                 {
-                    e.Graphics.DrawPath(pen, graphicsPath);
+                    e.Graphics.FillPath(brush, graphicsPath);
                 }
             }
+
+            // 3. Draw Rounded Border inside the bounds so it stays unbroken
+            ThemeConfig.DrawRoundedBorder(e.Graphics, bounds, BorderRadius, ThemeConfig.BorderColor, 1.5f);
         }
 
         private GraphicsPath GetRoundedPath(Rectangle rect, int radius)

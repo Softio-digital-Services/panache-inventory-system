@@ -629,23 +629,18 @@ namespace InventorySystem.Forms
                 using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(chip)))
                     g.FillRectangle(parentBrush, -1, -1, chip.Width + 2, chip.Height + 2);
 
-                var r = new Rectangle(0, 0, chip.Width - 1, chip.Height - 1);
                 const int cardRadius = 16;
 
                 Color bgFill = isActive
                     ? Color.FromArgb(18, activeBorder.R, activeBorder.G, activeBorder.B)
                     : hover ? Color.FromArgb(250, 251, 253) : inactiveBg;
 
-                using (var path = RoundedPath(r, cardRadius))
-                using (var br = new SolidBrush(bgFill))
-                    g.FillPath(br, path);
+                ThemeConfig.FillRoundedBackground(g, chip.ClientRectangle, cardRadius, bgFill);
 
                 Color borderColor = isActive
                     ? activeBorder
                     : hover ? ThemeConfig.SecondaryColor : ThemeConfig.BorderColor;
-                using (var path = RoundedPath(r, cardRadius))
-                using (var pen = new Pen(borderColor, isActive ? 1.6f : 1f))
-                    g.DrawPath(pen, path);
+                ThemeConfig.DrawRoundedBorder(g, chip.ClientRectangle, cardRadius, borderColor, isActive ? 1.6f : 1f);
 
                 int iconSize = 38;
                 int cy = (CARD_H - iconSize) / 2;
@@ -787,21 +782,15 @@ namespace InventorySystem.Forms
                 using (var parentBrush = new SolidBrush(ThemeConfig.GetParentColor(card)))
                     pe.Graphics.FillRectangle(parentBrush, -1, -1, card.Width + 2, card.Height + 2);
 
-                var r = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
                 int liveQty = GetLiveQty();
                 Color borderColor;
                 if (liveQty > 0) borderColor = ThemeConfig.PrimaryColor;   // in-cart: teal accent
                 else if (hovered && !outOfStock) borderColor = ThemeConfig.PrimaryColor;
                 else borderColor = ThemeConfig.BorderColor;
 
-                using (var path = RoundedPath(r, RADIUS))
-                {
-                    using (var br = new SolidBrush(cardBgColor))
-                        pe.Graphics.FillPath(br, path);
-                    float borderW = (liveQty > 0 || (hovered && !outOfStock)) ? 1.8f : 1f;
-                    using (var pen = new Pen(borderColor, borderW))
-                        pe.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(pe.Graphics, card.ClientRectangle, RADIUS, cardBgColor);
+                float borderW = (liveQty > 0 || (hovered && !outOfStock)) ? 1.8f : 1f;
+                ThemeConfig.DrawRoundedBorder(pe.Graphics, card.ClientRectangle, RADIUS, borderColor, borderW);
             };
             // Hover wiring deferred  applied after all children are built (see PropagateHover below)
 
@@ -1649,14 +1638,8 @@ namespace InventorySystem.Forms
                 Color parentColor = ThemeConfig.GetParentColor(p);
                 using (var brush = new SolidBrush(parentColor))
                     e.Graphics.FillRectangle(brush, -1, -1, p.Width + 2, p.Height + 2);
-                Rectangle r = new Rectangle(0, 0, p.Width - 1, p.Height - 1);
-                using (var path = GetRoundedRect(r, 15))
-                {
-                    using (var brush = new SolidBrush(ThemeConfig.SurfaceColor))
-                        e.Graphics.FillPath(brush, path);
-                    using (var pen = new Pen(ThemeConfig.BorderColor, 1f))
-                        e.Graphics.DrawPath(pen, path);
-                }
+                ThemeConfig.FillRoundedBackground(e.Graphics, p.ClientRectangle, 15f, ThemeConfig.SurfaceColor);
+                ThemeConfig.DrawRoundedBorder(e.Graphics, p.ClientRectangle, 15f, ThemeConfig.BorderColor, 1f);
             };
             return p;
         }
