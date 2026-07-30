@@ -196,7 +196,7 @@ namespace InventorySystem.Forms
             btnExport.Click += BtnExport_Click;
             btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
 
-            var actionButtons = new Control[] { btnAdd, btnDeleteSelected, btnImport, btnExport };
+            var actionButtons = new Control[] { btnDeleteSelected, btnImport, btnExport, btnAdd };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblInventoryTitle, txtSearch, actionButtons);
             tlpRoot.Controls.Add(tlpHeader, 0, 0);
 

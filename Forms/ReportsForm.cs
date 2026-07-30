@@ -161,11 +161,13 @@ namespace InventorySystem.Forms
         {
             var panel = new Panel
             {
+                Name = "pnlFilterBar",
                 Dock = DockStyle.Top,
                 Height = 48,
                 Margin = new Padding(0, 0, 0, 0),
                 BackColor = Color.Transparent,
-                Padding = new Padding(0, 2, 0, 2)
+                Padding = new Padding(0, 2, 0, 2),
+                RightToLeft = RightToLeft.No
             };
 
             pnlFilterBar = panel;
@@ -324,6 +326,7 @@ namespace InventorySystem.Forms
 
             if (ar)
             {
+                // Arabic: actions on the left, filters on the right (unchanged).
                 int x = 0;
                 foreach (Control c in actions)
                 {
@@ -342,17 +345,22 @@ namespace InventorySystem.Forms
             }
             else
             {
+                // English: filters on the left, actions flush to the right edge.
                 int x = 0;
                 foreach (Control c in filters)
                 {
                     c.SetBounds(x, Top(c), c.Width, c.Height);
                     x += c.Width + gap;
                 }
-                x += groupGap - gap;
+
+                int actionsW = 0;
+                for (int i = 0; i < actions.Length; i++)
+                    actionsW += actions[i].Width + (i > 0 ? gap : 0);
+                int ax = Math.Max(x + groupGap, w - actionsW);
                 foreach (Control c in actions)
                 {
-                    c.SetBounds(x, Top(c), c.Width, c.Height);
-                    x += c.Width + gap;
+                    c.SetBounds(ax, Top(c), c.Width, c.Height);
+                    ax += c.Width + gap;
                 }
             }
         }

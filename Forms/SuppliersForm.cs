@@ -183,7 +183,7 @@ namespace InventorySystem.Forms
             this.btnImport.Click += BtnImport_Click;
             this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Sup_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
 
-            var actionButtons = new Control[] { btnAdd, btnDetails, btnDeleteSelected, btnImport, btnExport };
+            var actionButtons = new Control[] { btnDeleteSelected, btnImport, btnExport, btnAdd, btnDetails };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(this.lblSuppliersTitle, this.txtSearch, actionButtons);
 
             tlpMain.Controls.Add(tlpHeader, 0, 0);

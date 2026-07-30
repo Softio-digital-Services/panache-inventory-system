@@ -191,14 +191,16 @@ namespace InventorySystem
 
             if (hasActions)
             {
-                // The row is positioned by hand rather than with a mirrored TableLayoutPanel:
-                // RTL mirroring flips anchors as well as columns, which parked a lone action
-                // button next to the search box instead of at the far edge of the page.
+                // Positioned by hand: ApplyRTL must not mirror these children (panel name
+                // is the skip key). English = actions on the right / search on the left;
+                // Arabic stays the opposite so existing AR chrome is unchanged.
                 Panel pnlActions = new Panel
                 {
+                    Name = "pnlGlobalHeaderActions",
                     Dock = DockStyle.Fill,
                     Margin = new Padding(0),
-                    BackColor = Color.Transparent
+                    BackColor = Color.Transparent,
+                    RightToLeft = RightToLeft.No
                 };
 
                 var buttons = new List<Control>();
@@ -208,6 +210,8 @@ namespace InventorySystem
                     {
                         if (btn == null) continue;
                         btn.Margin = new Padding(0);
+                        btn.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                        btn.Dock = DockStyle.None;
                         buttons.Add(btn);
                         pnlActions.Controls.Add(btn);
                     }
@@ -216,12 +220,15 @@ namespace InventorySystem
                 if (searchBox != null)
                 {
                     searchBox.Margin = new Padding(0);
+                    searchBox.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                    searchBox.Dock = DockStyle.None;
                     pnlActions.Controls.Add(searchBox);
                 }
 
                 void LayoutActionsRow()
                 {
                     if (pnlActions.IsDisposed) return;
+                    pnlActions.RightToLeft = RightToLeft.No;
                     int w = pnlActions.ClientSize.Width;
                     int h = pnlActions.ClientSize.Height;
                     if (w <= 0) return;
@@ -233,12 +240,12 @@ namespace InventorySystem
                     for (int i = 0; i < buttons.Count; i++)
                         groupW += buttons[i].Width + (i > 0 ? gap : 0);
 
-                    // Arabic keeps the actions at the left edge and the search at the right;
-                    // English is the mirror. Buttons always read in their declared order.
+                    // EN: actions flush right, search left. AR: actions left, search right.
                     bool ar = LocalizationManager.IsArabic;
                     int groupX = ar ? 0 : Math.Max(0, w - groupW);
                     for (int i = 0; i < buttons.Count; i++)
                     {
+                        buttons[i].RightToLeft = RightToLeft.No;
                         buttons[i].Location = new Point(groupX, Top(buttons[i]));
                         groupX += buttons[i].Width + gap;
                     }

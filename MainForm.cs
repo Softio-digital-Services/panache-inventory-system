@@ -511,13 +511,16 @@ namespace InventorySystem
             };
             pnlFooter.Controls.Add(lblDeveloper);
 
-            // In WinForms with Dock, controls are laid out in reverse z-order.
-            // Add footer BEFORE panel3 so Dock=Bottom is claimed before Dock=Fill.
-            // Correct order: panel1 (Top), panel2 (Left), pnlFooter (Bottom), panel3 (Fill).
             this.Controls.Add(pnlFooter);
-            this.Controls.Add(panel3);
-            this.Controls.Add(panel2);
-            this.Controls.Add(panel1);
+
+            // Docked children are laid out from the highest z-order index down, so the
+            // Fill panel must sit at index 0. Re-adding an existing child only sends it
+            // to the back, which left panel3 above the footer and let page content run
+            // 30px under it - the footer then painted over card bottoms and borders.
+            this.Controls.SetChildIndex(panel3, 0);
+            this.Controls.SetChildIndex(pnlFooter, 1);
+            this.Controls.SetChildIndex(panel2, 2);
+            this.Controls.SetChildIndex(panel1, 3);
         }
 
         private void SetupHeaderIcons()
