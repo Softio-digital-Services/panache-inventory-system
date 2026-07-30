@@ -45,7 +45,18 @@ namespace InventorySystem.Forms
             InitializeComponent();
             InitializeDashboardLayout();
             ApplyLocalization();
-            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) =>
+            {
+                if (IsDisposed) return;
+                void Run()
+                {
+                    if (IsDisposed) return;
+                    ApplyLocalization();
+                }
+                if (!IsHandleCreated) return;
+                if (InvokeRequired) BeginInvoke((Action)Run);
+                else Run();
+            };
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -63,7 +74,6 @@ namespace InventorySystem.Forms
 
         private void ApplyLocalization()
         {
-            InventorySystem.Helpers.LocalizationManager.ApplyRTL(this);
             Func<string, string> L = InventorySystem.Helpers.LocalizationManager.GetString;
 
             if (this.lblDashboardTitle != null) this.lblDashboardTitle.Text = L("Dash_Title");

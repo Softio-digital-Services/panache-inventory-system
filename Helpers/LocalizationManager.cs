@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Resources;
 using System.Threading;
@@ -58,7 +59,16 @@ namespace InventorySystem.Helpers
             catch { }
 
             ResetTranslationCaches();
-            LanguageChanged?.Invoke(null, EventArgs.Empty);
+            // Invoke handlers individually so one failing form cannot block the rest (sidebar/MainForm).
+            var handlers = LanguageChanged;
+            if (handlers != null)
+            {
+                foreach (Delegate d in handlers.GetInvocationList())
+                {
+                    try { ((EventHandler)d)(null, EventArgs.Empty); }
+                    catch { }
+                }
+            }
         }
 
         public static string GetString(string key)
@@ -256,159 +266,169 @@ namespace InventorySystem.Helpers
 
         /// <summary>
         /// Recursively applies RTL (or LTR) to a control tree.
-        /// - Sets RightToLeft on every control.
+        /// - Sets RightToLeft on every control (except MS Chart, which throws Win32Exception).
         /// - Mirrors DockStyle.Left <-> DockStyle.Right on Panels.
         /// - Reverses FlowDirection on FlowLayoutPanels.
+        /// Per-control failures are swallowed so one bad control cannot abort a language switch.
         /// </summary>
         public static void ApplyRTL(Control control)
         {
-            if (control == null) return;
+            if (control == null || control.IsDisposed) return;
             bool isAr = IsArabic;
+            bool isChart = control.GetType().FullName == "System.Windows.Forms.DataVisualization.Charting.Chart";
 
-            control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
-
-            // Mirror FlowLayoutPanel direction for RTL
-            if (control is FlowLayoutPanel flp)
+            try
             {
-                if (!_originalFlowDirections.TryGetValue(flp, out ValueBox<FlowDirection> box))
-                {
-                    box = new ValueBox<FlowDirection>(flp.FlowDirection);
-                    _originalFlowDirections.Add(flp, box);
-                }
-                FlowDirection origFlow = box.Value;
-                if (isAr)
-                {
-                    if (origFlow == FlowDirection.LeftToRight) flp.FlowDirection = FlowDirection.RightToLeft;
-                    else if (origFlow == FlowDirection.RightToLeft) flp.FlowDirection = FlowDirection.LeftToRight;
-                }
-                else
-                {
-                    flp.FlowDirection = origFlow;
-                }
-            }
+                // MS Chart crashes with "Error creating window handle" when RightToLeft is set.
+                if (!isChart)
+                    control.RightToLeft = isAr ? RightToLeft.Yes : RightToLeft.No;
 
-            // Skip manual location/anchor mirroring for internal components of ModernTextBox and StatCard
-            // as they handle their own internal layout logic.
-            // Also skip manually laid-out header / filter toolbars — they own EN-right / AR-left placement.
-            bool isManualToolbarChild = control.Parent != null &&
-                (control.Parent.Name == "pnlGlobalHeaderActions" || control.Parent.Name == "pnlFilterBar");
-            bool isInternalHandled = isManualToolbarChild ||
-                                     (control.Parent != null && (control.Parent.GetType().Name == "ModernTextBox" || control.Parent.GetType().Name == "StatCard" || control.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.GetType().Name == "ModernComboBox")) ||
-                                     (control.Parent != null && control.Parent.Parent != null && (control.Parent.Parent.GetType().Name == "ModernTextBox" || control.Parent.Parent.GetType().Name == "StatCard" || control.Parent.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.Parent.GetType().Name == "ModernComboBox"));
-
-            if (!isInternalHandled)
-            {
-                // Handle Docking Mirroring for all controls (Labels, Buttons, Panels, etc.)
-                if (control.Dock == DockStyle.Left || control.Dock == DockStyle.Right)
+                // Mirror FlowLayoutPanel direction for RTL
+                if (control is FlowLayoutPanel flp)
                 {
-                    // Title-bar icon strip keeps fixed dock; MainForm.ApplyLocalization sets sidebar dock.
-                    if (control.Name == "rightPanel")
+                    if (!_originalFlowDirections.TryGetValue(flp, out ValueBox<FlowDirection> box))
                     {
-                        // skip dock mirroring
+                        box = new ValueBox<FlowDirection>(flp.FlowDirection);
+                        _originalFlowDirections.Add(flp, box);
                     }
-                    else
-                    {
-                    bool isSwapped = HasRtlState(control, "rtl_dock_swapped");
-                    if (isAr && !isSwapped)
-                    {
-                        control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
-                        AddRtlState(control, "rtl_dock_swapped");
-                    }
-                    else if (!isAr && isSwapped)
-                    {
-                        control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
-                        RemoveRtlState(control, "rtl_dock_swapped");
-                    }
-                    }
-                }
-            }
-            
-
-            // Handle Chart Mirroring
-            if (control.GetType().FullName == "System.Windows.Forms.DataVisualization.Charting.Chart")
-            {
-                dynamic chart = control;
-                foreach (var title in chart.Titles)
-                {
-                    title.Alignment = isAr ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
-                }
-                
-                foreach (var legend in chart.Legends)
-                {
-                    if (legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Top || 
-                        legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Bottom)
-                    {
-                        legend.Alignment = isAr ? StringAlignment.Far : StringAlignment.Near;
-                    }
-                }
-            }
-
-            // RightToLeft property handles TableLayoutPanel column mirroring automatically
-            // No manual MirrorTableLayout needed.
-
-            if (!isInternalHandled)
-            {
-                // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
-                if (control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
-                {
-                    if (!_originalLocations.TryGetValue(control, out ValueBox<Point> locBox))
-                    {
-                        locBox = new ValueBox<Point>(control.Location);
-                        _originalLocations.Add(control, locBox);
-                    }
-                    Point origLoc = locBox.Value;
-
+                    FlowDirection origFlow = box.Value;
                     if (isAr)
                     {
-                        int pWidth = control.Parent.ClientSize.Width;
-                        if (pWidth > 0 && !HasRtlState(control, "rtl_loc_swapped"))
-                        {
-                            control.Location = new Point(pWidth - origLoc.X - control.Width, origLoc.Y);
-                            AddRtlState(control, "rtl_loc_swapped");
-                        }
+                        if (origFlow == FlowDirection.LeftToRight) flp.FlowDirection = FlowDirection.RightToLeft;
+                        else if (origFlow == FlowDirection.RightToLeft) flp.FlowDirection = FlowDirection.LeftToRight;
                     }
                     else
                     {
-                        if (HasRtlState(control, "rtl_loc_swapped"))
+                        flp.FlowDirection = origFlow;
+                    }
+                }
+
+                // Skip manual location/anchor mirroring for internal components of ModernTextBox and StatCard
+                // as they handle their own internal layout logic.
+                // Also skip manually laid-out header / filter toolbars — they own EN-right / AR-left placement.
+                bool isManualToolbarChild = control.Parent != null &&
+                    (control.Parent.Name == "pnlGlobalHeaderActions" || control.Parent.Name == "pnlFilterBar");
+                bool isInternalHandled = isManualToolbarChild ||
+                                         (control.Parent != null && (control.Parent.GetType().Name == "ModernTextBox" || control.Parent.GetType().Name == "StatCard" || control.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.GetType().Name == "ModernComboBox")) ||
+                                         (control.Parent != null && control.Parent.Parent != null && (control.Parent.Parent.GetType().Name == "ModernTextBox" || control.Parent.Parent.GetType().Name == "StatCard" || control.Parent.Parent.GetType().Name == "ModernNumericUpDown" || control.Parent.Parent.GetType().Name == "ModernComboBox"));
+
+                if (!isInternalHandled)
+                {
+                    // Handle Docking Mirroring for all controls (Labels, Buttons, Panels, etc.)
+                    if (control.Dock == DockStyle.Left || control.Dock == DockStyle.Right)
+                    {
+                        // MainForm owns these docks explicitly on language change.
+                        if (control.Name == "rightPanel" || control.Name == "panel2")
                         {
-                            control.Location = origLoc;
-                            RemoveRtlState(control, "rtl_loc_swapped");
+                            // skip dock mirroring
+                        }
+                        else
+                        {
+                            bool isSwapped = HasRtlState(control, "rtl_dock_swapped");
+                            if (isAr && !isSwapped)
+                            {
+                                control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
+                                AddRtlState(control, "rtl_dock_swapped");
+                            }
+                            else if (!isAr && isSwapped)
+                            {
+                                control.Dock = (control.Dock == DockStyle.Left) ? DockStyle.Right : DockStyle.Left;
+                                RemoveRtlState(control, "rtl_dock_swapped");
+                            }
                         }
                     }
                 }
 
-                // Swap Anchors (Only for controls that are not Docked, as setting Anchor resets Dock to None)
-                bool isAnchorSwapped = HasRtlState(control, "rtl_anchor_swapped");
-                bool isLayoutChild = control.Parent != null && (control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel);
-
-                if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
+                // Handle Chart title/legend alignment without touching RightToLeft.
+                if (isChart)
                 {
-                    if (!_originalAnchors.TryGetValue(control, out ValueBox<AnchorStyles> anchorBox))
+                    dynamic chart = control;
+                    foreach (var title in chart.Titles)
+                        title.Alignment = isAr ? ContentAlignment.TopRight : ContentAlignment.TopLeft;
+
+                    foreach (var legend in chart.Legends)
                     {
-                        anchorBox = new ValueBox<AnchorStyles>(control.Anchor);
-                        _originalAnchors.Add(control, anchorBox);
-                    }
-                    AnchorStyles a = anchorBox.Value;
-                    if ((a & AnchorStyles.Left) == AnchorStyles.Left && (a & AnchorStyles.Right) != AnchorStyles.Right)
-                    {
-                        control.Anchor = (a & ~AnchorStyles.Left) | AnchorStyles.Right;
-                        AddRtlState(control, "rtl_anchor_swapped");
-                    }
-                    else if ((a & AnchorStyles.Right) == AnchorStyles.Right && (a & AnchorStyles.Left) != AnchorStyles.Left)
-                    {
-                        control.Anchor = (a & ~AnchorStyles.Right) | AnchorStyles.Left;
-                        AddRtlState(control, "rtl_anchor_swapped");
+                        if (legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Top ||
+                            legend.Docking == System.Windows.Forms.DataVisualization.Charting.Docking.Bottom)
+                        {
+                            legend.Alignment = isAr ? StringAlignment.Far : StringAlignment.Near;
+                        }
                     }
                 }
-                else if (!isAr && isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
+
+                if (!isInternalHandled)
                 {
-                    if (_originalAnchors.TryGetValue(control, out ValueBox<AnchorStyles> anchorBox))
-                        control.Anchor = anchorBox.Value;
-                    RemoveRtlState(control, "rtl_anchor_swapped");
+                    // Handle Absolute Location Mirroring for child controls (if parent is not a layout panel)
+                    if (control.Parent != null && !(control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel))
+                    {
+                        if (!_originalLocations.TryGetValue(control, out ValueBox<Point> locBox))
+                        {
+                            locBox = new ValueBox<Point>(control.Location);
+                            _originalLocations.Add(control, locBox);
+                        }
+                        Point origLoc = locBox.Value;
+
+                        if (isAr)
+                        {
+                            int pWidth = control.Parent.ClientSize.Width;
+                            if (pWidth > 0 && !HasRtlState(control, "rtl_loc_swapped"))
+                            {
+                                control.Location = new Point(pWidth - origLoc.X - control.Width, origLoc.Y);
+                                AddRtlState(control, "rtl_loc_swapped");
+                            }
+                        }
+                        else
+                        {
+                            if (HasRtlState(control, "rtl_loc_swapped"))
+                            {
+                                control.Location = origLoc;
+                                RemoveRtlState(control, "rtl_loc_swapped");
+                            }
+                        }
+                    }
+
+                    // Swap Anchors (Only for controls that are not Docked, as setting Anchor resets Dock to None)
+                    bool isAnchorSwapped = HasRtlState(control, "rtl_anchor_swapped");
+                    bool isLayoutChild = control.Parent != null && (control.Parent is TableLayoutPanel || control.Parent is FlowLayoutPanel);
+
+                    if (isAr && !isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
+                    {
+                        if (!_originalAnchors.TryGetValue(control, out ValueBox<AnchorStyles> anchorBox))
+                        {
+                            anchorBox = new ValueBox<AnchorStyles>(control.Anchor);
+                            _originalAnchors.Add(control, anchorBox);
+                        }
+                        AnchorStyles a = anchorBox.Value;
+                        if ((a & AnchorStyles.Left) == AnchorStyles.Left && (a & AnchorStyles.Right) != AnchorStyles.Right)
+                        {
+                            control.Anchor = (a & ~AnchorStyles.Left) | AnchorStyles.Right;
+                            AddRtlState(control, "rtl_anchor_swapped");
+                        }
+                        else if ((a & AnchorStyles.Right) == AnchorStyles.Right && (a & AnchorStyles.Left) != AnchorStyles.Left)
+                        {
+                            control.Anchor = (a & ~AnchorStyles.Right) | AnchorStyles.Left;
+                            AddRtlState(control, "rtl_anchor_swapped");
+                        }
+                    }
+                    else if (!isAr && isAnchorSwapped && control.Dock == DockStyle.None && !isLayoutChild)
+                    {
+                        if (_originalAnchors.TryGetValue(control, out ValueBox<AnchorStyles> anchorBox))
+                            control.Anchor = anchorBox.Value;
+                        RemoveRtlState(control, "rtl_anchor_swapped");
+                    }
                 }
             }
+            catch
+            {
+                // One control must never abort the whole language/RTL pass.
+            }
 
-            foreach (Control child in control.Controls)
+            // Snapshot children — Controls collection can change while we recurse.
+            Control[] children;
+            try { children = control.Controls.Cast<Control>().ToArray(); }
+            catch { return; }
+
+            foreach (Control child in children)
                 ApplyRTL(child);
         }
 

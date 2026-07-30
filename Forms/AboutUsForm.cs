@@ -25,10 +25,18 @@ namespace InventorySystem.Forms
         public AboutUsForm()
         {
             InitializeAboutLayout();
-            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            _languageHandler = (s, e) =>
+            {
+                if (IsDisposed) return;
+                if (!IsHandleCreated || !Visible) return;
+                ApplyLocalization();
+            };
+            LocalizationManager.LanguageChanged += _languageHandler;
             ApplyLocalization();
             this.Size = new Size(CardWidth, CardHeight);
         }
+
+        private EventHandler _languageHandler;
 
         protected override void OnLoad(EventArgs e)
         {
@@ -45,6 +53,8 @@ namespace InventorySystem.Forms
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            if (_languageHandler != null)
+                LocalizationManager.LanguageChanged -= _languageHandler;
             base.OnFormClosed(e);
             _logo?.Dispose();
             _logo = null;
@@ -52,6 +62,7 @@ namespace InventorySystem.Forms
 
         private void ApplyLocalization()
         {
+            if (IsDisposed) return;
             LocalizationManager.ApplyRTL(this);
             this.TitleText = LocalizationManager.GetString("Nav_AboutUs");
             if (_lblName != null)

@@ -46,7 +46,18 @@ namespace InventorySystem
             panel1.MouseDown += Header_MouseDown;
             label2.MouseDown += Header_MouseDown;
 
-            LocalizationManager.LanguageChanged += (s, e) => ApplyLocalization();
+            LocalizationManager.LanguageChanged += (s, e) =>
+            {
+                if (IsDisposed) return;
+                void Run()
+                {
+                    if (IsDisposed) return;
+                    ApplyLocalization();
+                }
+                if (!IsHandleCreated) return;
+                if (InvokeRequired) BeginInvoke((Action)Run);
+                else Run();
+            };
             ApplyLocalization();
 
             LoadPlugins();
@@ -187,6 +198,9 @@ namespace InventorySystem
                 pnlHeaderIcons.RightToLeft = RightToLeft.No;
                 LayoutHeaderChrome(pnlHeaderIcons);
                 panel2.Dock = isAr ? DockStyle.Right : DockStyle.Left;
+                panel2.RightToLeft = RightToLeft.No;
+                var pnlNavRtl = Controls.Find("pnlNav", true).FirstOrDefault();
+                if (pnlNavRtl != null) pnlNavRtl.RightToLeft = RightToLeft.No;
             }
             label2.Visible = false; // Forced hide to prevent clipping
             label2.Location = isAr ? new Point(panel1.Width - label2.Width - 10, (panel1.Height - label2.Height) / 2) : new Point(10, (panel1.Height - label2.Height) / 2);
@@ -261,6 +275,8 @@ namespace InventorySystem
                     Place(t, HeaderIconSize, HeaderIconSize);
                     cursor += isAr ? HeaderIconGap : -HeaderIconGap;
                 }
+
+                pbLanguage?.BringToFront();
             }
             finally
             {
@@ -589,7 +605,12 @@ namespace InventorySystem
             rightPanel.Controls.Add(pbAbout);
 
             // Language Switcher
-            pbLanguage = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("language"), Color.White) };
+            pbLanguage = new PictureBox
+            {
+                Name = "pbLanguage",
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Image = ThemeConfig.TintImage(ThemeConfig.GetNuricon("language"), Color.White)
+            };
             ThemeConfig.ApplyHeaderIconStyle(pbLanguage);
             pbLanguage.Click += (s, e) =>
             {
@@ -597,10 +618,12 @@ namespace InventorySystem
                 LocalizationManager.SetLanguage(nextLang);
             };
             rightPanel.Controls.Add(pbLanguage);
+            pbLanguage.BringToFront();
 
             rightPanel.SizeChanged += (s, e) => LayoutHeaderChrome(rightPanel);
             panel1.Controls.Add(rightPanel);
             LayoutHeaderChrome(rightPanel);
+            pbLanguage.BringToFront();
         }
 
         private void ShowInPopup(UserControl control, string title, int width, int height)
