@@ -2380,10 +2380,10 @@ Accepted By: __________________________</value>
     <value>Walk-in Customer</value>
   </data>
   <data name="QuotePreview_CompanyInfo" xml:space="preserve">
-    <value>Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731</value>
+    <value>Lebanon | West Beqaa | Kamed El Laouz    +961 71 030 683</value>
   </data>
   <data name="QuotePreview_ContactFooter" xml:space="preserve">
-    <value>Phone: +961 76 117731  |  Email: contact@panache.com  |  Website: www.panache.com</value>
+    <value>Phone: +961 71 030 683  |  Email: contact@panache.com  |  Website: www.panache.com</value>
   </data>
   <data name="QuotePreview_MetaLine" xml:space="preserve">
     <value>QUOTE #: {0}   |   DATE: {1}   |   CUST ID: {2}   |   VALIDITY: {3}</value>

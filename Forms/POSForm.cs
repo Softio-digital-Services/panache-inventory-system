@@ -361,26 +361,38 @@ namespace InventorySystem.Forms
             };
             _orderPanel.DraftClick += (s, e) => PlaceActiveOrder("Draft", requireCustomer: false, paid: false,
                 LocalizationManager.GetString("Msg_DraftSaved", "Draft saved successfully!"));
-            _orderPanel.QuoteClick += (s, e) => PlaceActiveOrder("Quotation", requireCustomer: false, paid: false,
-                LocalizationManager.GetString("Msg_QuotationSaved", "Quotation saved successfully!"));
+            _orderPanel.QuoteClick += (s, e) =>
+            {
+                int quoteId = PlaceActiveOrder("Quotation", requireCustomer: false, paid: false,
+                    LocalizationManager.GetString("Msg_QuotationSaved", "Quotation saved successfully!"));
+                if (quoteId <= 0) return;
+
+                // Open the printable quotation, then switch to the Quotations page.
+                using (var preview = new QuotationPreviewForm(quoteId))
+                    preview.ShowDialog(FindForm());
+
+                if (FindForm() is MainForm main)
+                    main.NavigateToTab("btnQuotations");
+            };
             _orderPanel.BillClick += (s, e) => PlaceActiveOrder("Completed", requireCustomer: true, paid: false,
                 LocalizationManager.GetString("Msg_AddedToBill", "Successfully added to customer bill!"));
             _orderPanel.CheckoutClick += BtnCheckout_Click;
             _orderPanel.PrintClick += BtnPrintReceipt_Click;
         }
 
-        private void PlaceActiveOrder(string status, bool requireCustomer, bool paid, string successMsg)
+        /// <summary>Returns the new order id on success, or 0 on failure / cancelled.</summary>
+        private int PlaceActiveOrder(string status, bool requireCustomer, bool paid, string successMsg)
         {
             if (cartTable == null || cartTable.Rows.Count == 0)
             {
                 MessageHelper.ShowWarning(LocalizationManager.GetString("CartEmpty"));
-                return;
+                return 0;
             }
             int cid = _orderPanel.SelectedCustomerId;
             if (requireCustomer && cid <= 0)
             {
                 MessageHelper.ShowWarning(LocalizationManager.GetString("POS_SelectCustomerForBill", "Please select a registered customer to add to their bill."));
-                return;
+                return 0;
             }
 
             decimal totalAmount = 0;
@@ -405,11 +417,14 @@ namespace InventorySystem.Forms
             DateTime? pDate = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.PaymentDueDate : (DateTime?)null;
             string sAddr = _shippingDetails?.ShippingTo;
 
-            if (new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, paid, status, pDate, sAddr, dDate) > 0)
+            int orderId = new InventorySystem.Services.OrderService().PlaceOrder(cid, items, totalAmount, paid, status, pDate, sAddr, dDate);
+            if (orderId > 0)
             {
                 MessageHelper.ShowInfo(successMsg);
                 _orderPanel.ClearActiveCart();
+                return orderId;
             }
+            return 0;
         }
 
         // ---------------------------------------------------------------------

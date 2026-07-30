@@ -75,6 +75,7 @@ namespace InventorySystem.Services
                         new SqliteParameter("@price", item.UnitPrice)
                     );
                  }
+                 GlobalEvents.RaiseOrdersUpdated();
                  return orderId;
             }
 

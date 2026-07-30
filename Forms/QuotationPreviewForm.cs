@@ -155,7 +155,7 @@ namespace InventorySystem.Forms
                     hy += 45;
                     Label lblCompInfo = new Label
                     {
-                        Text = L("QuotePreview_CompanyInfo", "Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731"),
+                        Text = L("QuotePreview_CompanyInfo", "Lebanon | West Beqaa | Kamed El Laouz    +961 71 030 683"),
                         Font = new Font("Segoe UI", 9),
                         Location = new Point(130, hy),
                         Size = new Size(500, 35),
@@ -377,7 +377,7 @@ namespace InventorySystem.Forms
 
                     Label lblContactFooter = new Label
                     {
-                        Text = L("QuotePreview_ContactFooter", "Phone: +961 76 117731  |  Email: contact@panache.com  |  Website: www.panache.com"),
+                        Text = L("QuotePreview_ContactFooter", "Phone: +961 71 030 683  |  Email: contact@panache.com  |  Website: www.panache.com"),
                         Font = new Font("Segoe UI", 8.5F),
                         Location = new Point(0, 1085),
                         Size = new Size(page.Width, 25),

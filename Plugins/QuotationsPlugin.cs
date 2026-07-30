@@ -30,11 +30,9 @@ namespace InventorySystem.Plugins
 
         public UserControl CreateTabContent()
         {
-            var allowed = false;
-            foreach (var role in new string[] { "Admin" })
-            {
-                if (_context.UserRole == role || (_context.IsAdmin && role == "Admin")) allowed = true;
-            }
+            var allowed = _context.IsAdmin
+                || string.Equals(_context.UserRole, "Admin", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(_context.UserRole, "Accountant", StringComparison.OrdinalIgnoreCase);
 
             if (allowed)
             {

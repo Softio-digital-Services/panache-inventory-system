@@ -805,6 +805,13 @@ namespace InventorySystem
             if (btns.Length > 0 && btns[0] is Button btn) { btn.PerformClick(); }
         }
 
+        /// <summary>Switches the shell to a sidebar tab by button name (e.g. btnQuotations).</summary>
+        public void NavigateToTab(string buttonName)
+        {
+            if (string.IsNullOrEmpty(buttonName)) return;
+            ClickNavButton(buttonName);
+        }
+
         private void ShowForm(UserControl form)
         {
             foreach (Control c in panel3.Controls) if (c is UserControl) c.Visible = false;

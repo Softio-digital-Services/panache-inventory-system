@@ -918,7 +918,8 @@ namespace InventorySystem.Forms
                 AutoSize = false,
                 Font = new Font(ThemeConfig.AppFontFamily, 9F, FontStyle.Bold),
                 ForeColor = Muted,
-                BackColor = Color.White,
+                // Transparent so this label cannot punch holes through the pill outline.
+                BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleCenter,
                 RightToLeft = RightToLeft.No
             };
@@ -1024,12 +1025,15 @@ namespace InventorySystem.Forms
                 cursor += step + gap;
 
                 priceBox.SetBounds(MirrorX(cursor, priceW), top, priceW, rowH);
+                // Keep children clear of the 1px outline so they never cover the stroke.
+                const int edge = 2;
                 int symX = rtl ? priceW - symW - 6 : 6;
                 int valX = rtl ? 6 : symX + symW;
-                // Currency label spans the pill so its glyph centres on the same
-                // optical line as the editable amount.
-                lblCurrency.SetBounds(symX, 0, symW, rowH);
-                txtPrice.SetBounds(valX, Math.Max(0, (rowH - priceH) / 2), Math.Max(30, priceW - symW - 12), priceH);
+                int innerH = Math.Max(1, rowH - edge * 2);
+                lblCurrency.SetBounds(symX, edge, symW, innerH);
+                int priceTop = Math.Max(edge, (rowH - priceH) / 2);
+                int priceBoxH = Math.Min(priceH, innerH);
+                txtPrice.SetBounds(valX, priceTop, Math.Max(30, priceW - symW - 12), priceBoxH);
                 cursor += priceW + gap;
 
                 btnDelete.SetBounds(MirrorX(cursor, trashW), top + Math.Max(0, (rowH - btnDelete.Height) / 2),
@@ -1096,14 +1100,9 @@ namespace InventorySystem.Forms
         private static void PaintItemPill(Graphics g, Rectangle bounds)
         {
             if (bounds.Width < 3 || bounds.Height < 3) return;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            var rect = new RectangleF(0.5f, 0.5f, bounds.Width - 1.5f, bounds.Height - 1.5f);
-            float r = Math.Min(PillCornerRadius, Math.Max(4f, rect.Height / 2f));
-            using var path = RoundedPathF(rect, r);
-            using var br = new SolidBrush(Color.White);
-            using var pen = new Pen(PillBorder, 1.3f);
-            g.FillPath(br, path);
-            g.DrawPath(pen, path);
+            float r = Math.Min(PillCornerRadius, Math.Max(4f, bounds.Height / 2f));
+            ThemeConfig.FillRoundedBackground(g, bounds, r, Color.White);
+            ThemeConfig.DrawRoundedBorder(g, bounds, r, PillBorder, 1.2f);
         }
 
         private void RemoveCartLine(int partId)
