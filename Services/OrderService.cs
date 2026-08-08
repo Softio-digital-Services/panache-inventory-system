@@ -12,6 +12,8 @@ namespace InventorySystem.Services
         public string Description { get; set; }
         public string PartImage { get; set; }
         public int Quantity { get; set; }
+        /// <summary>When &gt; 0, stock is reduced by this amount instead of Quantity (e.g. grams for weighed items).</summary>
+        public int StockDeductQty { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Total => Quantity * UnitPrice;
     }
@@ -91,10 +93,11 @@ namespace InventorySystem.Services
                     new SqliteParameter("@price", item.UnitPrice)
                 );
 
-                // Update Stock
+                // Update Stock (weighed chocolate lines deduct grams via StockDeductQty)
+                int stockQty = item.StockDeductQty > 0 ? item.StockDeductQty : item.Quantity;
                 string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')";
                 DatabaseHelper.ExecuteNonQuery(sqlStock,
-                    new SqliteParameter("@qty", item.Quantity),
+                    new SqliteParameter("@qty", stockQty),
                     new SqliteParameter("@pid", item.PartId)
                 );
             }

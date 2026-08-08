@@ -17,6 +17,9 @@
 
   <ItemGroup>
     <Compile Remove="scratch\**" />
+    <Compile Remove="_backup_pre_otargi_web\**" />
+    <Content Remove="_backup_pre_otargi_web\**" />
+    <None Remove="_backup_pre_otargi_web\**" />
   </ItemGroup>
 
   <!-- Enable ASP.NET Core Web API inside WinForms -->
@@ -33,6 +36,7 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="Svg" Version="3.4.7" />
     <PackageReference Include="WinForms.DataVisualization" Version="1.10.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
   </ItemGroup>
 
   <ItemGroup>

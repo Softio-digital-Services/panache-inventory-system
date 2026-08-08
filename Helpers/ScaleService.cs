@@ -241,13 +241,26 @@ namespace InventorySystem.Helpers
             {
                 string path = GetConfigPath();
                 string json = JsonSerializer.Serialize(Config, new JsonSerializerOptions { WriteIndented = true });
-                File.ReadAllText(path); // check if exists or write
                 File.WriteAllText(path, json);
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "ScaleService.SaveConfig");
             }
+        }
+
+        /// <summary>Applies config fields and persists. Does not open/close the port.</summary>
+        public void UpdateConfig(ScaleConfig next)
+        {
+            if (next == null) return;
+            if (!string.IsNullOrWhiteSpace(next.PortName)) Config.PortName = next.PortName.Trim();
+            if (next.BaudRate > 0) Config.BaudRate = next.BaudRate;
+            if (next.DataBits > 0) Config.DataBits = next.DataBits;
+            if (!string.IsNullOrWhiteSpace(next.Parity)) Config.Parity = next.Parity;
+            if (!string.IsNullOrWhiteSpace(next.StopBits)) Config.StopBits = next.StopBits;
+            if (!string.IsNullOrWhiteSpace(next.DefaultUnit)) Config.DefaultUnit = next.DefaultUnit;
+            Config.AutoConnect = next.AutoConnect;
+            SaveConfig();
         }
     }
 }

@@ -26,3 +26,11 @@ packages/
 # Publish and Installer output
 publish-output/
 InstallerOutput/
+dist/
+scratch/
+
+# Local backups / crash dumps
+_backup_pre_otargi_web/
+crash.txt
+server_error.txt
+*.db

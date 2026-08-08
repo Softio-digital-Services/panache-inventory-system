@@ -261,6 +261,7 @@ namespace InventorySystem
                         is_inactive         INTEGER DEFAULT 0,
                         tax_rate            REAL DEFAULT 0,
                         is_stock_tracked    INTEGER DEFAULT 1,
+                        sell_by_weight      INTEGER DEFAULT 0,
                         price2              REAL DEFAULT 0,
                         price3              REAL DEFAULT 0,
                         price4              REAL DEFAULT 0
@@ -387,6 +388,7 @@ namespace InventorySystem
                 if (!ColumnExists("parts", "is_inactive")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_inactive INTEGER DEFAULT 0;");
                 if (!ColumnExists("parts", "tax_rate")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN tax_rate REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "is_stock_tracked")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN is_stock_tracked INTEGER DEFAULT 1;");
+                if (!ColumnExists("parts", "sell_by_weight")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN sell_by_weight INTEGER DEFAULT 0;");
                 if (!ColumnExists("parts", "price2")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price2 REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "price3")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price3 REAL DEFAULT 0;");
                 if (!ColumnExists("parts", "price4")) ExecuteNonQuery("ALTER TABLE parts ADD COLUMN price4 REAL DEFAULT 0;");

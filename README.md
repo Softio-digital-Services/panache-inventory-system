@@ -6,38 +6,41 @@ Complete inventory management system for car parts businesses with POS, customer
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Windows 7 or later
-- .NET Framework 4.7.2 or higher
-- SQL Server LocalDB (included with Visual Studio)
+### Run published web app (Otargi-style WebView2)
 
-### Running the Application
-
-**Option 1: Run Executable (Recommended)**
-```
-bin\Debug\CarPartsInventorySystem.exe
+```text
+dist\app\PanacheInventorySystem.exe
 ```
 
-**Option 2: Build from Source**
+This opens the full Panache web UI (dashboard, inventory, POS, reports, …) with scale support.
+
+Refresh `dist` after code changes:
+
 ```powershell
-dotnet build CarPartsInventorySystem.csproj
+powershell -ExecutionPolicy Bypass -File .\installer\build.ps1
+```
+
+### Prerequisites
+- Windows 10+ (win-x64) and WebView2 Runtime
+- .NET 8 SDK only needed to build from source (`dist\app` is self-contained)
+
+### Running from source
+
+```powershell
+dotnet run -c Release --project PanacheInventorySystem.csproj
+```
+
+Or Debug:
+
+```text
+bin\Debug\net8.0-windows\win-x64\PanacheInventorySystem.exe
 ```
 
 ### First-Time Setup
 
-1. **License Activation**
-   - On first launch, you'll see the License Activation dialog
-   - Enter a valid license key OR start a 30-day trial
-   - License keys are generated using the separate License Generator tool
-
-2. **Default Login**
-   - Username: ``
-   - Password: ``
-
-3. **Database Setup**
-   - Database automatically creates on first run
-   - Location: `bin\Debug\Data\carparts.mdf`
-   - To reset database, run: `Database\SetupDatabase.bat`
+1. **License Activation** (if prompted)
+2. **Default Login** — Softio.Admin / Softio@2026!
+3. **Database** — `Data\inventory.db` next to the exe (created on first run)
 
 ## ✨ Features
 

@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using InventorySystem.Services;
 using InventorySystem.Helpers;
+using InventorySystem.Forms;
+using QRCoder;
 
 namespace InventorySystem
 {
@@ -99,7 +101,8 @@ namespace InventorySystem
                     );
                 }
 
-                Application.Run(new LoginForm());
+                // Desktop exe: embedded WebView2 window (no external Chrome)
+                Application.Run(new WebServerHostForm());
             }
             catch (Exception ex)
             {
@@ -285,19 +288,6 @@ namespace InventorySystem
                     failures++;
                 }
 
-                // Host ReportsForm briefly to ensure UI constructs without throw
-                using (var host = new Form { Width = 1200, Height = 800 })
-                {
-                    var reports = new Forms.ReportsForm { Dock = DockStyle.Fill };
-                    host.Controls.Add(reports);
-                    host.Show();
-                    reports.RefreshData();
-                    Application.DoEvents();
-                    System.Threading.Thread.Sleep(400);
-                    host.Close();
-                }
-                Console.WriteLine("ReportsForm construct+RefreshData OK");
-
                 if (failures == 0)
                 {
                     Console.WriteLine("REPORTS SMOKE TEST PASSED");
@@ -318,10 +308,18 @@ namespace InventorySystem
         {
             try
             {
-                string certPath = System.IO.Path.Combine(Application.StartupPath, "Database", "pos_cert.pfx");
+                string appRoot = Application.StartupPath;
+                if (string.IsNullOrWhiteSpace(appRoot))
+                    appRoot = AppContext.BaseDirectory;
+
+                string certPath = System.IO.Path.Combine(appRoot, "Database", "pos_cert.pfx");
                 const string certPassword = "SoftioPos2026!";
 
-                var builder = WebApplication.CreateBuilder();
+                var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+                {
+                    ContentRootPath = appRoot,
+                    WebRootPath = System.IO.Path.Combine(appRoot, "wwwroot")
+                });
 
                 // Configure Kestrel for both HTTP and HTTPS
                 builder.WebHost.ConfigureKestrel(options =>
@@ -357,6 +355,9 @@ namespace InventorySystem
                 InventoryBroadcaster.HubContext = app.Services
                     .GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<InventoryHub>>();
 
+                // Live TM-A17 / COM scale → SignalR + auto-connect
+                ScaleApiBootstrap.WireBroadcasts();
+
                 app.UseCors();
 
                 // Camera requires HTTPS OR the Chrome Flag (chrome://flags/#unsafely-treat-insecure-origin-as-secure)
@@ -365,7 +366,22 @@ namespace InventorySystem
                 // app.UseHttpsRedirection();
 
                 app.UseDefaultFiles();
-                app.UseStaticFiles();
+                app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
+                {
+                    OnPrepareResponse = ctx =>
+                    {
+                        var ext = System.IO.Path.GetExtension(ctx.File.Name).ToLowerInvariant();
+                        if (ext is ".js" or ".css" or ".html" or ".json" or ".svg")
+                        {
+                            // Force UTF-8 so Arabic strings in app.js parse correctly
+                            var ct = ctx.Context.Response.ContentType ?? "application/octet-stream";
+                            if (!ct.Contains("charset", StringComparison.OrdinalIgnoreCase))
+                                ctx.Context.Response.ContentType = ct + "; charset=utf-8";
+                            // Avoid stale cached broken JS/CSS after updates
+                            ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                        }
+                    }
+                });
 
                 // Serve desktop assets to the web portal
                 string assetsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "Assets");
@@ -374,7 +390,11 @@ namespace InventorySystem
                     app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
                     {
                         FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(assetsPath),
-                        RequestPath = "/Assets"
+                        RequestPath = "/Assets",
+                        OnPrepareResponse = ctx =>
+                        {
+                            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=604800";
+                        }
                     });
                 }
 
@@ -389,9 +409,152 @@ namespace InventorySystem
                 {
                     language = LocalizationManager.IsArabic ? "ar" : "en",
                     isArabic = LocalizationManager.IsArabic,
-                    primaryColor = System.Drawing.ColorTranslator.ToHtml(ThemeConfig.PrimaryColor),
-                    primaryRgb = $"{ThemeConfig.PrimaryColor.R}, {ThemeConfig.PrimaryColor.G}, {ThemeConfig.PrimaryColor.B}"
+                    companyName = ThemeConfig.CompanyName,
+                    primaryColor = "#10B981",
+                    primaryRgb = "168, 30, 46"
                 }));
+
+                // - Dashboard stats -
+                app.MapGet("/api/dashboard", () =>
+                {
+                    try
+                    {
+                        var dash = new DashboardService();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            todaySales = dash.GetSales("Today"),
+                            inventoryValue = dash.GetTotalInventoryValue(),
+                            totalItems = dash.GetTotalItems(),
+                            lowStock = dash.GetLowStockCount(),
+                            ordersToday = dash.GetOrdersCount("Today"),
+                            pendingOrders = dash.GetPendingOrdersCount(),
+                            ytdSales = dash.GetTotalSalesYTD(),
+                            topProducts = DataTableToList(dash.GetTopSellingItems(5)),
+                            topCategories = DataTableToList(dash.GetSalesByCategory())
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem("Dashboard error: " + ex.Message);
+                    }
+                });
+
+                // - Scan to Connect (phone / tablet on same Wi‑Fi) -
+                app.MapGet("/api/connect", () =>
+                {
+                    try
+                    {
+                        string ip = ScanToConnectForm.GetLocalIpAddress();
+                        string url = ScanToConnectForm.GetServerUrl();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            url,
+                            ip,
+                            port = 5000,
+                            qrUrl = "/api/connect/qr"
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
+
+                app.MapGet("/api/connect/qr", () =>
+                {
+                    try
+                    {
+                        string url = ScanToConnectForm.GetServerUrl();
+                        using var generator = new QRCodeGenerator();
+                        using var data = generator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
+                        var png = new PngByteQRCode(data);
+                        byte[] bytes = png.GetGraphic(10);
+                        return Microsoft.AspNetCore.Http.Results.File(bytes, "image/png");
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
+
+                // - Customers -
+                app.MapGet("/api/customers", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT customer_id, full_name, phone, email, address, current_balance, type,
+                                     COALESCE(credit_limit, 1000) as credit_limit
+                              FROM customers WHERE date_deleted IS NULL ORDER BY full_name");
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                id = Convert.ToInt32(row["customer_id"]),
+                                name = row["full_name"].ToString(),
+                                phone = row["phone"].ToString(),
+                                email = row["email"].ToString(),
+                                address = row["address"].ToString(),
+                                balance = row["current_balance"] == DBNull.Value ? 0m : Convert.ToDecimal(row["current_balance"]),
+                                type = row["type"].ToString(),
+                                creditLimit = row["credit_limit"] == DBNull.Value ? 1000m : Convert.ToDecimal(row["credit_limit"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Suppliers -
+                app.MapGet("/api/suppliers", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT id, supplier_name, contact_person, phone, email, address, COALESCE(balance_due, 0) as balance_due
+                              FROM suppliers WHERE date_deleted IS NULL ORDER BY supplier_name");
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                id = Convert.ToInt32(row["id"]),
+                                name = row["supplier_name"].ToString(),
+                                contact = row["contact_person"].ToString(),
+                                phone = row["phone"].ToString(),
+                                email = row["email"].ToString(),
+                                address = row["address"].ToString(),
+                                balance = Convert.ToDecimal(row["balance_due"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Users -
+                app.MapGet("/api/users", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            "SELECT id, username, full_name, role FROM users ORDER BY username");
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                id = Convert.ToInt32(row["id"]),
+                                username = row["username"].ToString(),
+                                fullName = row["full_name"].ToString(),
+                                role = row["role"].ToString()
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
 
                 // Wire up dynamic language broadcast to connected web portals
                 LocalizationManager.LanguageChanged += (s, e) =>
@@ -400,36 +563,43 @@ namespace InventorySystem
                 };
 
                 // - Products (live from DB) -
-                app.MapGet("/api/products", () =>
+                app.MapGet("/api/products", (string includeInactive = null) =>
                 {
                     try
                     {
+                        bool showInactive = string.Equals(includeInactive, "1", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(includeInactive, "true", StringComparison.OrdinalIgnoreCase);
+                        string statusFilter = showInactive
+                            ? "WHERE p.date_deleted IS NULL"
+                            : "WHERE p.date_deleted IS NULL AND (p.status = 'Active' OR p.status IS NULL) AND COALESCE(p.is_inactive, 0) = 0";
+
                         var dt = DatabaseHelper.ExecuteDataTable(
-                            @"SELECT p.id, p.part_name, p.selling_price, p.quantity_in_stock,
-                                     p.minimum_stock_level, p.barcode, p.part_number, p.part_image,
+                            $@"SELECT p.id, p.part_name, p.description, p.selling_price, p.purchase_price, p.quantity_in_stock,
+                                     p.minimum_stock_level, p.barcode, p.part_number, p.part_image, p.status,
+                                     p.location, p.shelf, p.unit_of_measure, p.batch_number, p.expiry_date,
+                                     p.item_type, p.is_sales_item, p.is_purchase_item, p.is_inactive, p.tax_rate,
+                                     p.is_stock_tracked, COALESCE(p.sell_by_weight, 0) AS sell_by_weight, p.price2, p.price3, p.price4, p.supplier_id,
                                      COALESCE(c.category_name, 'General') AS category,
-                                     c.category_image
+                                     c.category_image, s.supplier_name
                               FROM parts p
                               LEFT JOIN categories c ON p.category_id = c.id
-                              WHERE p.date_deleted IS NULL AND p.status = 'Active'
+                              LEFT JOIN suppliers s ON p.supplier_id = s.id
+                              {statusFilter}
                               ORDER BY c.category_name, p.part_name");
 
                         var products = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
-                            string partImage = row["part_image"].ToString();
-                            string catImage = row["category_image"].ToString();
+                            string partImage = row["part_image"]?.ToString() ?? "";
+                            string catImage = row["category_image"]?.ToString() ?? "";
                             string category = row["category"].ToString();
+                            string itemType = row["item_type"]?.ToString() ?? "Product";
 
-                            // Fully dynamic category icon resolution
                             if (string.IsNullOrEmpty(catImage))
                             {
                                 string cleanCat = category.ToLower().Trim();
-
-                                // Try finding a matching icon (SVG preferred, then PNG)
                                 string[] extensions = { ".svg", ".png" };
                                 bool found = false;
-
                                 foreach (var ext in extensions)
                                 {
                                     string iconFile = $"nuricon_{cleanCat}{ext}";
@@ -440,27 +610,14 @@ namespace InventorySystem
                                         break;
                                     }
                                 }
-
                                 if (!found)
-                                {
-                                    // Fallback to specific keywords based on actual file existence
-                                    if (cleanCat.Contains("service")) catImage = "/Assets/nuricon_pos.png";
-                                    else if (cleanCat.Contains("accessory")) catImage = "/Assets/nuricon_inventory.svg";
-                                    else if (cleanCat.Contains("engine")) catImage = "/Assets/nuricon_inventory.svg";
-                                    else if (cleanCat.Contains("brake")) catImage = "/Assets/nuricon_inventory.svg";
-                                    else catImage = "/Assets/nuricon_inventory.svg"; // Final default
-                                }
+                                    catImage = cleanCat.Contains("service") ? "/Assets/nuricon_pos.png" : "/Assets/nuricon_inventory.svg";
                             }
-                            else
-                            {
-                                // Clean up catImage: prevent /Assets/Assets/ double prefix
-                                if (catImage.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
-                                    catImage = "/" + catImage;
-                                else if (!catImage.StartsWith("/") && !catImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                                    catImage = "/Assets/" + catImage;
-                            }
+                            else if (catImage.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+                                catImage = "/" + catImage;
+                            else if (!catImage.StartsWith("/") && !catImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                                catImage = "/Assets/" + catImage;
 
-                            // Clean up partImage: prevent /Assets/Assets/ double prefix
                             if (!string.IsNullOrEmpty(partImage))
                             {
                                 if (partImage.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
@@ -469,19 +626,43 @@ namespace InventorySystem
                                     partImage = "/Assets/" + partImage;
                             }
 
+                            bool inactive = row["is_inactive"] != DBNull.Value && Convert.ToInt32(row["is_inactive"]) == 1;
+                            string status = row["status"]?.ToString() ?? "Active";
+                            if (inactive) status = "Inactive";
+
                             products.Add(new
                             {
                                 id = Convert.ToInt32(row["id"]),
                                 name = row["part_name"].ToString(),
-                                price = Convert.ToDecimal(row["selling_price"]),
-                                stock = Convert.ToInt32(row["quantity_in_stock"]),
-                                minStock = Convert.ToInt32(row["minimum_stock_level"]),
-                                barcode = row["barcode"].ToString(),
-                                sku = row["part_number"].ToString(),
-                                category = category,
+                                description = row["description"]?.ToString() ?? "",
+                                price = Convert.ToDecimal(row["selling_price"] == DBNull.Value ? 0 : row["selling_price"]),
+                                cost = Convert.ToDecimal(row["purchase_price"] == DBNull.Value ? 0 : row["purchase_price"]),
+                                stock = Convert.ToInt32(row["quantity_in_stock"] == DBNull.Value ? 0 : row["quantity_in_stock"]),
+                                minStock = Convert.ToInt32(row["minimum_stock_level"] == DBNull.Value ? 0 : row["minimum_stock_level"]),
+                                barcode = row["barcode"]?.ToString() ?? "",
+                                sku = row["part_number"]?.ToString() ?? "",
+                                category,
                                 image = partImage,
                                 categoryImage = catImage,
-                                isService = category.Equals("Services", StringComparison.OrdinalIgnoreCase)
+                                status,
+                                location = row["location"]?.ToString() ?? "",
+                                shelf = row["shelf"]?.ToString() ?? "",
+                                uom = row["unit_of_measure"]?.ToString() ?? "",
+                                batch = row["batch_number"]?.ToString() ?? "",
+                                expiry = row["expiry_date"]?.ToString() ?? "",
+                                itemType,
+                                isService = itemType.Equals("Service", StringComparison.OrdinalIgnoreCase),
+                                isSalesItem = row["is_sales_item"] == DBNull.Value || Convert.ToInt32(row["is_sales_item"]) == 1,
+                                isPurchaseItem = row["is_purchase_item"] != DBNull.Value && Convert.ToInt32(row["is_purchase_item"]) == 1,
+                                isInactive = inactive,
+                                taxRate = row["tax_rate"] == DBNull.Value ? 0m : Convert.ToDecimal(row["tax_rate"]),
+                                isStockTracked = row["is_stock_tracked"] == DBNull.Value || Convert.ToInt32(row["is_stock_tracked"]) == 1,
+                                sellByWeight = row["sell_by_weight"] != DBNull.Value && Convert.ToInt32(row["sell_by_weight"]) == 1,
+                                price2 = row["price2"] == DBNull.Value ? 0m : Convert.ToDecimal(row["price2"]),
+                                price3 = row["price3"] == DBNull.Value ? 0m : Convert.ToDecimal(row["price3"]),
+                                price4 = row["price4"] == DBNull.Value ? 0m : Convert.ToDecimal(row["price4"]),
+                                supplierId = row["supplier_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["supplier_id"]),
+                                supplierName = row["supplier_name"]?.ToString() ?? ""
                             });
                         }
 
@@ -525,7 +706,15 @@ namespace InventorySystem
 
                         // Allow Softio super-admin through the web POS too
                         if (body.Username == "Softio.Admin" && body.Password == "Softio@2026!")
-                            return Microsoft.AspNetCore.Http.Results.Ok(new { username = "Softio.Admin", role = "Admin", fullName = "Softio Super Admin" });
+                            return Microsoft.AspNetCore.Http.Results.Ok(new
+                            {
+                                username = "Softio.Admin",
+                                role = "Admin",
+                                fullName = "Softio Super Admin",
+                                isAdmin = true,
+                                isStaff = true,
+                                isAccountant = true
+                            });
 
                         var dt = DatabaseHelper.ExecuteDataTable(
                             "SELECT username, role, full_name FROM users WHERE username = @u AND password = @p",
@@ -536,11 +725,18 @@ namespace InventorySystem
                             return Microsoft.AspNetCore.Http.Results.Unauthorized();
 
                         var row = dt.Rows[0];
+                        string role = row["role"].ToString() ?? "";
+                        bool isAdmin = role.Contains("Admin", StringComparison.OrdinalIgnoreCase);
+                        bool isStaff = isAdmin || role.Contains("Staff", StringComparison.OrdinalIgnoreCase) || role.Equals("Worker", StringComparison.OrdinalIgnoreCase);
+                        bool isAccountant = isAdmin || role.Contains("Accountant", StringComparison.OrdinalIgnoreCase);
                         return Microsoft.AspNetCore.Http.Results.Ok(new
                         {
                             username = row["username"].ToString(),
-                            role = row["role"].ToString(),
-                            fullName = row["full_name"].ToString()
+                            role = role,
+                            fullName = row["full_name"].ToString(),
+                            isAdmin,
+                            isStaff,
+                            isAccountant
                         });
                     }
                     catch (Exception ex)
@@ -549,50 +745,24 @@ namespace InventorySystem
                     }
                 });
 
-                // - Add Item (POST) -
+                // - Add / Save Product (full PartData) -
                 app.MapPost("/api/add-item", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
                     {
-                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<AddItemPayload>(
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ProductPayload>(
                             request.Body,
                             new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                        if (body == null || string.IsNullOrEmpty(body.Name))
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Missing name");
 
-                        if (!string.IsNullOrEmpty(body.Barcode))
-                        {
-                            int existingCount = DatabaseHelper.ExecuteScalar<int>(
-                                "SELECT COUNT(*) FROM parts WHERE barcode = @b AND date_deleted IS NULL",
-                                new Microsoft.Data.Sqlite.SqliteParameter("@b", body.Barcode));
+                        if (!string.IsNullOrEmpty(body.Barcode) && new InventoryService().BarcodeExists(body.Barcode, null))
+                            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
 
-                            if (existingCount > 0)
-                                return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
-                        }
-
-                        int catId = DatabaseHelper.ExecuteScalar<int>("SELECT id FROM categories WHERE category_name = @c",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@c", body.Category ?? "General"));
-                        if (catId == 0) catId = 1;
-
-                        string sql = @"
-                            INSERT INTO parts (part_name, part_number, category_id, purchase_price, selling_price, quantity_in_stock, barcode, status)
-                            VALUES (@name, @sku, @cat, @p_price, @s_price, @stock, @barcode, 'Active')";
-
-                        DatabaseHelper.ExecuteNonQuery(sql,
-                            new Microsoft.Data.Sqlite.SqliteParameter("@name", body.Name),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@sku", body.Sku ?? ""),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@cat", catId),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@p_price", body.Price * 0.7m),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@s_price", body.Price),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@stock", body.Stock),
-                            new Microsoft.Data.Sqlite.SqliteParameter("@barcode", body.Barcode ?? ""));
-
-                        DatabaseHelper.LogTransaction("STOCK_ADD", body.Name, $"Added via WebPOS (Qty: {body.Stock})");
-
-                        // - Broadcast real-time update to all connected clients -
-                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added via Web POS");
-
+                        var part = MapProductPayload(body, 0);
+                        new InventoryService().SaveProductService(part);
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added");
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex)
@@ -601,7 +771,32 @@ namespace InventorySystem
                     }
                 });
 
-                // - Checkout (POST) -
+                app.MapPost("/api/products/upload-image", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        if (!request.HasFormContentType)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Expected multipart form" });
+                        var form = await request.ReadFormAsync();
+                        var file = form.Files.GetFile("file") ?? form.Files.FirstOrDefault();
+                        if (file == null || file.Length == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No file" });
+                        string ext = System.IO.Path.GetExtension(file.FileName);
+                        if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+                        string relDir = "Assets/Products";
+                        string absDir = System.IO.Path.Combine(appRoot, "Assets", "Products");
+                        System.IO.Directory.CreateDirectory(absDir);
+                        string name = Guid.NewGuid().ToString("N") + ext.ToLowerInvariant();
+                        string abs = System.IO.Path.Combine(absDir, name);
+                        using (var stream = System.IO.File.Create(abs))
+                            await file.CopyToAsync(stream);
+                        string rel = relDir.Replace('\\', '/') + "/" + name;
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, path = rel, url = "/" + rel });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Checkout (POST) - supports Completed / Quotation / Draft + optional customer -
                 app.MapPost("/api/checkout", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
@@ -613,42 +808,48 @@ namespace InventorySystem
                         if (body == null || body.Items == null || body.Items.Count == 0)
                             return Microsoft.AspNetCore.Http.Results.BadRequest("Empty cart");
 
-                        decimal total = 0;
-                        foreach (var item in body.Items) total += item.Price * item.Qty;
-
-                        // SQLite: insert order then get its rowid separately
-                        DatabaseHelper.ExecuteNonQuery(
-                            "INSERT INTO orders (order_date, customer_id, total_amount, status, payment_status, payment_method) " +
-                            "VALUES (datetime('now'), NULL, @total, 'Completed', 'Paid', 'WebPOS')",
-                            new Microsoft.Data.Sqlite.SqliteParameter("@total", total));
-                        long orderId = DatabaseHelper.ExecuteScalar<long>("SELECT last_insert_rowid()");
-
+                        decimal subtotal = 0;
+                        var orderItems = new System.Collections.Generic.List<OrderItem>();
                         foreach (var item in body.Items)
                         {
-                            if (item.Id > 0)
+                            subtotal += item.Price * item.Qty;
+                            orderItems.Add(new OrderItem
                             {
-                                DatabaseHelper.ExecuteNonQuery(
-                                    "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@oid", orderId),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@price", item.Price));
-
-                                DatabaseHelper.ExecuteNonQuery(
-                                    "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid",
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@qty", item.Qty),
-                                    new Microsoft.Data.Sqlite.SqliteParameter("@pid", item.Id));
-                            }
+                                PartId = item.Id,
+                                PartName = item.Name ?? "",
+                                Quantity = item.Qty,
+                                UnitPrice = item.Price,
+                                StockDeductQty = item.StockQty > 0 ? item.StockQty : 0
+                            });
                         }
 
-                        DatabaseHelper.ExecuteNonQuery(
-                            "INSERT INTO transactions (action_type, part_name, description, username) VALUES ('SALE', 'POS Sale', @desc, 'WebPOS')",
-                            new Microsoft.Data.Sqlite.SqliteParameter("@desc", $"Order #{orderId} -- Total: {total:C}"));
+                        decimal vat = Math.Max(0, body.VatAmount);
+                        decimal ship = Math.Max(0, body.ShippingAmount);
+                        decimal disc = Math.Max(0, body.DiscountAmount);
+                        decimal calc = Math.Max(0, subtotal + vat + ship - disc);
+                        decimal total = body.TotalAmount.HasValue && body.TotalAmount.Value >= 0
+                            ? body.TotalAmount.Value
+                            : calc;
 
-                        // - Broadcast real-time update to ALL connected clients -
-                        _ = InventoryBroadcaster.Broadcast("SaleCompleted", $"Order #{orderId} - Total: {total:F2}");
+                        string status = string.IsNullOrWhiteSpace(body.Status) ? "Completed" : body.Status.Trim();
+                        if (status != "Completed" && status != "Quotation" && status != "Draft" && status != "Bill")
+                            status = "Completed";
+                        bool billMode = status == "Bill" || (body.IsPaid == false && status == "Completed");
+                        if (status == "Bill") status = "Completed";
 
-                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, orderId, total });
+                        int customerId = body.CustomerId.GetValueOrDefault() > 0 ? body.CustomerId.Value : -1;
+                        bool isPaid = body.IsPaid ?? (status == "Completed" && !billMode);
+                        if (status == "Quotation" || status == "Draft") isPaid = false;
+                        if (billMode) isPaid = false;
+
+                        int orderId = new OrderService().PlaceOrder(customerId, orderItems, total, isPaid, status,
+                            body.DueDate, body.ShippingAddress, body.DeliveryDate);
+
+                        _ = InventoryBroadcaster.Broadcast(
+                            status == "Completed" ? "SaleCompleted" : "InventoryChanged",
+                            $"{status} #{orderId} - Total: {total:F2}");
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, orderId, total, status });
                     }
                     catch (Exception ex)
                     {
@@ -684,22 +885,24 @@ namespace InventorySystem
                     try
                     {
                         var dt = DatabaseHelper.ExecuteDataTable(
-                            @"SELECT o.order_id, o.order_date, o.total_amount, 
+                            @"SELECT o.order_id, o.order_date, o.total_amount, o.payment_status,
                                      COALESCE(c.full_name, 'Cash Customer') as customer_name
                               FROM orders o
                               LEFT JOIN customers c ON o.customer_id = c.customer_id
-                              WHERE o.status != 'Cancelled'
-                              ORDER BY o.order_id DESC LIMIT 50");
+                              WHERE o.status = 'Completed'
+                              ORDER BY o.order_id DESC LIMIT 100");
 
                         var sales = new System.Collections.Generic.List<object>();
                         foreach (System.Data.DataRow row in dt.Rows)
                         {
+                            string pay = row["payment_status"]?.ToString() ?? "Paid";
                             sales.Add(new
                             {
                                 orderId = Convert.ToInt32(row["order_id"]),
-                                date = Convert.ToDateTime(row["order_date"]),
+                                date = row["order_date"],
                                 total = Convert.ToDecimal(row["total_amount"]),
-                                customer = row["customer_name"].ToString()
+                                customer = row["customer_name"].ToString(),
+                                paymentStatus = pay
                             });
                         }
                         return Microsoft.AspNetCore.Http.Results.Ok(sales);
@@ -713,7 +916,7 @@ namespace InventorySystem
                     try
                     {
                         var dt = DatabaseHelper.ExecuteDataTable(
-                            @"SELECT oi.part_id, p.part_name, oi.quantity, oi.price
+                            @"SELECT oi.part_id, p.part_name, p.description, p.part_image, oi.quantity, oi.price
                               FROM order_items oi
                               JOIN parts p ON oi.part_id = p.id
                               WHERE oi.order_id = @id",
@@ -726,11 +929,169 @@ namespace InventorySystem
                             {
                                 partId = Convert.ToInt32(row["part_id"]),
                                 name = row["part_name"].ToString(),
+                                description = row["description"] == DBNull.Value ? "" : row["description"].ToString(),
+                                image = row["part_image"] == DBNull.Value ? "" : row["part_image"].ToString(),
                                 qty = Convert.ToInt32(row["quantity"]),
                                 price = Convert.ToDecimal(row["price"])
                             });
                         }
                         return Microsoft.AspNetCore.Http.Results.Ok(items);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Customer recent sales (for POS return) -
+                app.MapGet("/api/customers/{id:int}/sales", (int id) =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT o.order_id, o.order_date, o.total_amount, o.payment_status,
+                                     (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.order_id) AS item_count
+                              FROM orders o
+                              WHERE o.customer_id = @cid AND o.status = 'Completed'
+                              ORDER BY o.order_id DESC
+                              LIMIT 40",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@cid", id));
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                orderId = Convert.ToInt32(row["order_id"]),
+                                date = row["order_date"],
+                                total = Convert.ToDecimal(row["total_amount"]),
+                                paymentStatus = row["payment_status"]?.ToString() ?? "Paid",
+                                itemCount = Convert.ToInt32(row["item_count"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Order returnable lines (sold / already returned / remaining + unit price) -
+                app.MapGet("/api/orders/{id:int}/returnable", (int id) =>
+                {
+                    try
+                    {
+                        var orderDt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT o.order_id, o.order_date, o.total_amount, o.payment_status, o.customer_id,
+                                     COALESCE(c.full_name, 'Walk-in Customer') AS customer_name
+                              FROM orders o
+                              LEFT JOIN customers c ON o.customer_id = c.customer_id
+                              WHERE o.order_id = @id AND o.status = 'Completed'",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        if (orderDt.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Order not found" });
+
+                        var ord = orderDt.Rows[0];
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT oi.part_id, p.part_name, oi.quantity AS sold_qty, oi.price,
+                                     COALESCE((
+                                         SELECT SUM(ri.quantity)
+                                         FROM return_items ri
+                                         INNER JOIN returns r ON r.return_id = ri.return_id
+                                         WHERE r.order_id = @id AND ri.part_id = oi.part_id
+                                     ), 0) AS returned_qty
+                              FROM order_items oi
+                              JOIN parts p ON p.id = oi.part_id
+                              WHERE oi.order_id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+
+                        var items = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            int sold = Convert.ToInt32(row["sold_qty"]);
+                            int returned = Convert.ToInt32(row["returned_qty"]);
+                            int remaining = Math.Max(0, sold - returned);
+                            decimal price = Convert.ToDecimal(row["price"]);
+                            items.Add(new
+                            {
+                                partId = Convert.ToInt32(row["part_id"]),
+                                name = row["part_name"].ToString(),
+                                soldQty = sold,
+                                returnedQty = returned,
+                                remainingQty = remaining,
+                                price,
+                                lineTotal = price * sold
+                            });
+                        }
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            orderId = Convert.ToInt32(ord["order_id"]),
+                            date = ord["order_date"],
+                            total = Convert.ToDecimal(ord["total_amount"]),
+                            paymentStatus = ord["payment_status"]?.ToString() ?? "Paid",
+                            customerId = ord["customer_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(ord["customer_id"]),
+                            customerName = ord["customer_name"].ToString(),
+                            items
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Quotation Preview (GET) -
+                app.MapGet("/api/quotations/{id:int}", (int id) =>
+                {
+                    try
+                    {
+                        var orderDt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT o.order_id, o.order_date, o.total_amount, o.customer_id, o.status,
+                                     COALESCE(c.full_name, 'Walk-in Customer') AS customer_name,
+                                     COALESCE(c.address, '') AS address,
+                                     COALESCE(c.phone, '') AS phone
+                              FROM orders o
+                              LEFT JOIN customers c ON o.customer_id = c.customer_id
+                              WHERE o.order_id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        if (orderDt.Rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Quotation not found" });
+
+                        var o = orderDt.Rows[0];
+                        var itemsDt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT oi.part_id, p.part_name, p.description, p.part_image, oi.quantity, oi.price
+                              FROM order_items oi
+                              JOIN parts p ON oi.part_id = p.id
+                              WHERE oi.order_id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+
+                        var items = new System.Collections.Generic.List<object>();
+                        decimal subtotal = 0;
+                        foreach (System.Data.DataRow row in itemsDt.Rows)
+                        {
+                            var qty = Convert.ToInt32(row["quantity"]);
+                            var price = Convert.ToDecimal(row["price"]);
+                            subtotal += qty * price;
+                            items.Add(new
+                            {
+                                partId = Convert.ToInt32(row["part_id"]),
+                                name = row["part_name"].ToString(),
+                                description = row["description"] == DBNull.Value ? "" : row["description"].ToString(),
+                                image = row["part_image"] == DBNull.Value ? "" : row["part_image"].ToString(),
+                                qty,
+                                price
+                            });
+                        }
+
+                        var totalAmount = Convert.ToDecimal(o["total_amount"]);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            orderId = Convert.ToInt32(o["order_id"]),
+                            orderDate = o["order_date"],
+                            status = o["status"].ToString(),
+                            customerId = o["customer_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(o["customer_id"]),
+                            customerName = o["customer_name"].ToString(),
+                            address = o["address"].ToString(),
+                            phone = o["phone"].ToString(),
+                            subtotal,
+                            totalAmount,
+                            validityDays = 15,
+                            companyName = ThemeConfig.CompanyName,
+                            companyInfo = "Jnah- Rihab Road | Beirut - Lebanon | Phone: +961 76 117731",
+                            items
+                        });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
@@ -766,10 +1127,906 @@ namespace InventorySystem
 
                         _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Return processed for Order #{body.OrderId}");
 
+
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
+
+                // - Blind Return (POST) -
+                app.MapPost("/api/blind-return", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<BlindReturnPayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (body == null || body.Items == null || body.Items.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("No items to return");
+
+                        var returnService = new ReturnService();
+                        var items = new System.Collections.Generic.List<ReturnItemInfo>();
+                        foreach (var i in body.Items)
+                        {
+                            items.Add(new ReturnItemInfo
+                            {
+                                PartId = i.PartId,
+                                Quantity = i.Qty,
+                                RefundAmount = i.RefundAmount
+                            });
+                        }
+
+                        UserSession.Username = "WebPOS";
+                        int customerId = body.CustomerId.HasValue && body.CustomerId.Value > 0 ? body.CustomerId.Value : -1;
+                        returnService.ProcessBlindReturn(items, body.Reason, customerId);
+
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", "Blind return processed");
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Reports -
+                app.MapGet("/api/reports/summary", (string preset, string from, string to) =>
+                {
+                    try
+                    {
+                        var svc = new ReportService();
+                        DateTime fromDate, toDate;
+                        if (!string.IsNullOrWhiteSpace(from) && !string.IsNullOrWhiteSpace(to)
+                            && DateTime.TryParse(from, out fromDate) && DateTime.TryParse(to, out toDate))
+                        {
+                            if (toDate < fromDate) (fromDate, toDate) = (toDate, fromDate);
+                        }
+                        else
+                        {
+                            (fromDate, toDate) = svc.GetPresetRange(string.IsNullOrWhiteSpace(preset) ? "Monthly" : preset);
+                        }
+                        var s = svc.GetSummary(fromDate, toDate);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            fromDate = s.FromDate,
+                            toDate = s.ToDate,
+                            totalSales = s.TotalSales,
+                            totalCost = s.TotalCost,
+                            totalExpenses = s.TotalExpenses,
+                            totalProfit = s.TotalProfit,
+                            totalProfitAfterExpenses = s.TotalProfitAfterExpenses
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/reports/top-products", (string preset, string from, string to, int? limit) =>
+                {
+                    try
+                    {
+                        var svc = new ReportService();
+                        DateTime fromDate, toDate;
+                        if (!string.IsNullOrWhiteSpace(from) && !string.IsNullOrWhiteSpace(to)
+                            && DateTime.TryParse(from, out fromDate) && DateTime.TryParse(to, out toDate))
+                        {
+                            if (toDate < fromDate) (fromDate, toDate) = (toDate, fromDate);
+                        }
+                        else
+                        {
+                            (fromDate, toDate) = svc.GetPresetRange(string.IsNullOrWhiteSpace(preset) ? "Monthly" : preset);
+                        }
+                        var dt = svc.GetTopSellingProducts(fromDate, toDate, limit ?? 20);
+                        return Microsoft.AspNetCore.Http.Results.Ok(DataTableToList(dt));
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - History -
+                app.MapGet("/api/history/{kind}", (string kind) =>
+                {
+                    try
+                    {
+                        var svc = new HistoryService();
+                        System.Data.DataTable dt = (kind ?? "").ToLowerInvariant() switch
+                        {
+                            "inventory" => svc.GetInventoryLogs(),
+                            "customers" => svc.GetCustomerHistory(),
+                            "orders" => svc.GetOrderHistory(),
+                            "quotations" => svc.GetQuotationHistory(),
+                            "suppliers" => svc.GetSupplierHistory(),
+                            _ => svc.GetOrderHistory()
+                        };
+                        return Microsoft.AspNetCore.Http.Results.Ok(DataTableToList(dt));
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Quotations -
+                app.MapGet("/api/quotations", () =>
+                {
+                    try
+                    {
+                        var dt = new OrderService().GetQuotations();
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                orderId = Convert.ToInt32(row["order_id"]),
+                                orderDate = row["order_date"],
+                                customerName = row["CustomerName"].ToString(),
+                                totalAmount = Convert.ToDecimal(row["total_amount"]),
+                                customerId = row["customer_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["customer_id"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/drafts", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT o.order_id, o.order_date, o.total_amount, o.status, o.customer_id,
+                                     COALESCE(c.full_name, 'Walk-in') as customer_name
+                              FROM orders o
+                              LEFT JOIN customers c ON o.customer_id = c.customer_id
+                              WHERE o.status = 'Draft' AND (o.date_deleted IS NULL OR o.date_deleted = '')
+                              ORDER BY o.order_id DESC LIMIT 100");
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                orderId = Convert.ToInt32(row["order_id"]),
+                                orderDate = row["order_date"],
+                                customerId = row["customer_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["customer_id"]),
+                                customerName = row["customer_name"].ToString(),
+                                totalAmount = Convert.ToDecimal(row["total_amount"]),
+                                status = row["status"].ToString()
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch
+                    {
+                        // date_deleted may not exist on orders — fallback query
+                        try
+                        {
+                            var dt = DatabaseHelper.ExecuteDataTable(
+                                @"SELECT o.order_id, o.order_date, o.total_amount, o.status, o.customer_id,
+                                         COALESCE(c.full_name, 'Walk-in') as customer_name
+                                  FROM orders o
+                                  LEFT JOIN customers c ON o.customer_id = c.customer_id
+                                  WHERE o.status = 'Draft'
+                                  ORDER BY o.order_id DESC LIMIT 100");
+                            var list = new System.Collections.Generic.List<object>();
+                            foreach (System.Data.DataRow row in dt.Rows)
+                            {
+                                list.Add(new
+                                {
+                                    orderId = Convert.ToInt32(row["order_id"]),
+                                    orderDate = row["order_date"],
+                                    customerId = row["customer_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["customer_id"]),
+                                    customerName = row["customer_name"].ToString(),
+                                    totalAmount = Convert.ToDecimal(row["total_amount"]),
+                                    status = row["status"].ToString()
+                                });
+                            }
+                            return Microsoft.AspNetCore.Http.Results.Ok(list);
+                        }
+                        catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                    }
+                });
+
+                app.MapPost("/api/quotations/{id:int}/convert", (int id) =>
+                {
+                    try
+                    {
+                        bool ok = new OrderService().ConvertToOrder(id);
+                        if (ok) _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Quotation #{id} converted");
+                        return ok
+                            ? Microsoft.AspNetCore.Http.Results.Ok(new { success = true })
+                            : Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Convert failed" });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Expenses -
+                app.MapGet("/api/expenses", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT expense_id, expense_date, category, amount, description, recorded_by, is_paid, is_recurring
+                              FROM expenses WHERE date_deleted IS NULL AND category != 'System'
+                              ORDER BY expense_date DESC LIMIT 200");
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                expenseId = Convert.ToInt32(row["expense_id"]),
+                                expenseDate = row["expense_date"],
+                                category = row["category"].ToString(),
+                                amount = Convert.ToDecimal(row["amount"]),
+                                description = row["description"].ToString(),
+                                recordedBy = row["recorded_by"].ToString(),
+                                isPaid = Convert.ToInt32(row["is_paid"]) == 1,
+                                isRecurring = Convert.ToInt32(row["is_recurring"]) == 1
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/expenses", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ExpensePayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Category) || body.Amount <= 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest("Invalid expense");
+
+                        DatabaseHelper.ExecuteNonQuery(
+                            @"INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_paid, is_recurring)
+                              VALUES (@c, @d, @a, @desc, @u, @paid, @rec)",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@c", body.Category),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@d", body.ExpenseDate == default ? DateTime.Now : body.ExpenseDate),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@a", body.Amount),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@desc", body.Description ?? ""),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@u", string.IsNullOrWhiteSpace(body.RecordedBy) ? "Web" : body.RecordedBy),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@paid", body.IsPaid ? 1 : 0),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@rec", body.IsRecurring ? 1 : 0));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/expenses/{id:int}/pay", (int id) =>
+                {
+                    try
+                    {
+                        new ExpenseService().MarkAsPaid(id);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/expense-categories", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            "SELECT category_name FROM expense_categories ORDER BY category_name");
+                        var list = new System.Collections.Generic.List<string>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                            list.Add(row["category_name"].ToString());
+                        if (list.Count == 0)
+                            list.AddRange(new[] { "Rent", "Utilities", "Salaries", "Supplies", "Other" });
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch { return Microsoft.AspNetCore.Http.Results.Ok(new[] { "Rent", "Utilities", "Salaries", "Supplies", "Other" }); }
+                });
+
+                // - Barcode items -
+                app.MapGet("/api/barcode/items", () =>
+                {
+                    try
+                    {
+                        var dt = DatabaseHelper.ExecuteDataTable(
+                            @"SELECT id, part_name, part_number, selling_price, barcode, quantity_in_stock
+                              FROM parts WHERE date_deleted IS NULL AND status = 'Active'
+                              ORDER BY part_name");
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (System.Data.DataRow row in dt.Rows)
+                        {
+                            list.Add(new
+                            {
+                                id = Convert.ToInt32(row["id"]),
+                                name = row["part_name"].ToString(),
+                                sku = row["part_number"].ToString(),
+                                price = Convert.ToDecimal(row["selling_price"]),
+                                barcode = row["barcode"].ToString(),
+                                stock = Convert.ToInt32(row["quantity_in_stock"])
+                            });
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - License (display) -
+                app.MapGet("/api/license", () =>
+                {
+                    try
+                    {
+                        var lic = LicenseManager.GetCurrentLicense();
+                        string hwId = HardwareInfo.GetShortHardwareId();
+                        if (lic == null)
+                            return Microsoft.AspNetCore.Http.Results.Ok(new
+                            {
+                                isValid = false,
+                                isTrial = false,
+                                canActivate = true,
+                                hardwareId = hwId
+                            });
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            licenseType = lic.LicenseType,
+                            customerName = lic.CustomerName,
+                            activationDate = lic.ActivationDate,
+                            expirationDate = lic.ExpirationDate,
+                            daysRemaining = lic.DaysRemaining(),
+                            isValid = lic.IsValid(),
+                            isTrial = lic.IsTrial(),
+                            isActive = lic.IsActive,
+                            productId = lic.ProductId,
+                            machineName = lic.MachineName,
+                            canActivate = lic.IsTrial() || !lic.IsValid(),
+                            hardwareId = hwId,
+                            keyMasked = string.IsNullOrEmpty(lic.Key) ? "" :
+                                (lic.Key.Length <= 8 ? "****" : lic.Key.Substring(0, 5) + "-****-****-" + lic.Key.Substring(Math.Max(0, lic.Key.Length - 5)))
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/license/activate", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<LicenseActivatePayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.LicenseKey))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "License key required" });
+
+                        string customer = string.IsNullOrWhiteSpace(body.CustomerName) ? "Licensed User" : body.CustomerName.Trim();
+                        var license = LicenseManager.ActivateLicense(body.LicenseKey.Trim(), customer);
+                        if (license == null)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Invalid license key" });
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            licenseType = license.LicenseType,
+                            expirationDate = license.ExpirationDate,
+                            daysRemaining = license.DaysRemaining()
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/license/start-trial", () =>
+                {
+                    try
+                    {
+                        var existing = LicenseManager.GetCurrentLicense();
+                        if (existing != null && existing.IsTrial())
+                            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Trial already used" });
+
+                        var trial = LicenseManager.StartTrial();
+                        if (trial == null)
+                            return Microsoft.AspNetCore.Http.Results.Problem("Could not start trial");
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            daysRemaining = trial.DaysRemaining(),
+                            expirationDate = trial.ExpirationDate
+                        });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Product CRUD -
+                app.MapPost("/api/products/{id:int}/delete", (int id) =>
+                {
+                    try { new InventoryService().DeletePart(id); return Microsoft.AspNetCore.Http.Results.Ok(new { success = true }); }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/products/{id:int}/update", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ProductPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Missing name" });
+                        if (!string.IsNullOrEmpty(body.Barcode) && new InventoryService().BarcodeExists(body.Barcode, id))
+                            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
+                        var part = MapProductPayload(body, id);
+                        new InventoryService().SaveProductService(part);
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' updated");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/products/bulk-delete", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        if (!doc.RootElement.TryGetProperty("ids", out var idsEl) || idsEl.ValueKind != System.Text.Json.JsonValueKind.Array)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "ids required" });
+                        var svc = new InventoryService();
+                        int n = 0;
+                        foreach (var el in idsEl.EnumerateArray())
+                        {
+                            if (el.TryGetInt32(out int id)) { svc.DeletePart(id); n++; }
+                        }
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, count = n });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/categories", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string name = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        int exists = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM categories WHERE category_name = @n",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        if (exists == 0)
+                            DatabaseHelper.ExecuteNonQuery(
+                                "INSERT INTO categories (category_name, description) VALUES (@n, '')",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, name = name.Trim() });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/categories/rename", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string oldName = doc.RootElement.TryGetProperty("oldName", out var o) ? o.GetString() : null;
+                        string newName = doc.RootElement.TryGetProperty("newName", out var n) ? n.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(oldName) || string.IsNullOrWhiteSpace(newName))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "oldName and newName required" });
+                        int exists = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM categories WHERE category_name = @o",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@o", oldName.Trim()));
+                        if (exists == 0) return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Category not found" });
+                        DatabaseHelper.ExecuteNonQuery(
+                            "UPDATE categories SET category_name = @n WHERE category_name = @o",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", newName.Trim()),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@o", oldName.Trim()));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/categories/delete", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string name = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        int inUse = DatabaseHelper.ExecuteScalar<int>(
+                            @"SELECT COUNT(*) FROM parts p JOIN categories c ON p.category_id = c.id
+                              WHERE c.category_name = @n AND p.date_deleted IS NULL",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        if (inUse > 0)
+                            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Category has products" });
+                        DatabaseHelper.ExecuteNonQuery(
+                            "DELETE FROM categories WHERE category_name = @n",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/products/{id:int}/adjust-stock", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<StockAdjustPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || body.Change == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Change required" });
+                        new InventoryService().AdjustStock(id, body.Change, body.Reason ?? "Web adjust");
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Stock adjusted for #{id}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/customers/{id:int}/payment", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PaymentPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || body.Amount == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Amount required" });
+                        // Receiving payment reduces balance (negative delta)
+                        new CustomerService().UpdateBalance(id, -Math.Abs(body.Amount));
+                        DatabaseHelper.LogTransaction("CUSTOMER_PAYMENT", id.ToString(), $"Payment {body.Amount:F2}: {body.Note}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/suppliers/{id:int}/payment", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PaymentPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || body.Amount == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Amount required" });
+                        DatabaseHelper.ExecuteNonQuery(
+                            "UPDATE suppliers SET balance_due = balance_due - @amt WHERE id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@amt", Math.Abs(body.Amount)),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        DatabaseHelper.LogTransaction("SUPPLIER_PAYMENT", id.ToString(), $"Paid supplier: {body.Amount:F2} {body.Note}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/expense-categories", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string name = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        int exists = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM expense_categories WHERE category_name = @n",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        if (exists == 0)
+                            DatabaseHelper.ExecuteNonQuery(
+                                "INSERT INTO expense_categories (category_name) VALUES (@n)",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/expense-categories/delete", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string name = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        DatabaseHelper.ExecuteNonQuery(
+                            "DELETE FROM expense_categories WHERE category_name = @n",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name.Trim()));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Customer CRUD -
+                app.MapPost("/api/customers", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PartyPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        int id = new CustomerService().AddCustomer(body.Name.Trim(), body.Phone ?? "", body.Email ?? "", body.Address ?? "", body.Type ?? "Regular", body.CreditLimit, body.DueDate, body.ReminderDays);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, id });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/customers/{id:int}/update", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PartyPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        new CustomerService().UpdateCustomer(id, body.Name.Trim(), body.Phone ?? "", body.Email ?? "", body.Address ?? "", body.Type ?? "Regular", body.CreditLimit, body.DueDate, body.ReminderDays);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/customers/{id:int}/delete", (int id) =>
+                {
+                    try { new CustomerService().DeleteCustomer(id); return Microsoft.AspNetCore.Http.Results.Ok(new { success = true }); }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Supplier CRUD -
+                app.MapPost("/api/suppliers", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PartyPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        new SupplierService().AddSupplier(body.Name.Trim(), body.Phone ?? "", body.Email ?? "", body.Address ?? "", body.Type ?? "Regular", body.DueDate, body.ReminderDays);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/suppliers/{id:int}/update", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PartyPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        new SupplierService().UpdateSupplier(id, body.Name.Trim(), body.Phone ?? "", body.Email ?? "", body.Address ?? "", body.Type ?? "Regular", body.DueDate, body.ReminderDays);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/suppliers/{id:int}/delete", (int id) =>
+                {
+                    try { new SupplierService().DeleteSupplier(id); return Microsoft.AspNetCore.Http.Results.Ok(new { success = true }); }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Expense delete -
+                app.MapPost("/api/expenses/{id:int}/delete", (int id) =>
+                {
+                    try
+                    {
+                        DatabaseHelper.ExecuteNonQuery("DELETE FROM expenses WHERE expense_id = @id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Quotation delete -
+                app.MapPost("/api/quotations/{id:int}/delete", (int id) =>
+                {
+                    try { new OrderService().DeleteOrder(id); return Microsoft.AspNetCore.Http.Results.Ok(new { success = true }); }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Users CRUD -
+                app.MapPost("/api/users", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<UserPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Username) || string.IsNullOrWhiteSpace(body.Password))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Username and password required" });
+                        DatabaseHelper.ExecuteNonQuery(
+                            "INSERT INTO users (username, password, full_name, role, date_created) VALUES (@u, @p, @n, @r, datetime('now'))",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@u", body.Username.Trim()),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@p", body.Password),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", body.FullName ?? body.Username.Trim()),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@r", body.Role ?? "Staff"));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/users/{id:int}/update", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<UserPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Username))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Username required" });
+                        if (!string.IsNullOrWhiteSpace(body.Password))
+                            DatabaseHelper.ExecuteNonQuery(
+                                "UPDATE users SET username=@u, password=@p, full_name=@n, role=@r WHERE id=@id",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@u", body.Username.Trim()),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@p", body.Password),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@n", body.FullName ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@r", body.Role ?? "Staff"),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        else
+                            DatabaseHelper.ExecuteNonQuery(
+                                "UPDATE users SET username=@u, full_name=@n, role=@r WHERE id=@id",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@u", body.Username.Trim()),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@n", body.FullName ?? ""),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@r", body.Role ?? "Staff"),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/users/{id:int}/delete", (int id) =>
+                {
+                    try
+                    {
+                        string uname = DatabaseHelper.ExecuteScalar<string>("SELECT username FROM users WHERE id=@id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id)) ?? "";
+                        if (uname.Equals("admin", StringComparison.OrdinalIgnoreCase) || uname.Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Cannot delete admin user" });
+                        DatabaseHelper.ExecuteNonQuery("DELETE FROM users WHERE id=@id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Currencies -
+                app.MapPost("/api/currencies/refresh", async () =>
+                {
+                    try
+                    {
+                        var rates = await CurrencyService.FetchLiveRatesAsync();
+                        if (rates == null || rates.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.Problem("Could not fetch rates");
+                        CurrencyService.SaveRatesToDb(rates);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, count = rates.Count });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/currencies", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string code = doc.RootElement.TryGetProperty("code", out var c) ? c.GetString() : null;
+                        string name = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : code;
+                        string symbol = doc.RootElement.TryGetProperty("symbol", out var s) ? s.GetString() : code;
+                        decimal rate = doc.RootElement.TryGetProperty("rate", out var r) ? r.GetDecimal() : 1m;
+                        if (string.IsNullOrWhiteSpace(code))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Code required" });
+                        DatabaseHelper.ExecuteNonQuery(
+                            "INSERT OR REPLACE INTO currency_rates (code, name, symbol, rate_vs_usd, last_updated) VALUES (@c,@n,@s,@r,datetime('now'))",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@c", code.Trim().ToUpperInvariant()),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name ?? code),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@s", symbol ?? code),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@r", rate));
+                        CurrencyService.LoadRatesFromDb();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+                app.MapPost("/api/currencies/{code}/delete", (string code) =>
+                {
+                    try
+                    {
+                        if (string.Equals(code, "USD", StringComparison.OrdinalIgnoreCase))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Cannot delete base currency" });
+                        DatabaseHelper.ExecuteNonQuery("DELETE FROM currency_rates WHERE code=@c",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@c", code));
+                        CurrencyService.LoadRatesFromDb();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Notifications -
+                app.MapGet("/api/notifications", () =>
+                {
+                    try
+                    {
+                        var list = new DashboardService().GetNotifications();
+                        return Microsoft.AspNetCore.Http.Results.Ok(list.Select(n => new
+                        {
+                            title = n.Title,
+                            message = n.Message,
+                            type = n.Type,
+                            target = n.Target,
+                            timestamp = n.Timestamp
+                        }));
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Backup -
+                app.MapGet("/api/backup/status", () =>
+                {
+                    try
+                    {
+                        string dir = GetWebBackupDirectory();
+                        System.IO.Directory.CreateDirectory(dir);
+                        string tsFile = System.IO.Path.Combine(dir, "last_backup.txt");
+                        string last = null;
+                        if (System.IO.File.Exists(tsFile))
+                            last = System.IO.File.ReadAllText(tsFile).Trim();
+                        var files = System.IO.Directory.GetFiles(dir, "backup_*")
+                            .OrderByDescending(f => f)
+                            .Take(10)
+                            .Select(f => new { name = System.IO.Path.GetFileName(f), path = f, modified = System.IO.File.GetLastWriteTime(f) });
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { lastBackup = last, folder = dir, files });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/create", () =>
+                {
+                    try
+                    {
+                        string dir = GetWebBackupDirectory();
+                        System.IO.Directory.CreateDirectory(dir);
+                        string dbFile = DatabaseConfig.DatabasePath;
+                        if (!System.IO.File.Exists(dbFile))
+                            return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Database not found" });
+
+                        string dest = System.IO.Path.Combine(dir, $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                        System.IO.File.Copy(dbFile, dest, true);
+                        System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, file = dest });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/open-folder", () =>
+                {
+                    try
+                    {
+                        string dir = GetWebBackupDirectory();
+                        System.IO.Directory.CreateDirectory(dir);
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "explorer.exe",
+                            Arguments = dir,
+                            UseShellExecute = true
+                        });
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/restore", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string fileName = doc.RootElement.TryGetProperty("fileName", out var f) ? f.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(fileName))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "fileName required" });
+                        string safe = System.IO.Path.GetFileName(fileName);
+                        if (!safe.StartsWith("backup_", StringComparison.OrdinalIgnoreCase))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Invalid backup file" });
+                        string src = System.IO.Path.Combine(GetWebBackupDirectory(), safe);
+                        if (!System.IO.File.Exists(src))
+                            return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Backup not found" });
+                        string dbFile = DatabaseConfig.DatabasePath;
+                        string safety = System.IO.Path.Combine(GetWebBackupDirectory(), $"pre_restore_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                        if (System.IO.File.Exists(dbFile))
+                            System.IO.File.Copy(dbFile, safety, true);
+                        System.IO.File.Copy(src, dbFile, true);
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, restored = safe, safetyCopy = safety });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Unlock / verify password -
+                app.MapPost("/api/verify-password", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<LoginPayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrEmpty(body.Username) || string.IsNullOrEmpty(body.Password))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest();
+
+                        if (body.Username == "Softio.Admin" && body.Password == "Softio@2026!")
+                            return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+
+                        int count = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM users WHERE username = @u AND password = @p",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@u", body.Username),
+                            new Microsoft.Data.Sqlite.SqliteParameter("@p", body.Password));
+                        return count > 0
+                            ? Microsoft.AspNetCore.Http.Results.Ok(new { success = true })
+                            : Microsoft.AspNetCore.Http.Results.Unauthorized();
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // Panache scale (TM-A17 / COM) — kept from desktop POS
+                ScaleApiBootstrap.MapEndpoints(app);
 
                 // Ports are configured via Kestrel above
                 app.Run();
@@ -781,11 +2038,115 @@ namespace InventorySystem
         }
 
 
+        private static string GetWebBackupDirectory()
+        {
+            string root = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PanacheInventory", "Backups");
+            return root;
+        }
+
         // Payload models for API
         private class LoginPayload
         {
             public string Username { get; set; }
             public string Password { get; set; }
+        }
+
+        private class LicenseActivatePayload
+        {
+            public string LicenseKey { get; set; }
+            public string CustomerName { get; set; }
+        }
+
+        private class PartyPayload
+        {
+            public string Name { get; set; }
+            public string Phone { get; set; }
+            public string Email { get; set; }
+            public string Address { get; set; }
+            public string Type { get; set; }
+            public string Contact { get; set; }
+            public decimal CreditLimit { get; set; } = 1000;
+            public DateTime? DueDate { get; set; }
+            public int ReminderDays { get; set; }
+        }
+
+        private class UserPayload
+        {
+            public string Username { get; set; }
+            public string Password { get; set; }
+            public string FullName { get; set; }
+            public string Role { get; set; }
+        }
+
+        private class ProductPayload
+        {
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public string Category { get; set; }
+            public decimal Price { get; set; }
+            public decimal Cost { get; set; }
+            public int Stock { get; set; }
+            public int MinStock { get; set; }
+            public string Barcode { get; set; }
+            public string Sku { get; set; }
+            public string Image { get; set; }
+            public string Location { get; set; }
+            public string Shelf { get; set; }
+            public string Uom { get; set; }
+            public string Batch { get; set; }
+            public string Expiry { get; set; }
+            public string ItemType { get; set; }
+            public bool IsSalesItem { get; set; } = true;
+            public bool IsPurchaseItem { get; set; }
+            public bool IsInactive { get; set; }
+            public decimal TaxRate { get; set; }
+            public bool IsStockTracked { get; set; } = true;
+            public bool SellByWeight { get; set; }
+            public decimal Price2 { get; set; }
+            public decimal Price3 { get; set; }
+            public decimal Price4 { get; set; }
+            public int? SupplierId { get; set; }
+        }
+
+        private static InventorySystem.Data.PartData MapProductPayload(ProductPayload body, int id)
+        {
+            bool inactive = body.IsInactive;
+            bool byWeight = body.SellByWeight && !string.Equals(body.ItemType, "Service", StringComparison.OrdinalIgnoreCase);
+            string uom = body.Uom ?? "";
+            if (byWeight && string.IsNullOrWhiteSpace(uom)) uom = "kg";
+            return new InventorySystem.Data.PartData
+            {
+                Id = id,
+                PartName = body.Name.Trim(),
+                Description = body.Description ?? "",
+                Barcode = body.Barcode ?? "",
+                PartNumber = body.Sku ?? "",
+                CategoryName = string.IsNullOrWhiteSpace(body.Category) ? "General" : body.Category.Trim(),
+                UnitOfMeasure = uom,
+                BatchNumber = body.Batch ?? "",
+                Location = body.Location ?? "",
+                Shelf = body.Shelf ?? "",
+                ExpiryDate = body.Expiry ?? "",
+                ItemType = string.IsNullOrWhiteSpace(body.ItemType) ? "Product" : body.ItemType,
+                IsSalesItem = body.IsSalesItem,
+                IsPurchaseItem = body.IsPurchaseItem,
+                IsInactive = inactive,
+                TaxRate = body.TaxRate,
+                IsStockTracked = body.IsStockTracked,
+                SellByWeight = byWeight,
+                QuantityInStock = body.Stock,
+                MinimumStockLevel = body.MinStock,
+                PurchasePrice = body.Cost > 0 ? body.Cost : (body.Price * 0.7m),
+                SellingPrice = body.Price,
+                Price2 = body.Price2,
+                Price3 = body.Price3,
+                Price4 = body.Price4,
+                PartImage = body.Image,
+                SupplierId = body.SupplierId,
+                Status = inactive ? "Inactive" : "Active"
+            };
         }
 
         private class AddItemPayload
@@ -801,6 +2162,28 @@ namespace InventorySystem
         private class CheckoutPayload
         {
             public System.Collections.Generic.List<CheckoutItem> Items { get; set; }
+            public int? CustomerId { get; set; }
+            public string Status { get; set; }
+            public bool? IsPaid { get; set; }
+            public string ShippingAddress { get; set; }
+            public DateTime? DueDate { get; set; }
+            public DateTime? DeliveryDate { get; set; }
+            public decimal VatAmount { get; set; }
+            public decimal ShippingAmount { get; set; }
+            public decimal DiscountAmount { get; set; }
+            public decimal? TotalAmount { get; set; }
+        }
+
+        private class StockAdjustPayload
+        {
+            public int Change { get; set; }
+            public string Reason { get; set; }
+        }
+
+        private class PaymentPayload
+        {
+            public decimal Amount { get; set; }
+            public string Note { get; set; }
         }
         private class CheckoutItem
         {
@@ -808,6 +2191,9 @@ namespace InventorySystem
             public string Name { get; set; }
             public decimal Price { get; set; }
             public int Qty { get; set; }
+            /// <summary>Grams (or other stock units) to deduct for weighed lines; 0 = use Qty.</summary>
+            public int StockQty { get; set; }
+            public decimal WeightKg { get; set; }
         }
 
         private class ReturnPayload
@@ -816,11 +2202,45 @@ namespace InventorySystem
             public string Reason { get; set; }
             public System.Collections.Generic.List<ReturnItemDetail> Items { get; set; }
         }
+        private class BlindReturnPayload
+        {
+            public string Reason { get; set; }
+            public int? CustomerId { get; set; }
+            public System.Collections.Generic.List<ReturnItemDetail> Items { get; set; }
+        }
         private class ReturnItemDetail
         {
             public int PartId { get; set; }
             public int Qty { get; set; }
             public decimal RefundAmount { get; set; }
+        }
+
+        private class ExpensePayload
+        {
+            public string Category { get; set; }
+            public DateTime ExpenseDate { get; set; }
+            public decimal Amount { get; set; }
+            public string Description { get; set; }
+            public string RecordedBy { get; set; }
+            public bool IsPaid { get; set; }
+            public bool IsRecurring { get; set; }
+        }
+
+        private static System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>> DataTableToList(System.Data.DataTable dt)
+        {
+            var list = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>>();
+            if (dt == null) return list;
+            foreach (System.Data.DataRow row in dt.Rows)
+            {
+                var dict = new System.Collections.Generic.Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                foreach (System.Data.DataColumn col in dt.Columns)
+                {
+                    object val = row[col];
+                    dict[col.ColumnName] = val == DBNull.Value ? null : val;
+                }
+                list.Add(dict);
+            }
+            return list;
         }
     }
 }
@@ -867,6 +2287,17 @@ namespace InventorySystem
                     await HubContext.Clients.All.SendAsync(eventName, message);
             }
             catch { /* Never crash the caller due to broadcast failure */ }
+        }
+
+        /// <summary>Broadcast a structured payload (e.g. live scale weight).</summary>
+        public static async System.Threading.Tasks.Task BroadcastObject(string eventName, object payload)
+        {
+            try
+            {
+                if (HubContext != null)
+                    await HubContext.Clients.All.SendAsync(eventName, payload);
+            }
+            catch { }
         }
 
         /// <summary>Convenience: broadcast a generic stock-changed event.</summary>

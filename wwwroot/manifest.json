@@ -1,19 +1,12 @@
 {
-  "name": "Inventory POS System",
-  "short_name": "POS",
-  "description": "Point of Sale — real-time inventory management",
+  "name": "Panache Inventory",
+  "short_name": "Panache",
+  "description": "Panache Inventory Management — web portal",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "landscape",
-  "background_color": "#f8fafc",
-  "theme_color": "#dc2626",
-  "icons": [
-    {
-      "src": "nuricon_POS_web.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
+  "orientation": "any",
+  "background_color": "#f1f5f9",
+  "theme_color": "#10B981",
+  "icons": [],
   "categories": ["business", "productivity"]
 }

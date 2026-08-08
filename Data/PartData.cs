@@ -35,6 +35,7 @@ namespace InventorySystem.Data
         public bool IsInactive { get; set; } = false;
         public decimal TaxRate { get; set; } = 0;
         public bool IsStockTracked { get; set; } = true;
+        public bool SellByWeight { get; set; } = false;
         public decimal Price2 { get; set; } = 0;
         public decimal Price3 { get; set; } = 0;
         public decimal Price4 { get; set; } = 0;
@@ -153,6 +154,7 @@ namespace InventorySystem.Data
                 IsInactive        = Safe<int>(r, "is_inactive", 0) == 1,
                 TaxRate           = Safe<decimal>(r, "tax_rate", 0),
                 IsStockTracked    = Safe<int>(r, "is_stock_tracked", 1) == 1,
+                SellByWeight      = Safe<int>(r, "sell_by_weight", 0) == 1,
                 Price2            = Safe<decimal>(r, "price2", 0),
                 Price3            = Safe<decimal>(r, "price3", 0),
                 Price4            = Safe<decimal>(r, "price4", 0)
