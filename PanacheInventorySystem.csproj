@@ -44,6 +44,7 @@
     <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Plugins\**" CopyToOutputDirectory="PreserveNewest" Exclude="Plugins\**\*.cs" />
+    <Content Include="Data\inventory.db" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Data\inventory.db')" />
   </ItemGroup>
 
   <ItemGroup>

@@ -34,3 +34,4 @@ _backup_pre_otargi_web/
 crash.txt
 server_error.txt
 *.db
+!Data/inventory.db

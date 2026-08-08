@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATHS = [
+    ROOT / "Data" / "inventory.db",
     ROOT / "bin" / "Debug" / "net8.0-windows" / "win-x64" / "Data" / "inventory.db",
     ROOT / "dist" / "app" / "Data" / "inventory.db",
 ]
