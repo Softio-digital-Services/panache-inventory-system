@@ -594,6 +594,7 @@ tbody tr:hover { background: rgba(var(--primary-rgb), 0.03); }
 .badge.in-stock { background: #ecfdf5; color: #047857; }
 .badge.low-stock { background: #fff7ed; color: #c2410c; }
 .badge.out-of-stock { background: #fef2f2; color: #b91c1c; }
+.badge.service { background: #eff6ff; color: #2563eb; }
 
 .filter-bar {
     display: flex;
@@ -1005,6 +1006,10 @@ body:has(#pos.active) .main-content,
 }
 .pos-product-card .pos-oos-label {
     color: #dc2626 !important;
+    font-weight: 700;
+}
+.pos-product-card .pos-service-label {
+    color: #2563eb !important;
     font-weight: 700;
 }
 .pos-product-card h3 {
@@ -3949,7 +3954,27 @@ body.web-client:has(#pos.active) .main-content {
   color: var(--text-main);
 }
 .scale-calc-price.is-ready { color: #15803d; }
-.scale-actions, .scale-settings-actions { display:flex; flex-wrap:nowrap; gap:6px; align-items:stretch; width:100%; }
+.scale-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  align-items: stretch;
+  width: 100%;
+}
+.scale-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+}
+.scale-settings-actions .scale-btn {
+  flex: 1 1 0;
+  min-width: 96px;
+  height: 42px;
+  padding: 0 16px;
+  font-size: 0.82rem;
+}
 .scale-actions .scale-btn {
   flex: 1 1 0;
   min-width: 0;

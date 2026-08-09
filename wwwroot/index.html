@@ -198,9 +198,9 @@
                         <button class="btn btn-secondary" id="btn-refresh-inventory"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <button class="btn btn-secondary" id="btn-add-category" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="add_category">Add Category</span></button>
                         <button class="btn btn-secondary" id="btn-manage-categories" data-roles="admin"><span class="material-symbols-rounded">tune</span><span data-i18n="manage_categories">Manage Categories</span></button>
-                        <button class="btn btn-secondary" id="btn-import-inventory" data-roles="admin"><span class="material-symbols-rounded">upload</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary" id="btn-import-inventory" data-roles="admin"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <input type="file" id="inv-import-file" accept=".csv,text/csv" hidden>
-                        <button class="btn btn-secondary" id="btn-export-inventory"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-export-inventory"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                         <button class="btn btn-danger" id="btn-bulk-delete-inventory" data-roles="admin" hidden><span class="material-symbols-rounded">delete_sweep</span><span data-i18n="bulk_delete">Bulk Delete</span></button>
                         <button class="btn btn-primary" id="btn-add-product" data-roles="admin"><span class="material-symbols-rounded">add</span><span data-i18n="add_product">Add Product</span></button>
                     </div>
@@ -429,7 +429,7 @@
                 <div class="page-header">
                     <div class="page-actions">
                         <button class="btn btn-secondary" id="btn-refresh-sales"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
-                        <button class="btn btn-secondary" id="btn-export-sales"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-export-sales"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -458,7 +458,7 @@
                             <input type="date" id="report-to" class="form-control report-filter-control">
                         </label>
                         <button class="btn btn-secondary" id="btn-refresh-reports"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
-                        <button class="btn btn-secondary" id="btn-export-reports"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-export-reports"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                     </div>
                 </div>
                 <div class="stats-grid" id="report-stats"></div>
@@ -474,6 +474,8 @@
                 <div class="page-header">
                     <div class="page-actions">
                         <select id="history-kind" class="form-control" style="width:auto;">
+                            <option value="all" data-i18n="filter_all">All</option>
+                            <option value="pay_later" data-i18n="customer_bill">Pay Later</option>
                             <option value="orders" data-i18n="nav_sales">Orders</option>
                             <option value="inventory" data-i18n="nav_inventory">Inventory</option>
                             <option value="customers" data-i18n="nav_customers">Customers</option>
@@ -481,7 +483,7 @@
                             <option value="quotations" data-i18n="nav_quotations">Quotations</option>
                         </select>
                         <button class="btn btn-secondary" id="btn-refresh-history"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
-                        <button class="btn btn-secondary" id="btn-export-history"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-export-history"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead id="history-head"></thead><tbody id="history-body"></tbody></table></div>
@@ -507,8 +509,8 @@
                         <button class="btn btn-secondary" id="btn-filter-debt" data-i18n="filter_with_debt">With debt</button>
                         <button class="btn btn-secondary" id="btn-refresh-customers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <input type="file" id="cust-import-file" accept=".csv,text/csv" hidden>
-                        <button class="btn btn-secondary" id="btn-export-customers"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
-                        <button class="btn btn-secondary" id="btn-import-customers"><span class="material-symbols-rounded">upload</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary" id="btn-export-customers"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-import-customers"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <button class="btn btn-primary" id="btn-add-customer"><span class="material-symbols-rounded">add</span><span data-i18n="add_customer">Add Customer</span></button>
                     </div>
                 </div>
@@ -526,8 +528,8 @@
                     <div class="page-actions">
                         <button class="btn btn-secondary" id="btn-refresh-suppliers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <input type="file" id="supp-import-file" accept=".csv,text/csv" hidden>
-                        <button class="btn btn-secondary" id="btn-export-suppliers"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
-                        <button class="btn btn-secondary" id="btn-import-suppliers"><span class="material-symbols-rounded">upload</span><span data-i18n="import">Import</span></button>
+                        <button class="btn btn-secondary" id="btn-export-suppliers"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-import-suppliers"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <button class="btn btn-primary" id="btn-add-supplier"><span class="material-symbols-rounded">add</span><span data-i18n="add_supplier">Add Supplier</span></button>
                     </div>
                 </div>
@@ -543,7 +545,7 @@
                     <div class="page-actions">
                         <button class="btn btn-secondary" id="btn-manage-exp-cats" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="manage_categories">Manage Categories</span></button>
                         <button class="btn btn-secondary" id="btn-refresh-expenses"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
-                        <button class="btn btn-secondary" id="btn-export-expenses"><span class="material-symbols-rounded">download</span><span data-i18n="export">Export</span></button>
+                        <button class="btn btn-secondary" id="btn-export-expenses"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                         <button class="btn btn-primary" id="btn-add-expense"><span class="material-symbols-rounded">add</span><span data-i18n="add_expense">Add Expense</span></button>
                     </div>
                 </div>
@@ -912,13 +914,16 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="backup-modal">
+            <div class="modal-overlay" id="backup-modal">
         <div class="modal">
             <div class="modal-header"><h2 data-i18n="tool_backup">Backup</h2>
                 <button class="close-btn" data-close="backup-modal"><span class="material-symbols-rounded">close</span></button></div>
             <p id="backup-status" class="muted" style="margin-bottom:1rem;">—</p>
             <div class="modal-actions" style="justify-content:flex-start; flex-wrap:wrap; gap:8px;">
-                <button type="button" class="btn btn-primary" id="btn-do-backup" data-i18n="backup_now">Create Backup</button>
+                <button type="button" class="btn btn-primary" id="btn-backup-export"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
+                <button type="button" class="btn btn-secondary" id="btn-backup-import"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
+                <input type="file" id="backup-import-file" accept=".db,application/octet-stream" hidden>
+                <button type="button" class="btn btn-danger" id="btn-backup-factory" data-i18n="factory_reset">Factory Delete</button>
                 <button type="button" class="btn btn-secondary" id="btn-open-backup" data-i18n="open_backup_folder">Open Folder</button>
             </div>
             <div id="backup-files" class="backup-files" style="margin-top:1rem;"></div>

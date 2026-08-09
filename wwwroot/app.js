@@ -36,7 +36,7 @@ const T = {
         users_subtitle: 'Accounts and roles', settings_subtitle: 'Language, license and appearance',
         recent_sales: 'Recent Sales', add_product: 'Add Product', add_expense: 'Add Expense',
         search_ph: 'Search...', cart_title: 'Cart', clear: 'Clear', subtotal: 'Subtotal', total: 'Total',
-        checkout: 'Checkout', cancel: 'Cancel', save: 'Save', print: 'Print', convert: 'Convert',
+        checkout: 'Checkout', cancel: 'Cancel', save: 'Save', print: 'Print', convert: 'Confirm',
         process_return: 'Process Return', return_reason: 'Reason', return_reason_ph: 'e.g. Defective',
         confirm_return: 'Confirm Return', language: 'Language', license_info: 'License',
         top_products: 'Top Products', best_selling: 'Best Selling Products', top_categories: 'Top Categories',
@@ -59,7 +59,7 @@ const T = {
         return: 'Return', empty_cart: 'Cart is empty', empty_list: 'No records',
         login_failed: 'Invalid username or password', checkout_ok: 'Sale completed',
         checkout_fail: 'Checkout failed', product_ok: 'Product added', return_ok: 'Return processed',
-        expense_ok: 'Expense saved', convert_ok: 'Converted to order',
+        expense_ok: 'Expense saved', convert_ok: 'Confirmed — converted to order',
         today_sales: 'Today Sales', inventory_value: 'Inventory Value', total_items: 'Total Items',
         low_stock_count: 'Low Stock', orders_today: 'Orders Today',
         rep_sales: 'Sales', rep_cost: 'Cost', rep_expenses: 'Expenses', rep_profit: 'Profit',
@@ -79,7 +79,7 @@ const T = {
         quote_terms_head: 'TERMS AND CONDITIONS',
         quote_terms_body: '• Validity: 15 days from issue.\n• Payment due prior to delivery.\n• Acceptance indicates billing confirmation.\n\nAccepted By: __________________________',
         quote_tax_extras: 'Tax / Extras', grand_total: 'GRAND TOTAL', preview: 'Preview',
-        tool_backup: 'Backup', tool_about: 'About', backup_now: 'Create Backup',
+        tool_backup: 'Backup', tool_about: 'About', backup_now: 'Create Backup', factory_reset: 'Factory Delete', confirm_factory_1: 'Delete ALL data and reset the database? This cannot be undone.', confirm_factory_2: 'Final confirmation: wipe everything and start empty?', factory_ok: 'Database reset', factory_fail: 'Factory reset failed', backup_export_ok: 'Backup exported', backup_import_ok: 'Backup imported',
         open_backup_folder: 'Open Folder', backup_ok: 'Backup created', backup_fail: 'Backup failed',
         no_notifications: 'No notifications', clear_all_notifications: 'Clear all',
         clear_notification: 'Clear', confirm_clear_notifications: 'Clear all notifications?',
@@ -249,7 +249,7 @@ const T = {
         users_subtitle: 'الحسابات والصلاحيات', settings_subtitle: 'اللغة والترخيص والمظهر',
         recent_sales: 'أحدث المبيعات', add_product: 'إضافة منتج', add_expense: 'إضافة مصروف',
         search_ph: 'بحث...', cart_title: 'السلة', clear: 'مسح', subtotal: 'المجموع الفرعي', total: 'الإجمالي',
-        checkout: 'إتمام الدفع', cancel: 'إلغاء', save: 'حفظ', print: 'طباعة', convert: 'تحويل',
+        checkout: 'إتمام الدفع', cancel: 'إلغاء', save: 'حفظ', print: 'طباعة', convert: 'تأكيد',
         process_return: 'معالجة مرتجع', return_reason: 'السبب', return_reason_ph: 'مثال: تالف',
         confirm_return: 'تأكيد المرتجع', language: 'اللغة', license_info: 'الترخيص',
         top_products: 'أفضل المنتجات', best_selling: 'الأكثر مبيعاً', top_categories: 'أفضل الفئات', mark_paid: 'تعليم الدفع', paid: 'مدفوع', unpaid: 'غير مدفوع',
@@ -271,7 +271,7 @@ const T = {
         return: 'مرتجع', empty_cart: 'السلة فارغة', empty_list: 'لا توجد سجلات',
         login_failed: 'اسم المستخدم أو كلمة المرور غير صحيحة', checkout_ok: 'تمت عملية البيع',
         checkout_fail: 'فشل الدفع', product_ok: 'تمت إضافة المنتج', return_ok: 'تمت معالجة المرتجع',
-        expense_ok: 'تم حفظ المصروف', convert_ok: 'تم التحويل إلى طلب',
+        expense_ok: 'تم حفظ المصروف', convert_ok: 'تم التأكيد وتحويل العرض إلى طلب',
         today_sales: 'مبيعات اليوم', inventory_value: 'قيمة المخزون', total_items: 'إجمالي القطع',
         low_stock_count: 'مخزون منخفض', orders_today: 'طلبات اليوم',
         rep_sales: 'المبيعات', rep_cost: 'التكلفة', rep_expenses: 'المصروفات', rep_profit: 'الربح',
@@ -291,7 +291,7 @@ const T = {
         quote_terms_head: 'الشروط والأحكام',
         quote_terms_body: '• الصلاحية: 15 يوماً من تاريخ الإصدار.\n• الدفع مستحق قبل التسليم.\n• القبول يعني تأكيد الفوترة.\n\nتم القبول بواسطة: __________________________',
         quote_tax_extras: 'ضريبة / إضافات', grand_total: 'الإجمالي النهائي', preview: 'معاينة',
-        tool_backup: 'نسخ احتياطي', tool_about: 'حول', backup_now: 'إنشاء نسخة',
+        tool_backup: 'نسخ احتياطي', tool_about: 'حول', backup_now: 'إنشاء نسخة', factory_reset: 'حذف المصنع', confirm_factory_1: 'حذف كل البيانات وإعادة ضبط قاعدة البيانات؟ لا يمكن التراجع.', confirm_factory_2: 'تأكيد أخير: مسح كل شيء والبدء من صفر؟', factory_ok: 'تمت إعادة ضبط قاعدة البيانات', factory_fail: 'فشل حذف المصنع', backup_export_ok: 'تم تصدير النسخة', backup_import_ok: 'تم استيراد النسخة',
         open_backup_folder: 'فتح المجلد', backup_ok: 'تم إنشاء النسخة', backup_fail: 'فشل النسخ',
         no_notifications: 'لا توجد إشعارات', clear_all_notifications: 'مسح الكل',
         clear_notification: 'مسح', confirm_clear_notifications: 'مسح كل الإشعارات؟',
@@ -901,6 +901,8 @@ function renderAll() {
 }
 
 function stockBadge(p) {
+    if (p.isService || p.itemType === 'Service') return `<span class="badge service">${tr('type_service')}</span>`;
+    if (p.isStockTracked === false) return `<span class="badge in-stock">—</span>`;
     if (p.stock <= 0) return `<span class="badge out-of-stock">${tr('out_of_stock')}</span>`;
     if (p.stock <= (p.minStock || 0)) return `<span class="badge low-stock">${tr('low_stock')}</span>`;
     return `<span class="badge in-stock">${tr('in_stock')}</span>`;
@@ -1012,17 +1014,19 @@ function renderPOS() {
         const available = isPosProductAvailable(p);
         const stockLabel = formatPosStock(p);
         const byWeight = isSellByWeight(p);
+        const isService = p.isService || p.itemType === 'Service';
         const weightClass = byWeight ? ' is-weighed' : '';
         const selectedClass = (byWeight && lastTappedProductId === p.id) ? ' is-scale-selected' : '';
         const weighBtn = byWeight
             ? `<button type="button" class="btn-pos-weigh" data-weigh-id="${p.id}">${tr('weigh_btn')}</button>`
             : '';
-        return `<div class="pos-product-card ${available ? '' : 'is-out-of-stock'}${weightClass}${selectedClass}" data-id="${p.id}" data-available="${available ? '1' : '0'}">
+        const stockClass = !available ? 'pos-oos-label' : (isService ? 'pos-service-label' : '');
+        return `<div class="pos-product-card ${available ? '' : 'is-out-of-stock'}${weightClass}${selectedClass}${isService ? ' is-service' : ''}" data-id="${p.id}" data-available="${available ? '1' : '0'}">
             <div class="pos-product-image placeholder"><span class="material-symbols-rounded">inventory_2</span>
                 ${img ? `<img src="${escapeHtml(img)}" alt="" onload="this.parentElement.classList.remove('placeholder');this.previousElementSibling.style.display='none';" onerror="this.remove();">` : ''}
             </div>
             <h3>${escapeHtml(p.name)}</h3>
-            <p class="${available ? '' : 'pos-oos-label'}">${escapeHtml(stockLabel)}</p>
+            <p class="${stockClass}">${escapeHtml(stockLabel)}</p>
             <div class="price">${formatPosPrice(p)}</div>
             ${weighBtn}
         </div>`;
@@ -1544,6 +1548,7 @@ function historyColLabel(key) {
         email: 'col_email', Email: 'col_email', EMAIL: 'col_email',
         amount: 'col_amount', Amount: 'col_amount', AMOUNT: 'col_amount',
         description: 'col_desc', Description: 'col_desc', DESCRIPTION: 'col_desc',
+        payment: 'col_payment', Payment: 'col_payment', PAYMENT: 'col_payment',
     };
     const i18nKey = map[k] || map[k.toLowerCase()];
     return i18nKey ? tr(i18nKey) : k;
@@ -4352,12 +4357,54 @@ function setupTools() {
     document.querySelectorAll('[data-calc]').forEach(btn => {
         btn.addEventListener('click', () => calcPress(btn.getAttribute('data-calc')));
     });
-    document.getElementById('btn-do-backup')?.addEventListener('click', async () => {
+    document.getElementById('btn-backup-export')?.addEventListener('click', async () => {
         try {
-            await api('/api/backup/create', { method: 'POST', body: '{}' });
-            toast(tr('backup_ok'), 'success');
+            const res = await fetch(API + '/api/backup/export');
+            if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+            const blob = await res.blob();
+            const cd = res.headers.get('Content-Disposition') || '';
+            const m = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i.exec(cd);
+            const name = m ? m[1].replace(/['"]/g, '') : `backup_${Date.now()}.db`;
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            toast(tr('backup_export_ok'), 'success');
             openBackupModal();
-        } catch (e) { toast(e.message, 'error'); }
+        } catch (e) { toast(e.message || tr('backup_fail'), 'error'); }
+    });
+    document.getElementById('btn-backup-import')?.addEventListener('click', () => {
+        document.getElementById('backup-import-file')?.click();
+    });
+    document.getElementById('backup-import-file')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!await confirmDialog(tr('confirm_restore'), { danger: true, confirmText: tr('import') })) return;
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetch(API + '/api/backup/import', { method: 'POST', body: fd });
+            if (!res.ok) {
+                let err = res.statusText;
+                try { const j = await res.json(); err = j.error || j.title || err; } catch {}
+                throw new Error(err);
+            }
+            toast(tr('backup_import_ok'), 'success');
+            closeModal('backup-modal');
+            await loadData();
+        } catch (err) { toast(err.message, 'error'); }
+    });
+    document.getElementById('btn-backup-factory')?.addEventListener('click', async () => {
+        if (!await confirmDialog(tr('confirm_factory_1'), { danger: true, confirmText: tr('factory_reset') })) return;
+        if (!await confirmDialog(tr('confirm_factory_2'), { danger: true, confirmText: tr('factory_reset') })) return;
+        try {
+            await api('/api/backup/factory-reset', { method: 'POST', body: '{}' });
+            toast(tr('factory_ok'), 'success');
+            closeModal('backup-modal');
+            await loadData();
+        } catch (e) { toast(e.message || tr('factory_fail'), 'error'); }
     });
     document.getElementById('btn-open-backup')?.addEventListener('click', async () => {
         try { await api('/api/backup/open-folder', { method: 'POST', body: '{}' }); }

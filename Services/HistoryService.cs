@@ -32,16 +32,21 @@ namespace InventorySystem.Services
             return DatabaseHelper.ExecuteDataTable(sql);
         }
 
-        public DataTable GetOrderHistory()
+        public DataTable GetOrderHistory(bool unpaidOnly = false)
         {
-             string sql = @"
+             string payFilter = unpaidOnly
+                ? " AND LOWER(COALESCE(o.payment_status,'')) IN ('unpaid','pending') AND o.status != 'Draft' "
+                : "";
+             string sql = $@"
                 SELECT o.order_id as 'Order ID', o.order_date as 'Date', 
                        CAST(COALESCE(c.full_name, 'Walk-in') AS TEXT) as 'Customer', 
-                       o.total_amount as 'Total', o.status as 'Status', 
+                       o.total_amount as 'Total', o.status as 'Status',
+                       CAST(COALESCE(o.payment_status, 'Paid') AS TEXT) as 'Payment',
                        CAST((SELECT COUNT(*) FROM order_items i WHERE i.order_id = o.order_id) AS INTEGER) as 'Items'
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
                 WHERE o.status != 'Quotation' AND o.status != 'Draft'
+                {payFilter}
                 ORDER BY o.order_date DESC";
              return DatabaseHelper.ExecuteDataTable(sql);
         }

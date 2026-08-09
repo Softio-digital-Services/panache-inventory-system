@@ -1231,6 +1231,8 @@ namespace InventorySystem
                             "inventory" => svc.GetInventoryLogs(),
                             "customers" => svc.GetCustomerHistory(),
                             "orders" => svc.GetOrderHistory(),
+                            "all" => svc.GetOrderHistory(),
+                            "pay_later" => svc.GetOrderHistory(unpaidOnly: true),
                             "quotations" => svc.GetQuotationHistory(),
                             "suppliers" => svc.GetSupplierHistory(),
                             _ => svc.GetOrderHistory()
@@ -1997,6 +1999,77 @@ namespace InventorySystem
                             System.IO.File.Copy(dbFile, safety, true);
                         System.IO.File.Copy(src, dbFile, true);
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, restored = safe, safetyCopy = safety });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapGet("/api/backup/export", () =>
+                {
+                    try
+                    {
+                        string dir = GetWebBackupDirectory();
+                        System.IO.Directory.CreateDirectory(dir);
+                        string dbFile = DatabaseConfig.DatabasePath;
+                        if (!System.IO.File.Exists(dbFile))
+                            return Microsoft.AspNetCore.Http.Results.NotFound(new { error = "Database not found" });
+                        string name = $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.db";
+                        string dest = System.IO.Path.Combine(dir, name);
+                        System.IO.File.Copy(dbFile, dest, true);
+                        System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
+                        var bytes = System.IO.File.ReadAllBytes(dest);
+                        return Microsoft.AspNetCore.Http.Results.File(bytes, "application/octet-stream", name);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        if (!request.HasFormContentType)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Expected multipart form" });
+                        var form = await request.ReadFormAsync();
+                        var file = form.Files.FirstOrDefault();
+                        if (file == null || file.Length == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No file uploaded" });
+                        string dir = GetWebBackupDirectory();
+                        System.IO.Directory.CreateDirectory(dir);
+                        string name = $"backup_import_{DateTime.Now:yyyyMMdd_HHmmss}.db";
+                        string dest = System.IO.Path.Combine(dir, name);
+                        await using (var fs = System.IO.File.Create(dest))
+                            await file.CopyToAsync(fs);
+                        string dbFile = DatabaseConfig.DatabasePath;
+                        string safety = System.IO.Path.Combine(dir, $"pre_import_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                        if (System.IO.File.Exists(dbFile))
+                            System.IO.File.Copy(dbFile, safety, true);
+                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                        System.IO.File.Copy(dest, dbFile, true);
+                        System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "last_backup.txt"), DateTime.Now.ToString("o"));
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, file = name, safetyCopy = safety });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/backup/factory-reset", () =>
+                {
+                    try
+                    {
+                        string dir = GetWebBackupDirectory();
+                        System.IO.Directory.CreateDirectory(dir);
+                        string dbFile = DatabaseConfig.DatabasePath;
+                        if (System.IO.File.Exists(dbFile))
+                        {
+                            string safety = System.IO.Path.Combine(dir, $"pre_factory_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+                            System.IO.File.Copy(dbFile, safety, true);
+                        }
+                        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                        if (System.IO.File.Exists(dbFile))
+                            System.IO.File.Delete(dbFile);
+                        string dataDir = System.IO.Path.GetDirectoryName(dbFile);
+                        if (!string.IsNullOrEmpty(dataDir))
+                            System.IO.Directory.CreateDirectory(dataDir);
+                        DatabaseHelper.EnsureSchema();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
