@@ -14,7 +14,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="css/style.css?v=20260807c">
+    <link rel="stylesheet" href="css/style.css?v=20260809green">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" defer></script>
 </head>
 <body>
@@ -135,7 +135,7 @@
             <section id="dashboard" class="view-section active">
                 <div class="page-header">
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-dashboard"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-dashboard"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                     </div>
                 </div>
                 <div class="dash-top-grid">
@@ -195,14 +195,14 @@
                     <div class="search-box"><span class="material-symbols-rounded">search</span>
                         <input type="text" id="inv-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-inventory"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
-                        <button class="btn btn-secondary" id="btn-add-category" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="add_category">Add Category</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-inventory"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-add" id="btn-add-category" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="add_category">Add Category</span></button>
                         <button class="btn btn-secondary" id="btn-manage-categories" data-roles="admin"><span class="material-symbols-rounded">tune</span><span data-i18n="manage_categories">Manage Categories</span></button>
                         <button class="btn btn-secondary" id="btn-import-inventory" data-roles="admin"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <input type="file" id="inv-import-file" accept=".csv,text/csv" hidden>
                         <button class="btn btn-secondary" id="btn-export-inventory"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
-                        <button class="btn btn-danger" id="btn-bulk-delete-inventory" data-roles="admin" hidden><span class="material-symbols-rounded">delete_sweep</span><span data-i18n="bulk_delete">Bulk Delete</span></button>
-                        <button class="btn btn-primary" id="btn-add-product" data-roles="admin"><span class="material-symbols-rounded">add</span><span data-i18n="add_product">Add Product</span></button>
+                        <button class="btn btn-delete" id="btn-bulk-delete-inventory" data-roles="admin" hidden><span class="material-symbols-rounded">delete_sweep</span><span data-i18n="bulk_delete">Bulk Delete</span></button>
+                        <button class="btn btn-add" id="btn-add-product" data-roles="admin"><span class="material-symbols-rounded">add</span><span data-i18n="add_product">Add Product</span></button>
                     </div>
                 </div>
                 <div class="filter-bar inv-toolbar-row">
@@ -241,7 +241,7 @@
                             </div>
                             <div class="page-actions">
                                 <button type="button" class="btn btn-secondary" id="btn-manage-drafts" data-i18n="manage_drafts">Manage Drafts</button>
-                                <button type="button" class="btn btn-primary" id="btn-add-shipping" data-i18n="add_shipping">Add Shipping Details</button>
+                                <button type="button" class="btn btn-add" id="btn-add-shipping" data-i18n="add_shipping">Add Shipping Details</button>
                             </div>
                         </div>
                         <div class="pos-scale-row">
@@ -428,7 +428,9 @@
             <section id="sales" class="view-section">
                 <div class="page-header">
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-sales"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-sales"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="sales-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary" id="btn-import-sales"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <button class="btn btn-secondary" id="btn-export-sales"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                     </div>
                 </div>
@@ -440,8 +442,8 @@
             </section>
 
             <section id="reports" class="view-section">
-                <div class="page-header">
-                    <div class="page-actions report-filters">
+                <div class="page-header report-page-header">
+                    <div class="report-filters">
                         <select id="report-preset" class="form-control report-filter-control" aria-label="Preset">
                             <option value="Daily" data-i18n="preset_daily">Daily</option>
                             <option value="Weekly" data-i18n="preset_weekly">Weekly</option>
@@ -457,7 +459,11 @@
                             <span data-i18n="date_to">To</span>
                             <input type="date" id="report-to" class="form-control report-filter-control">
                         </label>
-                        <button class="btn btn-secondary" id="btn-refresh-reports"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                    </div>
+                    <div class="page-actions report-actions">
+                        <button class="btn btn-refresh" id="btn-refresh-reports"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="reports-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary" id="btn-import-reports"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <button class="btn btn-secondary" id="btn-export-reports"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                     </div>
                 </div>
@@ -482,7 +488,9 @@
                             <option value="suppliers" data-i18n="nav_suppliers">Suppliers</option>
                             <option value="quotations" data-i18n="nav_quotations">Quotations</option>
                         </select>
-                        <button class="btn btn-secondary" id="btn-refresh-history"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-history"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <input type="file" id="history-import-file" accept=".csv,text/csv" hidden>
+                        <button class="btn btn-secondary" id="btn-import-history"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                         <button class="btn btn-secondary" id="btn-export-history"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                     </div>
                 </div>
@@ -492,7 +500,7 @@
             <section id="quotations" class="view-section">
                 <div class="page-header">
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-quotations"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-quotations"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -507,11 +515,11 @@
                         <input type="text" id="cust-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
                     <div class="page-actions">
                         <button class="btn btn-secondary" id="btn-filter-debt" data-i18n="filter_with_debt">With debt</button>
-                        <button class="btn btn-secondary" id="btn-refresh-customers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-customers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <input type="file" id="cust-import-file" accept=".csv,text/csv" hidden>
                         <button class="btn btn-secondary" id="btn-export-customers"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                         <button class="btn btn-secondary" id="btn-import-customers"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
-                        <button class="btn btn-primary" id="btn-add-customer"><span class="material-symbols-rounded">add</span><span data-i18n="add_customer">Add Customer</span></button>
+                        <button class="btn btn-add" id="btn-add-customer"><span class="material-symbols-rounded">add</span><span data-i18n="add_customer">Add Customer</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -526,11 +534,11 @@
                     <div class="search-box"><span class="material-symbols-rounded">search</span>
                         <input type="text" id="supp-search" class="form-control" data-i18n-ph="search_ph" placeholder="Search..."></div>
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-suppliers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-suppliers"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <input type="file" id="supp-import-file" accept=".csv,text/csv" hidden>
                         <button class="btn btn-secondary" id="btn-export-suppliers"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                         <button class="btn btn-secondary" id="btn-import-suppliers"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
-                        <button class="btn btn-primary" id="btn-add-supplier"><span class="material-symbols-rounded">add</span><span data-i18n="add_supplier">Add Supplier</span></button>
+                        <button class="btn btn-add" id="btn-add-supplier"><span class="material-symbols-rounded">add</span><span data-i18n="add_supplier">Add Supplier</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -544,9 +552,9 @@
                 <div class="page-header">
                     <div class="page-actions">
                         <button class="btn btn-secondary" id="btn-manage-exp-cats" data-roles="admin"><span class="material-symbols-rounded">category</span><span data-i18n="manage_categories">Manage Categories</span></button>
-                        <button class="btn btn-secondary" id="btn-refresh-expenses"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-expenses"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <button class="btn btn-secondary" id="btn-export-expenses"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
-                        <button class="btn btn-primary" id="btn-add-expense"><span class="material-symbols-rounded">add</span><span data-i18n="add_expense">Add Expense</span></button>
+                        <button class="btn btn-add" id="btn-add-expense"><span class="material-symbols-rounded">add</span><span data-i18n="add_expense">Add Expense</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -559,8 +567,8 @@
             <section id="currencies" class="view-section">
                 <div class="page-header">
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-rates"><span class="material-symbols-rounded">sync</span><span data-i18n="refresh_rates">Refresh Rates</span></button>
-                        <button class="btn btn-primary" id="btn-add-currency"><span class="material-symbols-rounded">add</span><span data-i18n="add_currency">Add Currency</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-rates"><span class="material-symbols-rounded">sync</span><span data-i18n="refresh_rates">Refresh Rates</span></button>
+                        <button class="btn btn-add" id="btn-add-currency"><span class="material-symbols-rounded">add</span><span data-i18n="add_currency">Add Currency</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -579,7 +587,7 @@
                             <input type="checkbox" id="bar-select-all">
                             <span data-i18n="select_all">Select all</span>
                         </label>
-                        <button class="btn btn-secondary" id="btn-refresh-barcodes"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-barcodes"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
                         <button class="btn btn-primary" id="btn-print-barcodes"><span class="material-symbols-rounded">print</span><span data-i18n="print">Print</span></button>
                     </div>
                 </div>
@@ -589,8 +597,8 @@
             <section id="users" class="view-section">
                 <div class="page-header">
                     <div class="page-actions">
-                        <button class="btn btn-secondary" id="btn-refresh-users"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
-                        <button class="btn btn-primary" id="btn-add-user"><span class="material-symbols-rounded">add</span><span data-i18n="add_user">Add User</span></button>
+                        <button class="btn btn-refresh" id="btn-refresh-users"><span class="material-symbols-rounded">refresh</span><span data-i18n="refresh">Refresh</span></button>
+                        <button class="btn btn-add" id="btn-add-user"><span class="material-symbols-rounded">add</span><span data-i18n="add_user">Add User</span></button>
                     </div>
                 </div>
                 <div class="card table-wrapper"><table><thead><tr>
@@ -699,13 +707,16 @@
                             <div class="form-group"><label data-i18n="shelf">Shelf</label><input class="form-control" id="p-shelf"></div>
                             <div class="form-group" id="p-uom-group">
                                 <label data-i18n="uom">Unit of Measure</label>
-                                <select class="form-control" id="p-uom">
-                                    <option value="pcs">pcs</option>
-                                    <option value="box">box</option>
-                                    <option value="pack">pack</option>
-                                    <option value="meter">meter</option>
-                                    <option value="liter">liter</option>
-                                </select>
+                                <div class="p-uom-row">
+                                    <select class="form-control" id="p-uom">
+                                        <option value="pcs">pcs</option>
+                                        <option value="box">box</option>
+                                        <option value="pack">pack</option>
+                                        <option value="meter">meter</option>
+                                        <option value="liter">liter</option>
+                                    </select>
+                                    <button type="button" class="btn btn-add btn-sm p-uom-add" id="btn-p-add-uom" title="Add unit" data-i18n-title="add_uom">+</button>
+                                </div>
                                 <small class="form-hint" id="p-uom-hint" data-i18n="uom_piece_hint">pcs / box / pack — price is per one unit</small>
                             </div>
                         </div>
@@ -923,7 +934,7 @@
                 <button type="button" class="btn btn-primary" id="btn-backup-export"><span class="material-symbols-rounded">upload</span><span data-i18n="export">Export</span></button>
                 <button type="button" class="btn btn-secondary" id="btn-backup-import"><span class="material-symbols-rounded">download</span><span data-i18n="import">Import</span></button>
                 <input type="file" id="backup-import-file" accept=".db,application/octet-stream" hidden>
-                <button type="button" class="btn btn-danger" id="btn-backup-factory" data-i18n="factory_reset">Factory Delete</button>
+                <button type="button" class="btn btn-delete" id="btn-backup-factory" data-i18n="factory_reset">Factory Delete</button>
                 <button type="button" class="btn btn-secondary" id="btn-open-backup" data-i18n="open_backup_folder">Open Folder</button>
             </div>
             <div id="backup-files" class="backup-files" style="margin-top:1rem;"></div>
@@ -1408,7 +1419,21 @@ Accepted By: __________________________</p>
             <p id="confirm-message" class="confirm-message"></p>
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" id="confirm-cancel" data-i18n="cancel">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirm-ok" data-i18n="delete">Delete</button>
+                <button type="button" class="btn btn-delete" id="confirm-ok" data-i18n="delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay confirm-modal-overlay" id="prompt-modal">
+        <div class="modal modal-sm confirm-modal">
+            <div class="modal-header"><h2 id="prompt-title" data-i18n="add_uom">Add Unit of Measure</h2></div>
+            <p id="prompt-message" class="confirm-message" data-i18n="add_uom_hint">Enter a custom unit name (e.g. carton, dozen).</p>
+            <div class="form-group" style="margin: 0 0 1rem;">
+                <input type="text" class="form-control" id="prompt-input" maxlength="32" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="prompt-cancel" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn-add" id="prompt-ok" data-i18n="add">Add</button>
             </div>
         </div>
     </div>
@@ -1431,6 +1456,6 @@ Accepted By: __________________________</p>
 
     <div id="toast" class="toast"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script src="app.js?v=20260807c" charset="utf-8"></script>
+    <script src="app.js?v=20260809green" charset="utf-8"></script>
 </body>
 </html>

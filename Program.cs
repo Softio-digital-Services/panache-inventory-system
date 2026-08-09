@@ -1414,6 +1414,76 @@ namespace InventorySystem
                     catch { return Microsoft.AspNetCore.Http.Results.Ok(new[] { "Rent", "Utilities", "Salaries", "Supplies", "Other" }); }
                 });
 
+                // - Units of measure (defaults + custom + used on products) -
+                app.MapGet("/api/uoms", () =>
+                {
+                    try
+                    {
+                        var defaults = new[] { "pcs", "box", "pack", "meter", "liter", "g", "kg" };
+                        var set = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var d in defaults) set.Add(d);
+
+                        try
+                        {
+                            var custom = DatabaseHelper.ExecuteDataTable(
+                                "SELECT unit_name FROM units_of_measure ORDER BY unit_name");
+                            foreach (System.Data.DataRow row in custom.Rows)
+                            {
+                                string n = row["unit_name"]?.ToString()?.Trim();
+                                if (!string.IsNullOrEmpty(n)) set.Add(n);
+                            }
+                        }
+                        catch { }
+
+                        try
+                        {
+                            var used = DatabaseHelper.ExecuteDataTable(
+                                @"SELECT DISTINCT TRIM(unit_of_measure) AS uom
+                                  FROM parts
+                                  WHERE date_deleted IS NULL
+                                    AND unit_of_measure IS NOT NULL
+                                    AND TRIM(unit_of_measure) != ''
+                                  ORDER BY uom");
+                            foreach (System.Data.DataRow row in used.Rows)
+                            {
+                                string n = row["uom"]?.ToString()?.Trim();
+                                if (!string.IsNullOrEmpty(n)) set.Add(n);
+                            }
+                        }
+                        catch { }
+
+                        var list = set.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/uoms", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        using var doc = await System.Text.Json.JsonDocument.ParseAsync(request.Body);
+                        string name = doc.RootElement.TryGetProperty("name", out var n) ? n.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+
+                        name = name.Trim();
+                        if (name.Length > 32)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Unit name too long" });
+
+                        int exists = DatabaseHelper.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM units_of_measure WHERE unit_name = @n COLLATE NOCASE",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@n", name));
+                        if (exists == 0)
+                            DatabaseHelper.ExecuteNonQuery(
+                                "INSERT INTO units_of_measure (unit_name) VALUES (@n)",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@n", name));
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, name });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
                 // - Barcode items -
                 app.MapGet("/api/barcode/items", () =>
                 {
@@ -1793,6 +1863,134 @@ namespace InventorySystem
                 app.MapPost("/api/quotations/{id:int}/delete", (int id) =>
                 {
                     try { new OrderService().DeleteOrder(id); return Microsoft.AspNetCore.Http.Results.Ok(new { success = true }); }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Sales / History / Reports CSV import -
+                app.MapPost("/api/sales/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var rows = await System.Text.Json.JsonSerializer.DeserializeAsync<System.Collections.Generic.List<SaleImportRow>>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (rows == null || rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        int imported = 0;
+                        foreach (var row in rows)
+                        {
+                            if (row == null || row.Total <= 0) continue;
+                            if (ImportHistoricalSale(row)) imported++;
+                        }
+                        if (imported > 0) GlobalEvents.RaiseOrdersUpdated();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, imported });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/history/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var rows = await System.Text.Json.JsonSerializer.DeserializeAsync<System.Collections.Generic.List<HistoryImportRow>>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (rows == null || rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        int imported = 0;
+                        int salesImported = 0;
+                        foreach (var row in rows)
+                        {
+                            if (row == null) continue;
+
+                            // Order-shaped history export → create completed sales
+                            if (row.Total > 0 && (!string.IsNullOrWhiteSpace(row.Customer) || !string.IsNullOrWhiteSpace(row.Date)))
+                            {
+                                if (ImportHistoricalSale(new SaleImportRow
+                                {
+                                    Customer = row.Customer,
+                                    Total = row.Total,
+                                    Date = row.Date,
+                                    Payment = row.Payment ?? row.Status
+                                }))
+                                {
+                                    salesImported++;
+                                    imported++;
+                                }
+                                continue;
+                            }
+
+                            string action = string.IsNullOrWhiteSpace(row.Action) ? "IMPORT" : row.Action.Trim();
+                            string item = string.IsNullOrWhiteSpace(row.Item) ? (row.Customer ?? "Import") : row.Item.Trim();
+                            string details = row.Details ?? row.Description ?? "";
+                            string user = string.IsNullOrWhiteSpace(row.User) ? "Import" : row.User.Trim();
+                            string ts = NormalizeImportDate(row.Date) ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                            DatabaseHelper.ExecuteNonQuery(
+                                @"INSERT INTO transactions (action_type, part_name, description, username, timestamp)
+                                  VALUES (@a, @p, @d, @u, @t)",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@a", action),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@p", item),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@d", details),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@u", user),
+                                new Microsoft.Data.Sqlite.SqliteParameter("@t", ts));
+                            imported++;
+                        }
+                        if (salesImported > 0) GlobalEvents.RaiseOrdersUpdated();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, imported, salesImported });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/reports/import", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var rows = await System.Text.Json.JsonSerializer.DeserializeAsync<System.Collections.Generic.List<ReportImportRow>>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (rows == null || rows.Count == 0)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "No rows" });
+
+                        int imported = 0;
+                        int salesImported = 0;
+                        foreach (var row in rows)
+                        {
+                            if (row == null) continue;
+
+                            // Top-products export → historical sale per product line
+                            decimal salesAmt = row.Sales > 0 ? row.Sales : row.Total;
+                            if (!string.IsNullOrWhiteSpace(row.Name) && salesAmt > 0)
+                            {
+                                if (ImportHistoricalSale(new SaleImportRow
+                                {
+                                    Customer = "Walk-in",
+                                    Total = salesAmt,
+                                    Date = row.Date,
+                                    Payment = "Paid"
+                                }))
+                                {
+                                    DatabaseHelper.LogTransaction("REPORT_IMPORT", row.Name.Trim(),
+                                        $"Imported report line qty={row.Qty}, sales={salesAmt}, profit={row.Profit}");
+                                    salesImported++;
+                                    imported++;
+                                }
+                                continue;
+                            }
+
+                            // Summary metric/value export → audit log entry
+                            if (!string.IsNullOrWhiteSpace(row.Metric))
+                            {
+                                DatabaseHelper.ExecuteNonQuery(
+                                    @"INSERT INTO transactions (action_type, part_name, description, username, timestamp)
+                                      VALUES ('REPORT_IMPORT', @m, @v, 'Import', datetime('now'))",
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@m", row.Metric.Trim()),
+                                    new Microsoft.Data.Sqlite.SqliteParameter("@v", row.Value ?? ""));
+                                imported++;
+                            }
+                        }
+                        if (salesImported > 0) GlobalEvents.RaiseOrdersUpdated();
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, imported, salesImported });
+                    }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
@@ -2297,6 +2495,115 @@ namespace InventorySystem
             public string RecordedBy { get; set; }
             public bool IsPaid { get; set; }
             public bool IsRecurring { get; set; }
+        }
+
+        private class SaleImportRow
+        {
+            public string Customer { get; set; }
+            public decimal Total { get; set; }
+            public string Date { get; set; }
+            public string Payment { get; set; }
+            public string PaymentStatus { get; set; }
+        }
+
+        private class HistoryImportRow
+        {
+            public string Date { get; set; }
+            public string Action { get; set; }
+            public string Item { get; set; }
+            public string Customer { get; set; }
+            public string Details { get; set; }
+            public string Description { get; set; }
+            public string User { get; set; }
+            public string Status { get; set; }
+            public string Payment { get; set; }
+            public decimal Total { get; set; }
+        }
+
+        private class ReportImportRow
+        {
+            public string Name { get; set; }
+            public decimal Qty { get; set; }
+            public decimal Sales { get; set; }
+            public decimal Profit { get; set; }
+            public decimal Total { get; set; }
+            public string Date { get; set; }
+            public string Metric { get; set; }
+            public string Value { get; set; }
+        }
+
+        private static string NormalizeImportDate(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            if (DateTime.TryParse(raw, out var dt))
+                return dt.ToString("yyyy-MM-dd HH:mm:ss");
+            return null;
+        }
+
+        /// <summary>
+        /// Inserts a completed historical sale without touching stock levels.
+        /// Used by Sales / History / Reports CSV import.
+        /// </summary>
+        private static bool ImportHistoricalSale(SaleImportRow row)
+        {
+            if (row == null || row.Total <= 0) return false;
+
+            string customerName = (row.Customer ?? "").Trim();
+            bool walkIn = string.IsNullOrEmpty(customerName)
+                || customerName.Equals("Walk-in", StringComparison.OrdinalIgnoreCase)
+                || customerName.Equals("Cash Customer", StringComparison.OrdinalIgnoreCase)
+                || customerName.Equals("Walk-in Customer", StringComparison.OrdinalIgnoreCase);
+
+            int? customerId = null;
+            if (!walkIn)
+            {
+                var found = DatabaseHelper.ExecuteScalar<object>(
+                    "SELECT customer_id FROM customers WHERE full_name = @n COLLATE NOCASE LIMIT 1",
+                    new Microsoft.Data.Sqlite.SqliteParameter("@n", customerName));
+                if (found != null && found != DBNull.Value)
+                    customerId = Convert.ToInt32(found);
+                else
+                    customerId = new CustomerService().AddCustomer(customerName, "", "", "", "Regular");
+            }
+
+            string payRaw = (row.Payment ?? row.PaymentStatus ?? "Paid").Trim();
+            bool isPaid = !payRaw.Equals("Unpaid", StringComparison.OrdinalIgnoreCase)
+                && !payRaw.Equals("Pending", StringComparison.OrdinalIgnoreCase);
+            string paymentStatus = isPaid ? "Paid" : "Unpaid";
+            decimal amountPaid = isPaid ? row.Total : 0;
+            string orderDate = NormalizeImportDate(row.Date) ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            if (customerId.HasValue)
+            {
+                DatabaseHelper.ExecuteNonQuery(
+                    @"INSERT INTO orders (order_date, customer_id, total_amount, status, payment_status, amount_paid)
+                      VALUES (@d, @c, @t, 'Completed', @p, @a)",
+                    new Microsoft.Data.Sqlite.SqliteParameter("@d", orderDate),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@c", customerId.Value),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@t", row.Total),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@p", paymentStatus),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@a", amountPaid));
+
+                if (!isPaid)
+                {
+                    DatabaseHelper.ExecuteNonQuery(
+                        "UPDATE customers SET current_balance = current_balance + @t WHERE customer_id = @c",
+                        new Microsoft.Data.Sqlite.SqliteParameter("@t", row.Total),
+                        new Microsoft.Data.Sqlite.SqliteParameter("@c", customerId.Value));
+                }
+            }
+            else
+            {
+                DatabaseHelper.ExecuteNonQuery(
+                    @"INSERT INTO orders (order_date, total_amount, status, payment_status, amount_paid)
+                      VALUES (@d, @t, 'Completed', @p, @a)",
+                    new Microsoft.Data.Sqlite.SqliteParameter("@d", orderDate),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@t", row.Total),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@p", paymentStatus),
+                    new Microsoft.Data.Sqlite.SqliteParameter("@a", amountPaid));
+            }
+
+            return true;
         }
 
         private static System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>> DataTableToList(System.Data.DataTable dt)

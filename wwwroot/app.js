@@ -70,7 +70,7 @@ const T = {
         refresh: 'Refresh', add_category: 'Add Category', add_customer: 'Add Customer',
         add_supplier: 'Add Supplier', add_user: 'Add User', add_currency: 'Add Currency',
         edit: 'Edit', delete: 'Delete', confirm_delete: 'Delete this record?', confirm_title: 'Please confirm', confirm_btn: 'Confirm', import: 'Import',
-        refresh_rates: 'Refresh Rates', view: 'View', deleted_ok: 'Deleted', saved_ok: 'Saved',
+        refresh_rates: 'Refresh Rates', view: 'View', deleted_ok: 'Deleted', saved_ok: 'Saved', import_ok: 'Imported',
         view_order: 'View Order', col_address: 'Address', edit_product: 'Edit Product',
         quote_preview_title: 'Quotation Preview', quote_preview_quote: 'QUOTATION',
         quote_preview_cust_header: 'Customer Details', quote_col_photo: 'Photo', quote_col_desc: 'Item Description',
@@ -181,7 +181,10 @@ const T = {
         upload_image: 'Upload Image', change_image: 'Change', remove_image: 'Remove',
         settings: 'Settings', sales_item: 'Sales item', purchase_item: 'Purchase item', inactive: 'Inactive',
         tax_rate: 'Tax Rate', expiry_date: 'Expiry Date', auto_sku: 'Auto', scan: 'Scan', batch_no: 'Batch No.',
-        shelf: 'Shelf', uom: 'Unit of Measure', stock_control: 'Stock control', track_stock: 'Track stock',
+        shelf: 'Shelf', uom: 'Unit of Measure', add_uom: 'Add Unit of Measure',
+        add_uom_hint: 'Enter a custom unit name (e.g. carton, dozen).',
+        uom_added: 'Unit added', uom_exists: 'Unit already exists', add: 'Add',
+        stock_control: 'Stock control', track_stock: 'Track stock',
         low_level: 'Low level', prices: 'Prices', price_level: 'Level', gross_pct: 'Gross %',
         price1: 'Price 1', price2: 'Price 2', price3: 'Price 3', price4: 'Price 4',
         add_service: 'Add Service', edit_service: 'Edit Service', credit_limit: 'Credit Limit',
@@ -282,7 +285,7 @@ const T = {
         refresh: 'تحديث', add_category: 'إضافة فئة', add_customer: 'إضافة عميل',
         add_supplier: 'إضافة مورد', add_user: 'إضافة مستخدم', add_currency: 'إضافة عملة',
         edit: 'تعديل', delete: 'حذف', confirm_delete: 'حذف هذا السجل؟', confirm_title: 'يرجى التأكيد', confirm_btn: 'تأكيد', import: 'استيراد',
-        refresh_rates: 'تحديث الأسعار', view: 'عرض', deleted_ok: 'تم الحذف', saved_ok: 'تم الحفظ',
+        refresh_rates: 'تحديث الأسعار', view: 'عرض', deleted_ok: 'تم الحذف', saved_ok: 'تم الحفظ', import_ok: 'تم الاستيراد',
         view_order: 'عرض الطلب', col_address: 'العنوان', edit_product: 'تعديل المنتج',
         quote_preview_title: 'معاينة عرض السعر', quote_preview_quote: 'عرض سعر',
         quote_preview_cust_header: 'تفاصيل العميل', quote_col_photo: 'صورة', quote_col_desc: 'وصف الصنف',
@@ -390,7 +393,10 @@ const T = {
         scale_manual_set: 'يدوي {0} {1}',
         settings: 'الإعدادات', sales_item: 'عنصر مبيعات', purchase_item: 'عنصر مشتريات', inactive: 'غير نشط',
         tax_rate: 'نسبة الضريبة', expiry_date: 'تاريخ الانتهاء', auto_sku: 'تلقائي', scan: 'مسح', batch_no: 'رقم الدفعة',
-        shelf: 'الرف', uom: 'وحدة القياس', stock_control: 'التحكم بالمخزون', track_stock: 'تتبع المخزون',
+        shelf: 'الرف', uom: 'وحدة القياس', add_uom: 'إضافة وحدة قياس',
+        add_uom_hint: 'أدخل اسم وحدة مخصصة (مثل كرتون، دستة).',
+        uom_added: 'تمت إضافة الوحدة', uom_exists: 'الوحدة موجودة مسبقاً', add: 'إضافة',
+        stock_control: 'التحكم بالمخزون', track_stock: 'تتبع المخزون',
         low_level: 'الحد الأدنى', prices: 'الأسعار', price_level: 'المستوى', gross_pct: 'الإجمالي %',
         price1: 'السعر 1', price2: 'السعر 2', price3: 'السعر 3', price4: 'السعر 4',
         add_service: 'إضافة خدمة', edit_service: 'تعديل الخدمة', credit_limit: 'حد الائتمان',
@@ -551,10 +557,49 @@ const exportCsv = (rows, filename) => {
     URL.revokeObjectURL(a.href);
 };
 
+function parseCsvLine(line) {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQ) {
+            if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+            else if (ch === '"') inQ = false;
+            else cur += ch;
+        } else if (ch === '"') inQ = true;
+        else if (ch === ',') { cols.push(cur); cur = ''; }
+        else cur += ch;
+    }
+    cols.push(cur);
+    return cols;
+}
+
+async function parseCsvFile(file) {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return { headers: [], rows: [] };
+    const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+    const rows = lines.slice(1).map(line => {
+        const cols = parseCsvLine(line);
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = (cols[i] ?? '').trim(); });
+        return obj;
+    });
+    return { headers, rows };
+}
+
+function csvCell(row, ...keys) {
+    for (const k of keys) {
+        const key = String(k || '').toLowerCase();
+        if (row[key] != null && String(row[key]).trim() !== '') return String(row[key]).trim();
+    }
+    return '';
+}
+
 const actionBtns = (editAttr, deleteAttr, extra = '') => `<div class="table-actions">
     ${extra}
-    <button type="button" class="btn-icon" title="${tr('edit')}" ${editAttr}><span class="material-symbols-rounded">edit</span></button>
-    <button type="button" class="btn-icon btn-icon-danger" title="${tr('delete')}" ${deleteAttr}><span class="material-symbols-rounded">delete</span></button>
+    <button type="button" class="btn-icon btn-icon-edit" title="${tr('edit')}" ${editAttr}><span class="material-symbols-rounded">edit</span></button>
+    <button type="button" class="btn-icon btn-icon-delete" title="${tr('delete')}" ${deleteAttr}><span class="material-symbols-rounded">delete</span></button>
 </div>`;
 
 const tr = (k) => (T[lang] && T[lang][k]) || T.en[k] || String(k || '').replace(/_/g, ' ');
@@ -773,6 +818,7 @@ async function loadData() {
         try { users = await api('/api/users'); } catch { users = []; }
     }
     try { barcodeItems = await api('/api/barcode/items'); } catch { barcodeItems = products.map(x => ({ id: x.id, name: x.name, sku: x.sku, price: x.price, barcode: x.barcode, stock: x.stock })); }
+    await loadUoms();
     await loadLicense();
     await loadConnectInfo();
     renderAll();
@@ -2451,27 +2497,154 @@ function getSellByValue() {
     return document.querySelector('input[name="p-sell-by"]:checked')?.value || 'piece';
 }
 
-const PIECE_UOM_OPTIONS = [
-    { value: 'pcs', label: 'pcs' },
-    { value: 'box', label: 'box' },
-    { value: 'pack', label: 'pack' },
-    { value: 'meter', label: 'meter' },
-    { value: 'liter', label: 'liter' }
-];
+const DEFAULT_PIECE_UOMS = ['pcs', 'box', 'pack', 'meter', 'liter', 'g'];
+let cachedUoms = [...DEFAULT_PIECE_UOMS];
+
+async function loadUoms() {
+    try {
+        const list = await api('/api/uoms');
+        if (Array.isArray(list) && list.length) {
+            cachedUoms = list.map(x => String(x || '').trim()).filter(Boolean);
+        }
+    } catch {
+        // Keep cached/default list if API unavailable
+    }
+    return cachedUoms;
+}
+
+function getPieceUomOptions() {
+    const set = new Set(DEFAULT_PIECE_UOMS.map(u => u.toLowerCase()));
+    const extras = [];
+    for (const u of cachedUoms) {
+        const key = String(u || '').trim();
+        if (!key || key.toLowerCase() === 'kg') continue;
+        if (set.has(key.toLowerCase())) continue;
+        set.add(key.toLowerCase());
+        extras.push(key);
+    }
+    // Also include units already used on loaded products
+    for (const p of (products || [])) {
+        const key = String(p?.uom || '').trim();
+        if (!key || key.toLowerCase() === 'kg') continue;
+        if (set.has(key.toLowerCase())) continue;
+        set.add(key.toLowerCase());
+        extras.push(key);
+    }
+    extras.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    return [...DEFAULT_PIECE_UOMS, ...extras].map(v => ({ value: v, label: v }));
+}
 
 function setProductUomOptions(byWeight, preferred) {
     const uom = document.getElementById('p-uom');
+    const addBtn = document.getElementById('btn-p-add-uom');
     if (!uom) return;
     const prev = preferred != null ? preferred : uom.value;
+    const isService = getProductTypeValue() === 'Service';
     if (byWeight) {
         uom.innerHTML = '<option value="kg">kg</option>';
         uom.value = 'kg';
         uom.disabled = true;
+        if (addBtn) addBtn.hidden = true;
     } else {
-        uom.innerHTML = PIECE_UOM_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        let opts = getPieceUomOptions();
+        const prevKey = String(prev || '').trim();
+        if (prevKey && !opts.some(o => o.value.toLowerCase() === prevKey.toLowerCase())) {
+            opts = [...opts, { value: prevKey, label: prevKey }];
+        }
+        uom.innerHTML = opts.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('');
         uom.disabled = false;
-        const ok = PIECE_UOM_OPTIONS.map(o => o.value);
-        uom.value = ok.includes(prev) ? prev : 'pcs';
+        if (addBtn) addBtn.hidden = isService;
+        const match = opts.find(o => o.value.toLowerCase() === prevKey.toLowerCase());
+        uom.value = match ? match.value : 'pcs';
+    }
+}
+
+function promptDialog(options = {}) {
+    const {
+        title = tr('add_uom'),
+        message = tr('add_uom_hint'),
+        confirmText = tr('add'),
+        cancelText = tr('cancel'),
+        placeholder = '',
+        initialValue = '',
+    } = options;
+    const overlay = document.getElementById('prompt-modal');
+    const titleEl = document.getElementById('prompt-title');
+    const messageEl = document.getElementById('prompt-message');
+    const inputEl = document.getElementById('prompt-input');
+    const okBtn = document.getElementById('prompt-ok');
+    const cancelBtn = document.getElementById('prompt-cancel');
+    if (!overlay || !titleEl || !messageEl || !inputEl || !okBtn || !cancelBtn) {
+        return Promise.resolve(window.prompt(message, initialValue));
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    okBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+    inputEl.placeholder = placeholder;
+    inputEl.value = initialValue || '';
+
+    return new Promise(resolve => {
+        const finish = (result) => {
+            okBtn.onclick = null;
+            cancelBtn.onclick = null;
+            overlay.onclick = null;
+            inputEl.onkeydown = null;
+            document.removeEventListener('keydown', onKey);
+            closeModal('prompt-modal');
+            resolve(result);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') finish(null);
+        };
+        okBtn.onclick = () => finish(inputEl.value.trim());
+        cancelBtn.onclick = () => finish(null);
+        overlay.onclick = (e) => { if (e.target === overlay) finish(null); };
+        inputEl.onkeydown = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); finish(inputEl.value.trim()); }
+        };
+        document.addEventListener('keydown', onKey);
+        openModal('prompt-modal');
+        setTimeout(() => { inputEl.focus(); inputEl.select(); }, 30);
+    });
+}
+
+async function addCustomUom() {
+    if (getSellByValue() === 'weight' || getProductTypeValue() === 'Service') return;
+    const name = await promptDialog({
+        title: tr('add_uom'),
+        message: tr('add_uom_hint'),
+        confirmText: tr('add'),
+        placeholder: 'carton',
+    });
+    if (!name) return;
+    const cleaned = name.trim().replace(/\s+/g, ' ');
+    if (!cleaned) return;
+
+    const existing = getPieceUomOptions().map(o => o.value.toLowerCase());
+    if (existing.includes(cleaned.toLowerCase()) || cleaned.toLowerCase() === 'kg') {
+        toast(tr('uom_exists'), 'error');
+        setProductUomOptions(false, cleaned);
+        return;
+    }
+
+    try {
+        await api('/api/uoms', { method: 'POST', body: JSON.stringify({ name: cleaned }) });
+        if (!cachedUoms.some(u => String(u).toLowerCase() === cleaned.toLowerCase())) {
+            cachedUoms = [...cachedUoms, cleaned];
+        }
+        setProductUomOptions(false, cleaned);
+        updatePieceStockLabels();
+        toast(tr('uom_added'), 'success');
+    } catch (e) {
+        // Still add locally so the user can save the product
+        if (!cachedUoms.some(u => String(u).toLowerCase() === cleaned.toLowerCase())) {
+            cachedUoms = [...cachedUoms, cleaned];
+        }
+        setProductUomOptions(false, cleaned);
+        updatePieceStockLabels();
+        toast(e.message || tr('uom_added'), e.message ? 'error' : 'success');
     }
 }
 
@@ -3416,6 +3589,69 @@ async function importInventoryCsv(file) {
     await loadData();
 }
 
+async function importSalesCsv(file) {
+    const { rows } = await parseCsvFile(file);
+    if (!rows.length) return toast(tr('empty_list'), 'error');
+    const payload = rows.map(row => ({
+        customer: csvCell(row, 'customer', 'customer_name'),
+        total: parseFloat(csvCell(row, 'total', 'amount', 'total_amount') || '0') || 0,
+        date: csvCell(row, 'date', 'order_date'),
+        payment: csvCell(row, 'payment', 'paymentstatus', 'payment_status', 'status') || 'Paid'
+    })).filter(r => r.total > 0);
+    if (!payload.length) return toast(tr('empty_list'), 'error');
+    try {
+        const res = await api('/api/sales/import', { method: 'POST', body: JSON.stringify(payload) });
+        toast(tr('import_ok') + ' (' + (res.imported || 0) + ')', 'success');
+        await loadData();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function importHistoryCsv(file) {
+    const { rows } = await parseCsvFile(file);
+    if (!rows.length) return toast(tr('empty_list'), 'error');
+    const payload = rows.map(row => ({
+        date: csvCell(row, 'date'),
+        action: csvCell(row, 'action', 'type'),
+        item: csvCell(row, 'item', 'name', 'sku'),
+        customer: csvCell(row, 'customer'),
+        details: csvCell(row, 'details', 'description', 'desc'),
+        description: csvCell(row, 'description', 'details', 'desc'),
+        user: csvCell(row, 'user', 'username'),
+        status: csvCell(row, 'status'),
+        payment: csvCell(row, 'payment', 'paymentstatus', 'payment_status'),
+        total: parseFloat(csvCell(row, 'total', 'amount') || '0') || 0
+    }));
+    try {
+        const res = await api('/api/history/import', { method: 'POST', body: JSON.stringify(payload) });
+        toast(tr('import_ok') + ' (' + (res.imported || 0) + ')', 'success');
+        await loadData();
+        await loadHistory();
+        renderHistory();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function importReportsCsv(file) {
+    const { rows } = await parseCsvFile(file);
+    if (!rows.length) return toast(tr('empty_list'), 'error');
+    const payload = rows.map(row => ({
+        name: csvCell(row, 'name', 'product', 'product_name'),
+        qty: parseFloat(csvCell(row, 'qty', 'quantity') || '0') || 0,
+        sales: parseFloat(csvCell(row, 'sales', 'total_sales') || '0') || 0,
+        profit: parseFloat(csvCell(row, 'profit') || '0') || 0,
+        total: parseFloat(csvCell(row, 'total', 'amount') || '0') || 0,
+        date: csvCell(row, 'date'),
+        metric: csvCell(row, 'metric'),
+        value: csvCell(row, 'value')
+    }));
+    try {
+        const res = await api('/api/reports/import', { method: 'POST', body: JSON.stringify(payload) });
+        toast(tr('import_ok') + ' (' + (res.imported || 0) + ')', 'success');
+        await loadData();
+        await loadReports();
+        renderReports();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
 function setupNavigation() {
     document.querySelectorAll('.nav-menu .nav-item[data-target]').forEach(item => {
         item.addEventListener('click', async e => {
@@ -3566,6 +3802,7 @@ function setupActions() {
     }));
     document.getElementById('p-track-stock')?.addEventListener('change', onProductTypeChange);
     document.querySelectorAll('input[name="p-sell-by"]').forEach(r => r.addEventListener('change', () => updateSellByWeightUI()));
+    document.getElementById('btn-p-add-uom')?.addEventListener('click', () => { addCustomUom(); });
     document.getElementById('p-uom')?.addEventListener('change', () => {
         if (getSellByValue() !== 'weight') updatePieceStockLabels();
     });
@@ -3690,6 +3927,24 @@ function setupActions() {
     document.getElementById('supp-import-file')?.addEventListener('change', async e => {
         const file = e.target.files?.[0];
         if (file) await importSuppliersCsv(file);
+        e.target.value = '';
+    });
+    document.getElementById('btn-import-sales')?.addEventListener('click', () => document.getElementById('sales-import-file')?.click());
+    document.getElementById('sales-import-file')?.addEventListener('change', async e => {
+        const file = e.target.files?.[0];
+        if (file) await importSalesCsv(file);
+        e.target.value = '';
+    });
+    document.getElementById('btn-import-history')?.addEventListener('click', () => document.getElementById('history-import-file')?.click());
+    document.getElementById('history-import-file')?.addEventListener('change', async e => {
+        const file = e.target.files?.[0];
+        if (file) await importHistoryCsv(file);
+        e.target.value = '';
+    });
+    document.getElementById('btn-import-reports')?.addEventListener('click', () => document.getElementById('reports-import-file')?.click());
+    document.getElementById('reports-import-file')?.addEventListener('change', async e => {
+        const file = e.target.files?.[0];
+        if (file) await importReportsCsv(file);
         e.target.value = '';
     });
 

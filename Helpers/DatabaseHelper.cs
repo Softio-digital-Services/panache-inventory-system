@@ -367,6 +367,11 @@ namespace InventorySystem
                         category_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         category_name TEXT NOT NULL UNIQUE
                     );
+
+                    CREATE TABLE IF NOT EXISTS units_of_measure (
+                        unit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        unit_name TEXT NOT NULL UNIQUE
+                    );
                 ";
 
                 // SQLite doesn't support multiple statements in one call -- split them
