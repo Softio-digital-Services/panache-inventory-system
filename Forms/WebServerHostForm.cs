@@ -92,7 +92,7 @@ namespace InventorySystem
                 {
                     var pb = new PictureBox
                     {
-                        Size = new Size(168, 168),
+                        Size = new Size(210, 168),
                         SizeMode = PictureBoxSizeMode.Zoom,
                         BackColor = Color.White,
                         Image = Image.FromFile(logoPath)
@@ -255,9 +255,11 @@ namespace InventorySystem
 
                 Bounds = new Rectangle(newX, newY, restore.Width, restore.Height);
                 _isMaximized = false;
+                _restoreBounds = Bounds;
                 PostWindowState();
             }
 
+            // Steal capture from WebView2, then run the native caption-drag loop.
             ReleaseCapture();
             SendMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
         }
@@ -376,6 +378,19 @@ namespace InventorySystem
                         openUrl = u.GetString();
                 }
 
+                // Drag must run synchronously while the left mouse button is still down.
+                // BeginInvoke is too late — WebView2 has already finished the click by then.
+                if (action == "drag")
+                {
+                    void DoDrag()
+                    {
+                        try { BeginTitleBarDrag(); } catch { }
+                    }
+                    if (InvokeRequired) Invoke((Action)DoDrag);
+                    else DoDrag();
+                    return;
+                }
+
                 BeginInvoke(new Action(() =>
                 {
                     switch (action)
@@ -401,9 +416,6 @@ namespace InventorySystem
                                 }
                                 catch { }
                             }
-                            break;
-                        case "drag":
-                            BeginTitleBarDrag();
                             break;
                         case "beginPrint":
                             SetPrintUiInset(true);

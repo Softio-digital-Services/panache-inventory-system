@@ -26,7 +26,10 @@ packages/
 # Publish and Installer output
 publish-output/
 InstallerOutput/
-dist/
+# dist/ is tracked (shipped app + installer)
+dist/app/Logs/
+dist/app/Data/*.db-shm
+dist/app/Data/*.db-wal
 scratch/
 
 # Local backups / crash dumps

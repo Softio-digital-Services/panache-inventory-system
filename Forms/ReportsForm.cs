@@ -373,7 +373,7 @@ namespace InventorySystem.Forms
             {
                 Name = titleName,
                 Text = title,
-                Font = ThemeConfig.SubHeaderFont,
+                Font = ThemeConfig.SubHeaderFont, 
                 ForeColor = ThemeConfig.TextColorDark,
                 Dock = DockStyle.Top,
                 Height = 32,
@@ -469,7 +469,7 @@ namespace InventorySystem.Forms
 
         private void LoadReport()
         {
-            try
+            try 
             {
                 var (from, to) = GetSelectedRange();
                 _currentSummary = _reportService.GetSummary(from, to);
