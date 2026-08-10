@@ -4378,13 +4378,19 @@ function setupChrome() {
     document.getElementById('win-min')?.addEventListener('click', () => postHost('minimize'));
     document.getElementById('win-max')?.addEventListener('click', () => postHost('maximize'));
     document.getElementById('win-close')?.addEventListener('click', () => postHost('close'));
-    const drag = document.getElementById('titlebar-drag');
-    if (drag) {
-        drag.addEventListener('mousedown', e => {
+    // Drag from anywhere on the title bar except interactive controls.
+    // When maximized, the host restores under the cursor so the window can move across monitors.
+    const titlebar = document.getElementById('titlebar');
+    if (titlebar) {
+        titlebar.addEventListener('mousedown', e => {
             if (e.button !== 0) return;
+            if (e.target.closest('button, a, input, select, textarea, .tb-user, .tb-btn, .win-btn')) return;
             postHost('drag');
         });
-        drag.addEventListener('dblclick', () => postHost('maximize'));
+        titlebar.addEventListener('dblclick', e => {
+            if (e.target.closest('button, a, input, select, textarea, .tb-user, .tb-btn, .win-btn')) return;
+            postHost('maximize');
+        });
     }
     try {
         if (window.chrome?.webview) {

@@ -221,6 +221,47 @@ namespace InventorySystem
             PostWindowState();
         }
 
+        /// <summary>
+        /// Starts a native window move from the web title bar. If the host is
+        /// "maximized" (fitted to the working area), restores under the cursor first
+        /// so the window can be dragged onto another monitor.
+        /// </summary>
+        private void BeginTitleBarDrag()
+        {
+            if (_isMaximized)
+            {
+                Point cursor = Cursor.Position;
+                Rectangle restore = _restoreBounds;
+                if (restore.Width < MinimumSize.Width || restore.Height < MinimumSize.Height)
+                {
+                    Rectangle wa = Screen.FromPoint(cursor).WorkingArea;
+                    restore = new Rectangle(
+                        wa.X + Math.Max(40, (wa.Width - 1280) / 2),
+                        wa.Y + Math.Max(40, (wa.Height - 800) / 2),
+                        Math.Min(1280, Math.Max(MinimumSize.Width, wa.Width - 80)),
+                        Math.Min(800, Math.Max(MinimumSize.Height, wa.Height - 80)));
+                }
+
+                double ratio = (double)(cursor.X - Bounds.Left) / Math.Max(1, Bounds.Width);
+                ratio = Math.Max(0.05, Math.Min(0.95, ratio));
+                int newX = cursor.X - (int)(restore.Width * ratio);
+                int newY = cursor.Y - 26; // keep pointer in the title-bar band
+
+                Rectangle targetScreen = Screen.FromPoint(cursor).WorkingArea;
+                newX = Math.Max(targetScreen.Left - restore.Width + 80,
+                    Math.Min(newX, targetScreen.Right - 80));
+                newY = Math.Max(targetScreen.Top,
+                    Math.Min(newY, targetScreen.Bottom - 80));
+
+                Bounds = new Rectangle(newX, newY, restore.Width, restore.Height);
+                _isMaximized = false;
+                PostWindowState();
+            }
+
+            ReleaseCapture();
+            SendMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+        }
+
         private async Task InitializeAsync()
         {
             try
@@ -362,9 +403,7 @@ namespace InventorySystem
                             }
                             break;
                         case "drag":
-                            if (_isMaximized) break;
-                            ReleaseCapture();
-                            SendMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+                            BeginTitleBarDrag();
                             break;
                         case "beginPrint":
                             SetPrintUiInset(true);
