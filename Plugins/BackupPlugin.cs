@@ -256,10 +256,11 @@ namespace InventorySystem.Plugins
                     DatabaseHelper.ExecuteNonQuery($"DROP TABLE IF EXISTS {table};");
                 }
 
-                // Re-initialize
-                InventorySystem.Helpers.DatabaseInitializer.Initialize();
+                    // Re-initialize (recreates schema + Softio Super Admin)
+                    InventorySystem.Helpers.DatabaseInitializer.Initialize();
+                    InventorySystem.Helpers.DatabaseInitializer.EnsureSoftioSuperAdmin();
 
-                MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_ResetDbSuccess", "Database reset successfully. Please restart the application."));
+                    MessageHelper.ShowSuccess(LocalizationManager.GetString("Plugins_ResetDbSuccess", "Database reset successfully. Please restart the application."));
             }
             catch (Exception ex)
             {

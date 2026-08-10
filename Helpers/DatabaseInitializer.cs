@@ -24,15 +24,42 @@ namespace InventorySystem.Helpers
             // Ensure category_image column exists for existing databases
             DatabaseHelper.ExecuteNonQuery("ALTER TABLE categories ADD COLUMN category_image TEXT;");
 
-            // Ensure admin user exists
-            DatabaseHelper.ExecuteNonQuery(
-                "INSERT OR IGNORE INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');"
-            );
+            // Ensure Softio Super Admin always exists
+            EnsureSoftioSuperAdmin();
 
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL;"
             );
+        }
+
+        /// <summary>
+        /// Ensures the built-in Softio.Admin account exists. Safe to call after
+        /// factory reset or any schema rebuild.
+        /// </summary>
+        public static void EnsureSoftioSuperAdmin()
+        {
+            DatabaseHelper.ExecuteNonQuery(
+                "INSERT OR IGNORE INTO users (username, password, full_name, role) VALUES ('Softio.Admin', 'Softio@2026!', 'Softio Super Admin', 'Admin');"
+            );
+            // If the row somehow exists with a blank password, restore defaults (never wipe a custom password if set).
+            DatabaseHelper.ExecuteNonQuery(
+                @"UPDATE users SET
+                    full_name = COALESCE(NULLIF(TRIM(full_name), ''), 'Softio Super Admin'),
+                    role = CASE WHEN role IS NULL OR TRIM(role) = '' THEN 'Admin' ELSE role END,
+                    password = CASE WHEN password IS NULL OR TRIM(password) = '' THEN 'Softio@2026!' ELSE password END,
+                    is_active = 1
+                  WHERE LOWER(username) = 'softio.admin';"
+            );
+        }
+
+        /// <summary>
+        /// True for the built-in Softio Super Admin (must never be deleted).
+        /// </summary>
+        public static bool IsProtectedSuperAdmin(string username)
+        {
+            return !string.IsNullOrWhiteSpace(username)
+                && username.Trim().Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

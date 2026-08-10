@@ -14,52 +14,72 @@
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="css/style.css?v=20260810invrow4">
+    <link rel="stylesheet" href="css/style.css?v=20260810invoverlap">
     <style id="inv-toolbar-fix">
-        /* Keep inventory search + actions on one row (served from dist/app) */
+        /* Inventory toolbar: one row, search never overlapped by actions */
         #inventory .page-search-row {
             display: flex !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
-            gap: 0.5rem !important;
+            gap: 0.75rem !important;
+            min-width: 0 !important;
+            overflow: visible !important;
         }
         #inventory .page-search-row .search-box {
-            flex: 0 0 168px !important;
-            width: 168px !important;
-            min-width: 140px !important;
-            max-width: 168px !important;
+            flex: 0 0 148px !important;
+            width: 148px !important;
+            min-width: 148px !important;
+            max-width: 148px !important;
             height: 38px !important;
             padding: 0 12px !important;
+            flex-shrink: 0 !important;
+            position: relative !important;
+            z-index: 2 !important;
+            box-sizing: border-box !important;
         }
         #inventory .page-search-row .search-box .form-control {
             padding: 8px 0 !important;
             font-size: 0.875rem !important;
+            min-width: 0 !important;
         }
         #inventory .page-search-row .search-box .material-symbols-rounded {
             font-size: 1.15rem !important;
+            flex-shrink: 0 !important;
         }
         #inventory .page-search-row .page-actions {
             display: flex !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
-            gap: 0.4rem !important;
-            margin-left: auto !important;
-            width: max-content !important;
+            gap: 0.35rem !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            width: auto !important;
+            max-width: none !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            justify-content: flex-end !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
         }
         #inventory .page-search-row .page-actions .btn {
             height: 38px !important;
             min-height: 38px !important;
-            padding: 0 12px !important;
-            font-size: 0.8125rem !important;
-            gap: 5px !important;
+            padding: 0 10px !important;
+            font-size: 0.78rem !important;
+            gap: 4px !important;
             border-radius: 10px !important;
             flex: 0 0 auto !important;
             white-space: nowrap !important;
         }
         #inventory .page-search-row .page-actions .btn .material-symbols-rounded {
-            font-size: 1.15rem !important;
-            width: 1.15rem !important;
-            height: 1.15rem !important;
+            font-size: 1.1rem !important;
+            width: 1.1rem !important;
+            height: 1.1rem !important;
+        }
+        body.rtl #inventory .page-search-row .page-actions {
+            justify-content: flex-start !important;
         }
         .sidebar .brand-logo.brand-logo-sm {
             width: 136px !important;
@@ -1519,6 +1539,6 @@ Accepted By: __________________________</p>
 
     <div id="toast" class="toast"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script src="app.js?v=20260810drag2" charset="utf-8"></script>
+    <script src="app.js?v=20260810superadmin" charset="utf-8"></script>
 </body>
 </html>

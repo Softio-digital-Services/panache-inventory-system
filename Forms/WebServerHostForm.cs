@@ -33,7 +33,8 @@ namespace InventorySystem
         private Rectangle _restoreBounds;
         private Task<CoreWebView2Environment> _envTask;
 
-        private const int WM_NCLBUTTONDOWN = 0xA1;
+        private const int WM_SYSCOMMAND = 0x112;
+        private const int SC_MOVE = 0xF010;
         private const int HTCAPTION = 0x2;
 
         [DllImport("user32.dll")] private static extern bool ReleaseCapture();
@@ -259,9 +260,13 @@ namespace InventorySystem
                 PostWindowState();
             }
 
-            // Steal capture from WebView2, then run the native caption-drag loop.
+            // Steal mouse capture from WebView2 while the button is still down,
+            // then enter the native move loop (same pattern as MainForm title drag).
+            try { if (_webView != null && !_webView.IsDisposed) _webView.Capture = false; } catch { }
+            Capture = false;
             ReleaseCapture();
-            SendMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            // SC_MOVE | HTCAPTION — more reliable than WM_NCLBUTTONDOWN alone with WebView2
+            SendMessage(Handle, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
         }
 
         private async Task InitializeAsync()

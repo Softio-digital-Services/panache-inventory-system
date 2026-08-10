@@ -2017,10 +2017,18 @@ namespace InventorySystem
                 {
                     try
                     {
+                        string existingName = DatabaseHelper.ExecuteScalar<string>(
+                            "SELECT username FROM users WHERE id=@id",
+                            new Microsoft.Data.Sqlite.SqliteParameter("@id", id)) ?? "";
+                        if (DatabaseInitializer.IsProtectedSuperAdmin(existingName))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Cannot modify Super Admin user" });
+
                         var body = await System.Text.Json.JsonSerializer.DeserializeAsync<UserPayload>(
                             request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (body == null || string.IsNullOrWhiteSpace(body.Username))
                             return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Username required" });
+                        if (DatabaseInitializer.IsProtectedSuperAdmin(body.Username))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Cannot use reserved Super Admin username" });
                         if (!string.IsNullOrWhiteSpace(body.Password))
                             DatabaseHelper.ExecuteNonQuery(
                                 "UPDATE users SET username=@u, password=@p, full_name=@n, role=@r WHERE id=@id",
@@ -2046,10 +2054,13 @@ namespace InventorySystem
                     {
                         string uname = DatabaseHelper.ExecuteScalar<string>("SELECT username FROM users WHERE id=@id",
                             new Microsoft.Data.Sqlite.SqliteParameter("@id", id)) ?? "";
-                        if (uname.Equals("admin", StringComparison.OrdinalIgnoreCase) || uname.Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase))
-                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Cannot delete admin user" });
+                        if (DatabaseInitializer.IsProtectedSuperAdmin(uname)
+                            || uname.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Cannot delete Super Admin user" });
                         DatabaseHelper.ExecuteNonQuery("DELETE FROM users WHERE id=@id",
                             new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
+                        // Softio Super Admin must always remain after any user deletion
+                        DatabaseInitializer.EnsureSoftioSuperAdmin();
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
@@ -2266,7 +2277,9 @@ namespace InventorySystem
                         string dataDir = System.IO.Path.GetDirectoryName(dbFile);
                         if (!string.IsNullOrEmpty(dataDir))
                             System.IO.Directory.CreateDirectory(dataDir);
-                        DatabaseHelper.EnsureSchema();
+                        // Rebuild empty schema and always re-create Softio Super Admin
+                        DatabaseInitializer.Initialize();
+                        DatabaseInitializer.EnsureSoftioSuperAdmin();
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }

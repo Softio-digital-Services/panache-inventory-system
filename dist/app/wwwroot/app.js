@@ -92,6 +92,7 @@ const T = {
         license_subtitle: 'Enter your license key to activate this machine.',
         license_ok: 'License activated successfully', license_invalid: 'Invalid license key',
         trial_ok: 'Trial started', trial_used: 'Trial already used', copied: 'Copied',
+        cannot_delete_super_admin: 'Super Admin cannot be deleted',
         about_us: 'About Us', about_app_name: 'Panache Inventory',
         about_version: 'Version 1.0.2 Platinum',
         about_desc: 'A comprehensive Inventory and Sales Management System designed to meet the needs of SMBs. Features modern UI, real-time sync, and multi-language support.',
@@ -307,6 +308,7 @@ const T = {
         license_subtitle: 'أدخل مفتاح الترخيص لتفعيل هذا الجهاز.',
         license_ok: 'تم تفعيل الترخيص بنجاح', license_invalid: 'مفتاح الترخيص غير صالح',
         trial_ok: 'تم بدء الفترة التجريبية', trial_used: 'تم استخدام التجربة مسبقاً', copied: 'تم النسخ',
+        cannot_delete_super_admin: 'لا يمكن حذف المسؤول الأعلى',
         about_us: 'من نحن', about_app_name: 'نظام مخزون أوتارجي', about_version: 'الإصدار 1.0.2 Platinum',
         about_desc: 'نظام متكامل لإدارة المخازن والمبيعات، مصمم خصيصاً لتلبية احتياجات الشركات الصغيرة والمتوسطة. يتميز بواجهة عصرية ودعم كامل للغة العربية.',
         about_dev: 'تطوير بواسطة Softio Digital Transformation', about_contact: 'تواصل معنا',
@@ -2116,10 +2118,21 @@ function printBarcodePreview() {
     setTimeout(() => { window.print(); }, 120);
 }
 
+function isProtectedSuperAdmin(u) {
+    const name = String(u?.username || '').trim().toLowerCase();
+    return name === 'softio.admin';
+}
+
 function renderUsers() {
-    document.getElementById('users-body').innerHTML = users.length ? users.map(u => `
-        <tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.fullName || '—')}</td><td>${escapeHtml(formatRole(u.role))}</td>
-        <td>${u.id != null ? actionBtns(`data-edit-user="${u.id}"`, `data-del-user="${u.id}"`) : '—'}</td></tr>`).join('')
+    document.getElementById('users-body').innerHTML = users.length ? users.map(u => {
+        const protectedAdmin = isProtectedSuperAdmin(u);
+        const actions = u.id == null ? '—'
+            : protectedAdmin
+                ? `<span class="muted" title="${tr('lic_valid')}">Softio</span>`
+                : actionBtns(`data-edit-user="${u.id}"`, `data-del-user="${u.id}"`);
+        return `<tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.fullName || '—')}</td><td>${escapeHtml(formatRole(u.role))}</td>
+        <td>${actions}</td></tr>`;
+    }).join('')
         : `<tr><td colspan="4" class="empty-state">${tr('empty_list')}</td></tr>`;
     document.querySelectorAll('[data-edit-user]').forEach(btn => btn.onclick = () => openUserModal(Number(btn.dataset.editUser)));
     document.querySelectorAll('[data-del-user]').forEach(btn => btn.onclick = () => deleteUser(Number(btn.dataset.delUser)));
@@ -3462,6 +3475,11 @@ function openUserModal(id) {
 }
 
 async function deleteUser(id) {
+    const u = users.find(x => x.id === id);
+    if (u && isProtectedSuperAdmin(u)) {
+        toast(tr('cannot_delete_super_admin'), 'error');
+        return;
+    }
     if (!await confirmDialog(tr('confirm_delete'))) return;
     try {
         await api('/api/users/' + id + '/delete', { method: 'POST' });
@@ -4413,18 +4431,19 @@ function setupChrome() {
     document.getElementById('win-min')?.addEventListener('click', () => postHost('minimize'));
     document.getElementById('win-max')?.addEventListener('click', () => postHost('maximize'));
     document.getElementById('win-close')?.addEventListener('click', () => postHost('close'));
-    // Drag from the title bar / taskbar strip (empty areas and drag region).
-    // When maximized, the host restores under the cursor so the window can move across monitors.
+    // Drag from the gold title bar (empty areas + drag region). Must post while
+    // the left button is still down so the host can start the native move loop.
     const titlebar = document.getElementById('titlebar');
     const startDrag = (e) => {
-        if (e.button !== 0) return;
+        if (!isHosted) return;
+        if (typeof e.button === 'number' && e.button !== 0) return;
         if (e.target.closest('button, a, input, select, textarea, label, .tb-btn, .tb-user, .win-btn, .window-controls')) return;
         e.preventDefault();
         e.stopPropagation();
         postHost('drag');
     };
     if (titlebar) {
-        titlebar.addEventListener('mousedown', startDrag);
+        titlebar.addEventListener('pointerdown', startDrag, true);
         titlebar.addEventListener('dblclick', e => {
             if (e.target.closest('button, a, input, select, textarea, label, .tb-btn, .tb-user, .win-btn, .window-controls')) return;
             postHost('maximize');

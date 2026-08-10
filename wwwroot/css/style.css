@@ -3513,54 +3513,64 @@ body.rtl .titlebar-tools { direction: rtl; }
     margin-bottom: 0.85rem;
     align-items: center;
     flex-wrap: nowrap !important;
-    gap: 0.5rem;
-    overflow-x: auto;
+    gap: 0.75rem;
+    min-width: 0;
+    overflow: visible;
 }
 #inventory .page-search-row .page-actions {
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: center;
-    gap: 0.4rem;
-    flex: 0 1 auto;
-    width: max-content;
+    gap: 0.35rem;
+    flex: 1 1 0;
     min-width: 0;
+    width: auto;
     max-width: none;
-    margin-left: auto;
+    margin-left: 0;
     justify-content: flex-end;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
 }
 #inventory .page-search-row .page-actions .btn {
     height: 38px !important;
     min-height: 38px !important;
-    padding: 0 12px !important;
-    font-size: 0.8125rem !important;
-    gap: 5px !important;
+    padding: 0 10px !important;
+    font-size: 0.78rem !important;
+    gap: 4px !important;
     border-radius: 10px;
     flex: 0 0 auto;
     white-space: nowrap;
 }
 #inventory .page-search-row .page-actions .btn .material-symbols-rounded {
-    font-size: 1.15rem !important;
-    width: 1.15rem;
-    height: 1.15rem;
+    font-size: 1.1rem !important;
+    width: 1.1rem;
+    height: 1.1rem;
 }
 #inventory .page-search-row .page-actions .btn[hidden] {
     display: none !important;
 }
 #inventory .page-search-row .search-box {
-    flex: 0 0 168px !important;
-    width: 168px !important;
-    min-width: 140px !important;
-    max-width: 168px !important;
+    flex: 0 0 148px !important;
+    width: 148px !important;
+    min-width: 148px !important;
+    max-width: 148px !important;
     height: 38px;
     padding: 0 12px;
     border-radius: 10px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    box-sizing: border-box;
 }
 #inventory .page-search-row .search-box .form-control {
     padding: 8px 0;
     font-size: 0.875rem;
+    min-width: 0;
 }
 #inventory .page-search-row .search-box .material-symbols-rounded {
     font-size: 1.15rem;
+    flex-shrink: 0;
 }
 @media (max-width: 720px) {
     #inventory .page-search-row {
@@ -3570,12 +3580,14 @@ body.rtl .titlebar-tools { direction: rtl; }
         flex: 1 1 100% !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
     }
     #inventory .page-search-row .page-actions {
         width: 100%;
         flex: 1 1 100%;
         justify-content: flex-end;
         flex-wrap: wrap !important;
+        overflow-x: visible;
     }
 }
 #inventory .inv-toolbar-row .cat-pills {
