@@ -490,11 +490,29 @@ namespace InventorySystem
                 }
                 catch { }
 
-                var namesJson = string.Join(",", printers.Select(p =>
-                    "\"" + p.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""));
-                var defEsc = (defaultPrinter ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+                var profiles = new Dictionary<string, object>();
+                foreach (var name in printers)
+                {
+                    var p = PrinterProfileStore.Get(name);
+                    profiles[name] = new
+                    {
+                        receiptProtocol = p.ReceiptProtocol ?? "auto",
+                        labelProtocol = p.LabelProtocol ?? "auto",
+                        labelWidthMm = p.LabelWidthMm,
+                        labelHeightMm = p.LabelHeightMm,
+                        labelGapMm = p.LabelGapMm
+                    };
+                }
+
+                var payload = new
+                {
+                    type = "printers",
+                    printers,
+                    defaultPrinter = defaultPrinter ?? "",
+                    profiles
+                };
                 _webView?.CoreWebView2?.PostWebMessageAsJson(
-                    $"{{\"type\":\"printers\",\"printers\":[{namesJson}],\"defaultPrinter\":\"{defEsc}\"}}");
+                    JsonSerializer.Serialize(payload));
             }
             catch { }
         }
@@ -540,6 +558,14 @@ namespace InventorySystem
                 var options = new LabelPrintOptions();
                 if (root.TryGetProperty("printerName", out var pn) && pn.ValueKind == JsonValueKind.String)
                     options.PrinterName = pn.GetString();
+                if (root.TryGetProperty("protocol", out var proto) && proto.ValueKind == JsonValueKind.String)
+                    options.Protocol = proto.GetString();
+                if (root.TryGetProperty("labelWidthMm", out var lw) && lw.ValueKind == JsonValueKind.Number)
+                    options.LabelWidthMm = lw.GetDouble();
+                if (root.TryGetProperty("labelHeightMm", out var lh) && lh.ValueKind == JsonValueKind.Number)
+                    options.LabelHeightMm = lh.GetDouble();
+                if (root.TryGetProperty("labelGapMm", out var lg) && lg.ValueKind == JsonValueKind.Number)
+                    options.LabelGapMm = lg.GetDouble();
                 if (root.TryGetProperty("copies", out var c) && c.ValueKind == JsonValueKind.Number)
                     options.Copies = Math.Max(1, Math.Min(99, c.GetInt32()));
                 if (root.TryGetProperty("landscape", out var ls))
@@ -578,6 +604,8 @@ namespace InventorySystem
                     options.CurrencySymbol = cs.GetString() ?? "$";
                 if (root.TryGetProperty("printerName", out var pn) && pn.ValueKind == JsonValueKind.String)
                     options.PrinterName = pn.GetString();
+                if (root.TryGetProperty("protocol", out var proto) && proto.ValueKind == JsonValueKind.String)
+                    options.Protocol = proto.GetString();
                 if (root.TryGetProperty("copies", out var c) && c.ValueKind == JsonValueKind.Number)
                     options.Copies = Math.Max(1, Math.Min(99, c.GetInt32()));
                 if (root.TryGetProperty("landscape", out var ls))

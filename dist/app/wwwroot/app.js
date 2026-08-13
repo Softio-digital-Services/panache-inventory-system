@@ -18,6 +18,11 @@ const T = {
         select_all: 'Select all',
         select_barcodes_first: 'Select at least one barcode to print',
         print_destination: 'Destination',
+        print_protocol: 'Print mode',
+        print_protocol_auto: 'Auto (recommended)',
+        print_protocol_tspl: 'Thermal label (TSPL)',
+        print_protocol_escpos: 'Thermal receipt (ESC/POS)',
+        print_protocol_gdi: 'Windows printer (GDI)',
         print_copies: 'Copies',
         print_layout: 'Layout',
         print_portrait: 'Portrait',
@@ -235,6 +240,11 @@ const T = {
         select_all: 'تحديد الكل',
         select_barcodes_first: 'حدد باركوداً واحداً على الأقل للطباعة',
         print_destination: 'الوجهة',
+        print_protocol: 'وضع الطباعة',
+        print_protocol_auto: 'تلقائي (موصى به)',
+        print_protocol_tspl: 'ملصق حراري (TSPL)',
+        print_protocol_escpos: 'إيصال حراري (ESC/POS)',
+        print_protocol_gdi: 'طابعة ويندوز (GDI)',
         print_copies: 'النسخ',
         print_layout: 'الاتجاه',
         print_portrait: 'عمودي',
@@ -1150,9 +1160,11 @@ function renderInventory() {
     renderCategoryPills('inv-cats', invCat, c => { invCat = c; renderInventory(); });
     const list = filteredProducts(document.getElementById('inv-search')?.value, invCat, { invMode: true });
     const canEdit = can('admin');
+    const tableScroll = document.getElementById('inv-table-scroll');
     const tableWrap = document.getElementById('inv-table-wrap');
     const cardsEl = document.getElementById('inv-cards');
-    if (tableWrap) tableWrap.hidden = invView !== 'table';
+    if (tableScroll) tableScroll.hidden = invView !== 'table';
+    if (tableWrap) tableWrap.hidden = false;
     if (cardsEl) cardsEl.hidden = invView !== 'card';
 
     document.getElementById('btn-inv-table')?.classList.toggle('active', invView === 'table');
@@ -1226,6 +1238,45 @@ function renderInventory() {
     document.querySelectorAll('[data-del-product]').forEach(btn => btn.onclick = () => deleteProduct(Number(btn.dataset.delProduct)));
     document.querySelectorAll('[data-adjust-product]').forEach(btn => btn.onclick = () => openStockModal(Number(btn.dataset.adjustProduct)));
     updateInvBulkBtn();
+    requestAnimationFrame(() => updateInvTableScrollButtons());
+}
+
+function updateInvTableScrollButtons() {
+    const wrap = document.getElementById('inv-table-wrap');
+    const leftBtn = document.getElementById('inv-scroll-left');
+    const rightBtn = document.getElementById('inv-scroll-right');
+    if (!wrap || !leftBtn || !rightBtn) return;
+    if (invView !== 'table' || wrap.hidden) {
+        leftBtn.hidden = true;
+        rightBtn.hidden = true;
+        return;
+    }
+    const maxScroll = wrap.scrollWidth - wrap.clientWidth;
+    const canScroll = maxScroll > 4;
+    const atStart = wrap.scrollLeft <= 2;
+    const atEnd = wrap.scrollLeft >= maxScroll - 2;
+    const rtl = document.body.classList.contains('rtl');
+    if (!canScroll) {
+        leftBtn.hidden = true;
+        rightBtn.hidden = true;
+        return;
+    }
+    if (rtl) {
+        leftBtn.hidden = atEnd;
+        rightBtn.hidden = atStart;
+    } else {
+        leftBtn.hidden = atStart;
+        rightBtn.hidden = atEnd;
+    }
+}
+
+function scrollInvTable(dir) {
+    const wrap = document.getElementById('inv-table-wrap');
+    if (!wrap) return;
+    const step = Math.max(160, Math.floor(wrap.clientWidth * 0.55));
+    const rtl = document.body.classList.contains('rtl');
+    const delta = (rtl ? -dir : dir) * step;
+    wrap.scrollBy({ left: delta, behavior: 'smooth' });
 }
 
 function renderPosStats() {
@@ -1956,9 +2007,39 @@ function fillPrinterSelect(selId, printers, defaultPrinter) {
     ).join('');
 }
 
-function fillBarcodePrinterSelect(printers, defaultPrinter) {
+let hostPrinterProfiles = {};
+
+function applyProtocolForPrinter(printerSelId, protocolSelId, kind) {
+    const printer = document.getElementById(printerSelId)?.value || '';
+    const protoSel = document.getElementById(protocolSelId);
+    if (!protoSel) return;
+    const profile = hostPrinterProfiles[printer] || {};
+    const saved = kind === 'label'
+        ? (profile.labelProtocol || 'auto')
+        : (profile.receiptProtocol || 'auto');
+    const allowed = kind === 'label' ? ['auto', 'tspl', 'gdi'] : ['auto', 'escpos', 'gdi'];
+    protoSel.value = allowed.includes(saved) ? saved : 'auto';
+}
+
+function fillBarcodePrinterSelect(printers, defaultPrinter, profiles) {
+    if (profiles && typeof profiles === 'object') hostPrinterProfiles = profiles;
     fillPrinterSelect('bpd-printer', printers, defaultPrinter);
     fillPrinterSelect('ppd-printer', printers, defaultPrinter);
+    applyProtocolForPrinter('bpd-printer', 'bpd-protocol', 'label');
+    applyProtocolForPrinter('ppd-printer', 'ppd-protocol', 'receipt');
+}
+
+function wirePrinterProtocolSync() {
+    const bpd = document.getElementById('bpd-printer');
+    const ppd = document.getElementById('ppd-printer');
+    if (bpd && !bpd.dataset.protocolWired) {
+        bpd.dataset.protocolWired = '1';
+        bpd.addEventListener('change', () => applyProtocolForPrinter('bpd-printer', 'bpd-protocol', 'label'));
+    }
+    if (ppd && !ppd.dataset.protocolWired) {
+        ppd.dataset.protocolWired = '1';
+        ppd.addEventListener('change', () => applyProtocolForPrinter('ppd-printer', 'ppd-protocol', 'receipt'));
+    }
 }
 
 function requestHostPrinters() {
@@ -2038,7 +2119,8 @@ function getBarcodePrintOptions() {
     const copies = Math.max(1, Math.min(99, parseInt(document.getElementById('bpd-copies')?.value, 10) || 1));
     const color = (document.getElementById('bpd-color')?.value || 'color') !== 'bw';
     const printerName = document.getElementById('bpd-printer')?.value || '';
-    return { landscape, pageRange, copies, color, printerName };
+    const protocol = document.getElementById('bpd-protocol')?.value || 'auto';
+    return { landscape, pageRange, copies, color, printerName, protocol };
 }
 
 function printBarcodePreview() {
@@ -2064,6 +2146,7 @@ function printBarcodePreview() {
                 action: 'printBarcodes',
                 items,
                 printerName: opts.printerName,
+                protocol: opts.protocol || 'auto',
                 copies: opts.copies,
                 landscape: opts.landscape,
                 color: opts.color,
@@ -3118,7 +3201,8 @@ function getPosPrintOptions() {
     const copies = Math.max(1, Math.min(99, parseInt(document.getElementById('ppd-copies')?.value, 10) || 1));
     const color = (document.getElementById('ppd-color')?.value || 'color') !== 'bw';
     const printerName = document.getElementById('ppd-printer')?.value || '';
-    return { landscape, pageRange, copies, color, printerName };
+    const protocol = document.getElementById('ppd-protocol')?.value || 'auto';
+    return { landscape, pageRange, copies, color, printerName, protocol };
 }
 
 function applyPosPrintLayoutPreview() {
@@ -3175,6 +3259,7 @@ function doPrintPosReceipt() {
         discount: t.disc,
         total: t.total,
         printerName: opts.printerName,
+        protocol: opts.protocol || 'auto',
         copies: opts.copies,
         landscape: opts.landscape,
         color: opts.color
@@ -4285,6 +4370,10 @@ function setupActions() {
     document.getElementById('inv-filter')?.addEventListener('change', e => { invFilter = e.target.value; renderInventory(); });
     document.getElementById('btn-inv-table')?.addEventListener('click', () => { invView = 'table'; renderInventory(); });
     document.getElementById('btn-inv-cards')?.addEventListener('click', () => { invView = 'card'; renderInventory(); });
+    document.getElementById('inv-scroll-left')?.addEventListener('click', () => scrollInvTable(-1));
+    document.getElementById('inv-scroll-right')?.addEventListener('click', () => scrollInvTable(1));
+    document.getElementById('inv-table-wrap')?.addEventListener('scroll', () => updateInvTableScrollButtons(), { passive: true });
+    window.addEventListener('resize', () => updateInvTableScrollButtons());
     document.getElementById('inv-select-all')?.addEventListener('change', e => {
         const list = filteredProducts(document.getElementById('inv-search')?.value, invCat, { invMode: true });
         if (e.target.checked) list.forEach(p => invSelected.add(p.id));
@@ -4461,7 +4550,8 @@ function setupChrome() {
                     if (icon) icon.textContent = data.maximized ? 'filter_none' : 'crop_square';
                 }
                 if (data?.type === 'printers') {
-                    fillBarcodePrinterSelect(data.printers || [], data.defaultPrinter || '');
+                    fillBarcodePrinterSelect(data.printers || [], data.defaultPrinter || '', data.profiles || {});
+                    wirePrinterProtocolSync();
                 }
                 if (data?.type === 'printResult') {
                     if (data.ok) toast(tr('print_sent'));

@@ -300,7 +300,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="card table-wrapper" id="inv-table-wrap"><table><thead><tr>
+                <div class="inv-table-scroll" id="inv-table-scroll">
+                    <button type="button" class="inv-table-scroll-btn" id="inv-scroll-left" aria-label="Scroll left" hidden>
+                        <span class="material-symbols-rounded">chevron_left</span>
+                    </button>
+                    <div class="card table-wrapper" id="inv-table-wrap"><table><thead><tr>
                     <th class="inv-check-col"><input type="checkbox" id="inv-select-all" title="Select all"></th>
                     <th data-i18n="col_image">Image</th><th data-i18n="col_name">Name</th><th data-i18n="col_sku">SKU</th>
                     <th data-i18n="col_barcode">Barcode</th><th data-i18n="col_category">Category</th>
@@ -308,6 +312,10 @@
                     <th data-i18n="col_min_stock">Min Stock</th><th data-i18n="col_location">Location</th>
                     <th data-i18n="col_status">Status</th><th data-i18n="col_actions">Actions</th>
                 </tr></thead><tbody id="inv-body"></tbody></table></div>
+                    <button type="button" class="inv-table-scroll-btn" id="inv-scroll-right" aria-label="Scroll right" hidden>
+                        <span class="material-symbols-rounded">chevron_right</span>
+                    </button>
+                </div>
                 <div class="inv-layout" id="inv-cards" hidden></div>
             </section>
 
@@ -1214,6 +1222,14 @@
                             <select class="form-control" id="bpd-printer"></select>
                         </div>
                         <div class="form-group">
+                            <label data-i18n="print_protocol">Print mode</label>
+                            <select class="form-control" id="bpd-protocol">
+                                <option value="auto" data-i18n="print_protocol_auto">Auto (recommended)</option>
+                                <option value="tspl" data-i18n="print_protocol_tspl">Thermal label (TSPL)</option>
+                                <option value="gdi" data-i18n="print_protocol_gdi">Windows printer (GDI)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label data-i18n="print_copies">Copies</label>
                             <input class="form-control" id="bpd-copies" type="number" min="1" max="99" value="1">
                         </div>
@@ -1267,6 +1283,14 @@
                         <div class="form-group">
                             <label data-i18n="print_destination">Destination</label>
                             <select class="form-control" id="ppd-printer"></select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="print_protocol">Print mode</label>
+                            <select class="form-control" id="ppd-protocol">
+                                <option value="auto" data-i18n="print_protocol_auto">Auto (recommended)</option>
+                                <option value="escpos" data-i18n="print_protocol_escpos">Thermal receipt (ESC/POS)</option>
+                                <option value="gdi" data-i18n="print_protocol_gdi">Windows printer (GDI)</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="print_copies">Copies</label>
