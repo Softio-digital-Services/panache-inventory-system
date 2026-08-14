@@ -847,13 +847,36 @@ async function loadConnectInfo() {
             link.href = info.url;
             link.textContent = info.url;
         }
-        if (qr) qr.src = '/api/connect/qr?t=' + Date.now();
+        if (qr) {
+            const wrap = qr.closest('.dash-connect-qr-wrap');
+            const show = () => {
+                qr.hidden = false;
+                if (wrap) wrap.hidden = false;
+            };
+            const hide = () => {
+                qr.hidden = true;
+                if (wrap) wrap.hidden = true;
+            };
+            qr.onload = show;
+            qr.onerror = hide;
+            if (info.qrDataUrl) {
+                qr.src = info.qrDataUrl;
+                show();
+            } else {
+                qr.src = (info.qrUrl || '/api/connect/qr') + '?t=' + Date.now();
+            }
+        }
         card?.removeAttribute('hidden');
     } catch (e) {
         console.error('connect info', e);
         if (link) {
             link.href = '#';
             link.textContent = '—';
+        }
+        if (qr) {
+            qr.hidden = true;
+            const wrap = qr.closest('.dash-connect-qr-wrap');
+            if (wrap) wrap.hidden = true;
         }
     }
 }
@@ -4546,8 +4569,10 @@ function setupChrome() {
                     try { data = JSON.parse(data); } catch { return; }
                 }
                 if (data?.type === 'windowState') {
-                    const icon = document.getElementById('win-max-icon');
-                    if (icon) icon.textContent = data.maximized ? 'filter_none' : 'crop_square';
+                    const maxIcon = document.getElementById('win-max-icon');
+                    const restoreIcon = document.getElementById('win-restore-icon');
+                    if (maxIcon) maxIcon.hidden = !!data.maximized;
+                    if (restoreIcon) restoreIcon.hidden = !data.maximized;
                 }
                 if (data?.type === 'printers') {
                     fillBarcodePrinterSelect(data.printers || [], data.defaultPrinter || '', data.profiles || {});
@@ -5332,16 +5357,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('boot failed', e);
         toast('UI failed to start: ' + e.message, 'error');
     } finally {
-        // Paint one frame with styles applied, then reveal (host hides splash)
-        requestAnimationFrame(() => {
+        const reveal = () => {
             requestAnimationFrame(() => {
-                document.body.classList.add('ui-ready');
-                try {
-                    if (window.chrome?.webview?.postMessage)
-                        window.chrome.webview.postMessage(JSON.stringify({ action: 'uiReady' }));
-                } catch { }
+                requestAnimationFrame(() => {
+                    document.body.classList.add('ui-ready');
+                    try {
+                        if (window.chrome?.webview?.postMessage)
+                            window.chrome.webview.postMessage(JSON.stringify({ action: 'uiReady' }));
+                    } catch { }
+                });
             });
-        });
+        };
+        const fontsReady = (document.fonts && document.fonts.ready)
+            ? document.fonts.ready.catch(() => {})
+            : Promise.resolve();
+        Promise.race([fontsReady, new Promise(r => setTimeout(r, 1800))]).then(reveal);
     }
 });
 

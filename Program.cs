@@ -446,12 +446,20 @@ namespace InventorySystem
                     {
                         string ip = ScanToConnectForm.GetLocalIpAddress();
                         string url = ScanToConnectForm.GetServerUrl();
+                        string qrDataUrl = null;
+                        try
+                        {
+                            byte[] png = ScanToConnectForm.GenerateQrPngBytes(url);
+                            qrDataUrl = "data:image/png;base64," + Convert.ToBase64String(png);
+                        }
+                        catch { }
                         return Microsoft.AspNetCore.Http.Results.Ok(new
                         {
                             url,
                             ip,
                             port = 5000,
-                            qrUrl = "/api/connect/qr"
+                            qrUrl = "/api/connect/qr",
+                            qrDataUrl
                         });
                     }
                     catch (Exception ex)
@@ -465,10 +473,7 @@ namespace InventorySystem
                     try
                     {
                         string url = ScanToConnectForm.GetServerUrl();
-                        using var generator = new QRCodeGenerator();
-                        using var data = generator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
-                        var png = new PngByteQRCode(data);
-                        byte[] bytes = png.GetGraphic(10);
+                        byte[] bytes = ScanToConnectForm.GenerateQrPngBytes(url);
                         return Microsoft.AspNetCore.Http.Results.File(bytes, "image/png");
                     }
                     catch (Exception ex)

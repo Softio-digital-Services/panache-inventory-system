@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -146,12 +148,23 @@ namespace InventorySystem.Forms
             return "localhost";
         }
 
+        public static byte[] GenerateQrPngBytes(string url, int pixelsPerModule = 8)
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
+            using var qrCode = new QRCode(qrData);
+            using var bmp = qrCode.GetGraphic(Math.Max(4, pixelsPerModule));
+            using var ms = new MemoryStream();
+            bmp.Save(ms, ImageFormat.Png);
+            return ms.ToArray();
+        }
+
         private static Bitmap GenerateQrBitmap(string url, int pixelsPerModule)
         {
             using var qrGenerator = new QRCodeGenerator();
             using var qrData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
             using var qrCode = new QRCode(qrData);
-            return qrCode.GetGraphic(pixelsPerModule / 21);
+            return qrCode.GetGraphic(Math.Max(4, pixelsPerModule / 21));
         }
     }
 }
