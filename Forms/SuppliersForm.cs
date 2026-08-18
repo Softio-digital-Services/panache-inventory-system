@@ -165,23 +165,15 @@ namespace InventorySystem.Forms
 
             // Export Button
             this.btnExport.Size = new System.Drawing.Size(100, 35);
-            this.btnExport.Text = "";
             this.btnExport.Name = "btnExportSup";
-            this.btnExport.FlatStyle = FlatStyle.Flat;
-            btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.Cursor = Cursors.Hand;
             this.btnExport.Click += BtnExport_Click;
-            this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Sup_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+            ThemeConfig.ApplyStandardExportButton(this.btnExport, "Sup_Export");
 
             // Import Button
             this.btnImport.Size = new System.Drawing.Size(100, 35);
-            this.btnImport.Text = "";
             this.btnImport.Name = "btnImportSup";
-            this.btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.FlatAppearance.BorderSize = 0;
-            btnImport.Cursor = Cursors.Hand;
             this.btnImport.Click += BtnImport_Click;
-            this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Sup_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            ThemeConfig.ApplyStandardImportButton(this.btnImport, "Sup_Import");
 
             var actionButtons = new Control[] { btnDeleteSelected, btnImport, btnExport, btnAdd, btnDetails };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(this.lblSuppliersTitle, this.txtSearch, actionButtons);
@@ -718,8 +710,6 @@ namespace InventorySystem.Forms
             {
                 var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
                 if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
-
-                if (btnImport != null) btnImport.Visible = false;
             }
         }
     }

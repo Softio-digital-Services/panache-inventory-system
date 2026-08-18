@@ -121,22 +121,13 @@ namespace InventorySystem.Forms
                 {
                     // Full Main Header
                     int hy = 40;
-                    PictureBox pbLogo = new PictureBox { Size = new Size(70, 70), Location = new Point(40, hy), SizeMode = PictureBoxSizeMode.Zoom };
-                    pbLogo.Image = ThemeConfig.GetNuricon("pos");
-                    try
-                    {
-                        string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png");
-                        if (System.IO.File.Exists(logoPath)) pbLogo.Image = Image.FromFile(logoPath);
-                    }
-                    catch { }
-                    page.Controls.Add(pbLogo);
 
                     Label lblCompany = new Label
                     {
                         Text = ThemeConfig.CompanyName.ToUpper(),
                         Font = new Font("Segoe UI", 24, FontStyle.Bold),
                         ForeColor = ThemeConfig.PrimaryColor,
-                        Location = new Point(130, hy),
+                        Location = new Point(40, hy),
                         AutoSize = true
                     };
                     page.Controls.Add(lblCompany);
@@ -155,9 +146,9 @@ namespace InventorySystem.Forms
                     hy += 45;
                     Label lblCompInfo = new Label
                     {
-                        Text = L("QuotePreview_CompanyInfo", "Lebanon | West Beqaa | Kamed El Laouz    +961 71 030 683"),
+                        Text = L("QuotePreview_CompanyInfo", ""),
                         Font = new Font("Segoe UI", 9),
-                        Location = new Point(130, hy),
+                        Location = new Point(40, hy),
                         Size = new Size(500, 35),
                         ForeColor = Color.Gray
                     };
@@ -377,7 +368,7 @@ namespace InventorySystem.Forms
 
                     Label lblContactFooter = new Label
                     {
-                        Text = L("QuotePreview_ContactFooter", "Phone: +961 71 030 683  |  Email: contact@panache.com  |  Website: www.panache.com"),
+                        Text = L("QuotePreview_ContactFooter", ""),
                         Font = new Font("Segoe UI", 8.5F),
                         Location = new Point(0, 1085),
                         Size = new Size(page.Width, 25),

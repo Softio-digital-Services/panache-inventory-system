@@ -372,6 +372,11 @@ namespace InventorySystem
                         unit_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         unit_name TEXT NOT NULL UNIQUE
                     );
+
+                    CREATE TABLE IF NOT EXISTS app_settings (
+                        key TEXT PRIMARY KEY NOT NULL,
+                        value TEXT NOT NULL
+                    );
                 ";
 
                 // SQLite doesn't support multiple statements in one call -- split them

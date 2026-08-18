@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Windows.Forms;
 using InventorySystem.Helpers;
 using InventorySystem.Controls;
@@ -9,13 +10,15 @@ namespace InventorySystem.Forms
 {
     public class AboutUsForm : BaseModalForm
     {
-        private const int LogoTile = 118;
+        private const int LogoTileWidth = 148;
+        private const int LogoTileHeight = 148;
         private const int CardWidth = 520;
-        private const int CardHeight = 640;
+        private const int CardHeight = 660;
 
         private Panel _pnlLogo;
         private Image _logo;
         private Label _lblName;
+        private Label _lblProduct;
         private Label _lblVer;
         private Label _lblDesc;
         private Label _lblDev;
@@ -67,8 +70,13 @@ namespace InventorySystem.Forms
             this.TitleText = LocalizationManager.GetString("Nav_AboutUs");
             if (_lblName != null)
             {
-                _lblName.Text = LocalizationManager.GetString("AboutUs_AppName");
+                _lblName.Text = LocalizationManager.GetString("AboutUs_Company", "Softio");
                 PinCentered(_lblName);
+            }
+            if (_lblProduct != null)
+            {
+                _lblProduct.Text = LocalizationManager.GetString("AboutUs_AppName");
+                PinCentered(_lblProduct);
             }
             if (_lblVer != null)
             {
@@ -113,7 +121,7 @@ namespace InventorySystem.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 9,
+                RowCount = 10,
                 Margin = new Padding(0),
                 Padding = new Padding(0, 6, 0, 0),
                 BackColor = Color.Transparent
@@ -122,7 +130,7 @@ namespace InventorySystem.Forms
 
             _pnlLogo = new Panel
             {
-                Size = new Size(LogoTile, LogoTile),
+                Size = new Size(LogoTileWidth, LogoTileHeight),
                 Anchor = AnchorStyles.None,
                 Margin = new Padding(0, 0, 0, 18),
                 BackColor = Color.Transparent
@@ -134,7 +142,10 @@ namespace InventorySystem.Forms
             // Absolute rows were shorter than the font (especially with bottom margins),
             // which clipped descenders and made Arabic look "glitched".
             _lblName = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 16F, FontStyle.Bold),
-                ThemeConfig.PrimaryColor, new Padding(10, 0, 10, 4));
+                ThemeConfig.PrimaryColor, new Padding(10, 0, 10, 2));
+
+            _lblProduct = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 10.5F, FontStyle.Bold),
+                ThemeConfig.TextColorDark, new Padding(10, 0, 10, 2));
 
             _lblVer = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 10F, FontStyle.Regular),
                 ThemeConfig.MutedTextColor, new Padding(10, 0, 10, 10));
@@ -177,18 +188,19 @@ namespace InventorySystem.Forms
             _lblCopyright = MakeCenteredLabel(new Font(ThemeConfig.AppFontFamily, 8.5F, FontStyle.Regular),
                 ThemeConfig.MutedTextColor, new Padding(10, 0, 10, 4));
 
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 9; i++)
                 stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             stack.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // filler
 
             stack.Controls.Add(_pnlLogo, 0, 0);
             stack.Controls.Add(_lblName, 0, 1);
-            stack.Controls.Add(_lblVer, 0, 2);
-            stack.Controls.Add(_lblDesc, 0, 3);
-            stack.Controls.Add(divider, 0, 4);
-            stack.Controls.Add(_lblDev, 0, 5);
-            stack.Controls.Add(_btnContact, 0, 6);
-            stack.Controls.Add(_lblCopyright, 0, 7);
+            stack.Controls.Add(_lblProduct, 0, 2);
+            stack.Controls.Add(_lblVer, 0, 3);
+            stack.Controls.Add(_lblDesc, 0, 4);
+            stack.Controls.Add(divider, 0, 5);
+            stack.Controls.Add(_lblDev, 0, 6);
+            stack.Controls.Add(_btnContact, 0, 7);
+            stack.Controls.Add(_lblCopyright, 0, 8);
 
             this.ContentPanel.Controls.Add(stack);
         }
@@ -218,24 +230,35 @@ namespace InventorySystem.Forms
 
         private void LoadLogo()
         {
+            _logo = null;
             try
             {
-                string path = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_arrow_logo.png");
-                if (!System.IO.File.Exists(path))
-                    path = System.IO.Path.Combine(Application.StartupPath, "Assets", "softio_logo.png");
-                if (System.IO.File.Exists(path))
-                {
-                    using var raw = Image.FromFile(path);
-                    _logo = new Bitmap(raw);
-                }
+                string path = FindAsset("softio_arrow_logo.png");
+                if (string.IsNullOrEmpty(path)) return;
+                using (var img = Image.FromFile(path))
+                    _logo = new Bitmap(img);
             }
-            catch { }
+            catch
+            {
+                _logo?.Dispose();
+                _logo = null;
+            }
         }
 
-        /// <summary>
-        /// Paints the logo as a rounded tile: the artwork has its own dark backdrop, so
-        /// it is cropped to fill the square rather than letterboxed on white.
-        /// </summary>
+        private static string FindAsset(string filename)
+        {
+            string currentDir = Application.StartupPath;
+            for (int i = 0; i < 5; i++)
+            {
+                string checkPath = Path.Combine(currentDir, "Assets", filename);
+                if (File.Exists(checkPath)) return checkPath;
+                var parent = Directory.GetParent(currentDir);
+                if (parent == null) break;
+                currentDir = parent.FullName;
+            }
+            return null;
+        }
+
         private void PaintLogoTile(object sender, PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -248,25 +271,28 @@ namespace InventorySystem.Forms
 
             var bounds = _pnlLogo.ClientRectangle;
             const float radius = 26f;
-
-            if (_logo == null)
+            using (var path = ThemeConfig.GetRoundedPathF(new RectangleF(0, 0, bounds.Width, bounds.Height), radius))
+            using (var fill = new SolidBrush(Color.FromArgb(10, 22, 40)))
             {
-                ThemeConfig.DrawRoundedBorder(g, bounds, radius, ThemeConfig.BorderColor, 1f);
-                return;
+                g.FillPath(fill, path);
+                g.SetClip(path);
             }
 
-            using (var clip = ThemeConfig.GetRoundedPathF(new RectangleF(0, 0, bounds.Width, bounds.Height), radius))
+            if (_logo != null)
             {
-                var saved = g.Save();
-                g.SetClip(clip);
-
-                // Cover-scale: fill the tile completely, trimming the longer axis.
                 float scale = Math.Max((float)bounds.Width / _logo.Width, (float)bounds.Height / _logo.Height);
-                float w = _logo.Width * scale;
-                float h = _logo.Height * scale;
-                g.DrawImage(_logo, new RectangleF((bounds.Width - w) / 2f, (bounds.Height - h) / 2f, w, h));
-
-                g.Restore(saved);
+                int w = Math.Max(1, (int)(_logo.Width * scale));
+                int h = Math.Max(1, (int)(_logo.Height * scale));
+                var dest = new Rectangle(
+                    bounds.X + (bounds.Width - w) / 2,
+                    bounds.Y + (bounds.Height - h) / 2,
+                    w, h);
+                g.DrawImage(_logo, dest);
+            }
+            else
+            {
+                TextRenderer.DrawText(g, "Softio", new Font("Segoe UI", 16F, FontStyle.Bold),
+                    bounds, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             }
         }
     }

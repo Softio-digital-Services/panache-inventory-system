@@ -1091,6 +1091,8 @@
   <data name="Notif_Overdue" xml:space="preserve">    <value>OVERDUE</value>  </data>
   <data name="Notif_DueIn" xml:space="preserve">    <value>due in {0} days</value>  </data>
   <data name="Notif_LowStockMsg" xml:space="preserve">    <value>{0} is low ({1} left)</value>  </data>
+  <data name="Notif_OutOfStock" xml:space="preserve">    <value>Out of Stock Alert</value>  </data>
+  <data name="Notif_OutOfStockMsg" xml:space="preserve">    <value>{0} is out of stock</value>  </data>
   <data name="Notif_RecentOrder" xml:space="preserve">    <value>Recent Order</value>  </data>
   <data name="Notif_RecentOrderMsg" xml:space="preserve">    <value>Order #{0} by {1} - {2}</value>  </data>
   <data name="Notif_WalkIn" xml:space="preserve">    <value>Walk-in</value>  </data>
@@ -2357,6 +2359,9 @@ Accepted By: __________________________</value>
   </data>
   <data name="AddCat_TitleEdit" xml:space="preserve">
     <value>Edit Category: {0}</value>
+  </data>
+  <data name="AboutUs_Company" xml:space="preserve">
+    <value>Softio</value>
   </data>
   <data name="AboutUs_AppName" xml:space="preserve">
     <value>Panache Inventory</value>

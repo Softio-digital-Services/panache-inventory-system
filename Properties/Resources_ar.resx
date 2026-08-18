@@ -1070,6 +1070,12 @@
   <data name="Notif_LowStockMsg" xml:space="preserve">
     <value>{0} منخفض (متبقي {1})</value>
   </data>
+  <data name="Notif_OutOfStock" xml:space="preserve">
+    <value>تنبيه نفاد المخزون</value>
+  </data>
+  <data name="Notif_OutOfStockMsg" xml:space="preserve">
+    <value>{0} نفد من المخزون</value>
+  </data>
   <data name="Notif_RecentOrder" xml:space="preserve">
     <value>طلب حديث</value>
   </data>
@@ -2419,6 +2425,9 @@
   </data>
   <data name="AddCat_TitleEdit" xml:space="preserve">
     <value>تعديل الفئة: {0}</value>
+  </data>
+  <data name="AboutUs_Company" xml:space="preserve">
+    <value>Softio</value>
   </data>
   <data name="AboutUs_AppName" xml:space="preserve">
     <value>نظام مخزون Panache</value>

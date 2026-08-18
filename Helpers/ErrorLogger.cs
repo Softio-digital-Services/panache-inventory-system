@@ -14,7 +14,7 @@ namespace InventorySystem
         {
             get
             {
-                string logDir = Path.Combine(Application.StartupPath, "Logs");
+                string logDir = Path.Combine(DatabaseConfig.UserDataDirectory, "Logs");
                 if (!Directory.Exists(logDir))
                 {
                     Directory.CreateDirectory(logDir);

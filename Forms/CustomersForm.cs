@@ -219,23 +219,15 @@ namespace InventorySystem.Forms
 
             // Export Button
             this.btnExport.Size = new System.Drawing.Size(100, 35);
-            this.btnExport.Text = "";
             this.btnExport.Name = "btnExportCust";
-            this.btnExport.FlatStyle = FlatStyle.Flat;
-            btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.Cursor = Cursors.Hand;
             this.btnExport.Click += btnExport_Click;
-            this.btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Cust_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+            ThemeConfig.ApplyStandardExportButton(this.btnExport, "Cust_Export");
 
             // Import Button
             this.btnImport.Size = new System.Drawing.Size(100, 35);
-            this.btnImport.Text = "";
             this.btnImport.Name = "btnImportCust";
-            this.btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.FlatAppearance.BorderSize = 0;
-            btnImport.Cursor = Cursors.Hand;
             this.btnImport.Click += btnImport_Click;
-            this.btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Cust_Import", ThemeConfig.SuccessBorder, ThemeConfig.SuccessBorder, true);
+            ThemeConfig.ApplyStandardImportButton(this.btnImport, "Cust_Import");
 
             var actionButtons = new Control[] { btnDeleteBulk, btnImport, btnExport, btnAddNew, btnCustomerDetails };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(this.lblCustomersTitle, this.txtSearch, actionButtons);

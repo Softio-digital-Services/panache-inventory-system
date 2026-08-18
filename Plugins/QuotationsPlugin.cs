@@ -32,6 +32,7 @@ namespace InventorySystem.Plugins
         {
             var allowed = _context.IsAdmin
                 || string.Equals(_context.UserRole, "Admin", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(_context.UserRole, "Staff", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(_context.UserRole, "Accountant", StringComparison.OrdinalIgnoreCase);
 
             if (allowed)

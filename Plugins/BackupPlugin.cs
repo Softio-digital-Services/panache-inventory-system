@@ -40,6 +40,17 @@ namespace InventorySystem.Plugins
     {
         private readonly PluginContext _ctx;
         private Label _lblLastBackup;
+        private Label _lblAutoBackup;
+        private ComboBox _cmbAutoBackup;
+        private Label _lblBackupFolder;
+
+        private static readonly (string Value, string Fallback)[] AutoSchedules =
+        {
+            ("off", "Off"),
+            ("daily", "Daily"),
+            ("weekly", "Weekly"),
+            ("monthly", "Monthly")
+        };
 
         public BackupPanel(PluginContext ctx)
         {
@@ -69,6 +80,73 @@ namespace InventorySystem.Plugins
             };
             this.Controls.Add(_lblLastBackup);
             y += 40;
+
+            _lblAutoBackup = new Label
+            {
+                AutoSize = false,
+                Size = new Size(440, 22),
+                Location = new Point(20, y),
+                Font = ThemeConfig.StandardFont,
+                ForeColor = ThemeConfig.TextColorDark,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = LocalizationManager.GetString("AutoBackup_Label", "Auto backup")
+            };
+            this.Controls.Add(_lblAutoBackup);
+            y += 26;
+
+            _cmbAutoBackup = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Size = new Size(440, 35),
+                Location = new Point(20, y),
+                Font = ThemeConfig.StandardFont
+            };
+            foreach (var item in AutoSchedules)
+            {
+                string key = "AutoBackup_" + char.ToUpper(item.Value[0]) + item.Value.Substring(1);
+                if (item.Value == "off") key = "AutoBackup_Off";
+                _cmbAutoBackup.Items.Add(LocalizationManager.GetString(key, item.Fallback));
+            }
+            _cmbAutoBackup.SelectedIndex = GetAutoScheduleIndex(BackupService.GetSchedule());
+            _cmbAutoBackup.SelectedIndexChanged += (s, e) =>
+            {
+                if (_cmbAutoBackup.SelectedIndex < 0) return;
+                BackupService.SetSchedule(AutoSchedules[_cmbAutoBackup.SelectedIndex].Value);
+            };
+            this.Controls.Add(_cmbAutoBackup);
+            y += 45;
+
+            var lblFolderTitle = new Label
+            {
+                AutoSize = false,
+                Size = new Size(440, 22),
+                Location = new Point(20, y),
+                Font = ThemeConfig.StandardFont,
+                ForeColor = ThemeConfig.TextColorDark,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = LocalizationManager.GetString("Backup_Location", "Backup location")
+            };
+            this.Controls.Add(lblFolderTitle);
+            y += 24;
+
+            _lblBackupFolder = new Label
+            {
+                AutoSize = false,
+                Size = new Size(440, 36),
+                Location = new Point(20, y),
+                Font = ThemeConfig.StandardFont,
+                ForeColor = ThemeConfig.SecondaryColor,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = BackupService.GetBackupDirectory()
+            };
+            this.Controls.Add(_lblBackupFolder);
+            y += 42;
+
+            AddActionButton(this, ref y,
+                LocalizationManager.GetString("Backup_ChooseFolder", "Choose Folder"),
+                "open_backup_folder", ThemeConfig.PrimaryColor, ChooseBackupFolder);
+
+            y += 10;
 
             // Separator
             this.Controls.Add(new Panel { BackColor = ThemeConfig.BorderColor, Location = new Point(20, y), Size = new Size(440, 1) });
@@ -155,27 +233,27 @@ namespace InventorySystem.Plugins
             y += 60;
         }
 
+        private void ChooseBackupFolder()
+        {
+            try
+            {
+                string folder = BackupService.PickBackupDirectory();
+                if (string.IsNullOrWhiteSpace(folder)) return;
+                if (_lblBackupFolder != null)
+                    _lblBackupFolder.Text = folder;
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.ShowError(ex.Message);
+            }
+        }
+
         private void DoBackup()
         {
             try
             {
-                string backupDir = GetBackupDirectory();
-                Directory.CreateDirectory(backupDir);
-
-                string dbFile = FindDatabaseFile();
-                if (dbFile == null)
-                {
-                    MessageHelper.ShowError(LocalizationManager.GetString("Error_DbNotFound", "Database file not found."));
-                    return;
-                }
-
-                string destFile = Path.Combine(backupDir,
-                    $"backup_{DateTime.Now:yyyyMMdd_HHmmss}{Path.GetExtension(dbFile)}");
-                File.Copy(dbFile, destFile, overwrite: true);
-
-                File.WriteAllText(Path.Combine(backupDir, "last_backup.txt"), DateTime.Now.ToString("o"));
+                string destFile = BackupService.CreateBackup();
                 _lblLastBackup.Text = GetLastBackupText();
-
                 MessageHelper.ShowSuccess(string.Format(LocalizationManager.GetString("Plugins_BackupSuccessMsg", "Backup created successfully!\n{0}"), destFile));
             }
             catch (Exception ex)
@@ -334,17 +412,27 @@ namespace InventorySystem.Plugins
             }
         }
 
-        private static string GetBackupDirectory()
-            => Path.Combine(Application.StartupPath, "Backups");
+        private static int GetAutoScheduleIndex(string schedule)
+        {
+            schedule = BackupService.NormalizeSchedule(schedule);
+            for (int i = 0; i < AutoSchedules.Length; i++)
+            {
+                if (AutoSchedules[i].Value == schedule) return i;
+            }
+            return 0;
+        }
+
+        private static string GetBackupDirectory() => BackupService.GetBackupDirectory();
 
         private static string FindDatabaseFile()
         {
             string dbPath = DatabaseConfig.DatabasePath;
             if (File.Exists(dbPath)) return dbPath;
-            
-            // Fallback for older versions or different structures
+
+            // Legacy locations (pre-AppData move)
             string[] candidates =
             {
+                Path.Combine(Application.StartupPath, "Data", "inventory.db"),
                 Path.Combine(Application.StartupPath, "Database", "carparts.mdf"),
                 Path.Combine(Application.StartupPath, "carparts.mdf"),
                 Path.Combine(Application.StartupPath, "Data", "inventory_generic.mdf"),

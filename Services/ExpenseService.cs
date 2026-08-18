@@ -13,18 +13,8 @@ namespace InventorySystem.Services
             try
             {
                 string currentMonth = DateTime.Now.ToString("yyyy-MM");
-                
-                // 1. Check if we've already processed recurring expenses for this month
-                // We use a dummy record or just check if any record has this month as 'last_processed_month'
-                int processedCount = DatabaseHelper.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM expenses WHERE last_processed_month = @month",
-                    new SqliteParameter("@month", currentMonth));
 
-                if (processedCount > 0) return; // Already processed
-
-                // 2. Find recurring templates from PREVIOUS months
-                // A template is any record where is_recurring = 1
-                // We'll take the most recent recurring record for each category/description pair
+                // Use the most recent recurring record per category/description as the template source.
                 string sqlTemplates = @"
                     SELECT category, amount, description, recorded_by 
                     FROM expenses 
@@ -37,7 +27,20 @@ namespace InventorySystem.Services
                 {
                     foreach (DataRow row in templates.Rows)
                     {
-                        // Create a new UNPAID record for the current month
+                        // Skip if this recurring template was already generated for this month.
+                        int alreadyExists = DatabaseHelper.ExecuteScalar<int>(
+                            @"SELECT COUNT(*) FROM expenses
+                              WHERE is_recurring = 1
+                                AND date_deleted IS NULL
+                                AND strftime('%Y-%m', expense_date) = @month
+                                AND IFNULL(category,'') = @cat
+                                AND IFNULL(description,'') = @desc",
+                            new SqliteParameter("@month", currentMonth),
+                            new SqliteParameter("@cat", row["category"]?.ToString() ?? string.Empty),
+                            new SqliteParameter("@desc", row["description"]?.ToString() ?? string.Empty));
+                        if (alreadyExists > 0) continue;
+
+                        // Create a new unpaid record for the current month.
                         string sqlInsert = @"
                             INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_paid, is_recurring, last_processed_month)
                             VALUES (@cat, @date, @amt, @desc, @usr, 0, 1, @month)";
@@ -50,15 +53,6 @@ namespace InventorySystem.Services
                             new SqliteParameter("@usr", "System"),
                             new SqliteParameter("@month", currentMonth));
                     }
-                }
-                else
-                {
-                    // If no templates found, just mark the month as processed so we don't keep checking
-                    // We can insert a hidden system record or just skip. 
-                    // To be safe, we'll insert a zero-amount system marker if no templates exist.
-                    DatabaseHelper.ExecuteNonQuery(
-                        "INSERT INTO expenses (category, expense_date, amount, description, recorded_by, is_paid, is_recurring, last_processed_month) VALUES ('System', datetime('now'), 0, 'Month Marker', 'System', 1, 0, @month)",
-                        new SqliteParameter("@month", currentMonth));
                 }
             }
             catch (Exception ex)

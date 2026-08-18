@@ -10,10 +10,16 @@ namespace InventorySystem.Helpers
     /// </summary>
     public static class ScaleApiBootstrap
     {
+        private static Microsoft.AspNetCore.Http.IResult ScaleDisabled() =>
+            Microsoft.AspNetCore.Http.Results.Json(
+                new { success = false, error = "Scale feature is disabled", enabled = false },
+                statusCode: 403);
+
         public static void WireBroadcasts()
         {
             ScaleService.Instance.WeightReceived += (weight, unit, stable) =>
             {
+                if (!FeatureFlags.ScaleEnabled) return;
                 _ = InventorySystem.InventoryBroadcaster.BroadcastObject("ScaleWeight", new
                 {
                     weight,
@@ -24,6 +30,7 @@ namespace InventorySystem.Helpers
             };
             ScaleService.Instance.StatusChanged += (connected, message) =>
             {
+                if (!FeatureFlags.ScaleEnabled) return;
                 _ = InventorySystem.InventoryBroadcaster.BroadcastObject("ScaleStatus", new
                 {
                     connected,
@@ -37,7 +44,7 @@ namespace InventorySystem.Helpers
 
             try
             {
-                if (ScaleService.Instance.Config.AutoConnect)
+                if (FeatureFlags.ScaleEnabled && ScaleService.Instance.Config.AutoConnect)
                     ScaleService.Instance.Connect();
             }
             catch { }
@@ -47,9 +54,26 @@ namespace InventorySystem.Helpers
         {
             app.MapGet("/api/scale/status", () =>
             {
+                if (!FeatureFlags.ScaleEnabled)
+                {
+                    return Microsoft.AspNetCore.Http.Results.Ok(new
+                    {
+                        enabled = false,
+                        connected = false,
+                        weight = 0m,
+                        unit = "kg",
+                        stable = true,
+                        port = "",
+                        baudRate = 9600,
+                        autoConnect = false,
+                        defaultUnit = "kg"
+                    });
+                }
+
                 var s = ScaleService.Instance;
                 return Microsoft.AspNetCore.Http.Results.Ok(new
                 {
+                    enabled = true,
                     connected = s.IsConnected,
                     weight = s.LastWeight,
                     unit = s.LastUnit,
@@ -62,10 +86,13 @@ namespace InventorySystem.Helpers
             });
 
             app.MapGet("/api/scale/ports", () =>
-                Microsoft.AspNetCore.Http.Results.Ok(ScaleService.GetAvailablePorts()));
+                FeatureFlags.ScaleEnabled
+                    ? Microsoft.AspNetCore.Http.Results.Ok(ScaleService.GetAvailablePorts())
+                    : ScaleDisabled());
 
             app.MapGet("/api/scale/weight", () =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 var s = ScaleService.Instance;
                 return Microsoft.AspNetCore.Http.Results.Ok(new
                 {
@@ -78,6 +105,7 @@ namespace InventorySystem.Helpers
 
             app.MapPost("/api/scale/connect", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 try
                 {
                     string port = null;
@@ -105,24 +133,28 @@ namespace InventorySystem.Helpers
 
             app.MapPost("/api/scale/disconnect", () =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 ScaleService.Instance.Disconnect();
                 return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
             });
 
             app.MapPost("/api/scale/tare", () =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 ScaleService.Instance.SendTare();
                 return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
             });
 
             app.MapPost("/api/scale/zero", () =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 ScaleService.Instance.SendZero();
                 return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
             });
 
             app.MapPost("/api/scale/request", () =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 ScaleService.Instance.RequestWeight();
                 return Microsoft.AspNetCore.Http.Results.Ok(new
                 {
@@ -135,6 +167,7 @@ namespace InventorySystem.Helpers
 
             app.MapPost("/api/scale/config", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 try
                 {
                     var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ScaleConfig>(
@@ -149,6 +182,7 @@ namespace InventorySystem.Helpers
 
             app.MapPost("/api/scale/simulate", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
             {
+                if (!FeatureFlags.ScaleEnabled) return ScaleDisabled();
                 try
                 {
                     var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ScaleSimulatePayload>(
@@ -166,6 +200,8 @@ namespace InventorySystem.Helpers
 
             app.MapPost("/api/scale/resolve-barcode", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
             {
+                if (!FeatureFlags.ScaleEnabled)
+                    return Microsoft.AspNetCore.Http.Results.Ok(new { isScaleBarcode = false, enabled = false });
                 try
                 {
                     var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ScaleBarcodePayload>(

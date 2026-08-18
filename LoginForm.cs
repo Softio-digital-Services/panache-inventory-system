@@ -120,24 +120,23 @@ namespace InventorySystem
             // Background
             this.tableLayoutPanel1.BackColor = ThemeConfig.BackgroundColor; 
             
-            // Add Logo
-            PictureBox pbLogo = new PictureBox();
-            pbLogo.Size = new Size(145, 79);
-            pbLogo.SizeMode = PictureBoxSizeMode.Zoom;
-            pbLogo.Anchor = AnchorStyles.Top; 
-            try 
-            { 
-                string logoPath = System.IO.Path.Combine(Application.StartupPath, "Assets", "logo.png");
-                if(System.IO.File.Exists(logoPath))
-                    pbLogo.Image = Image.FromFile(logoPath);
-            } catch { }
-            panelLoginCard.Controls.Add(pbLogo);
-
-            // Center Logo on Resize
-            panelLoginCard.Resize += (s, e) => {
-                pbLogo.Location = new Point((panelLoginCard.Width - 145) / 2, 30);
+            // Brand name
+            Label lblBrand = new Label
+            {
+                Text = ThemeConfig.CompanyName,
+                AutoSize = false,
+                Size = new Size(200, 48),
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
+                ForeColor = ThemeConfig.PrimaryColor,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Anchor = AnchorStyles.Top
             };
-            pbLogo.Location = new Point((panelLoginCard.Width - 145) / 2, 30);
+            panelLoginCard.Controls.Add(lblBrand);
+
+            panelLoginCard.Resize += (s, e) => {
+                lblBrand.Location = new Point((panelLoginCard.Width - lblBrand.Width) / 2, 36);
+            };
+            lblBrand.Location = new Point((panelLoginCard.Width - lblBrand.Width) / 2, 36);
 
             labelTitle.Top = 145;
             labelSubtitle.Top = 195;

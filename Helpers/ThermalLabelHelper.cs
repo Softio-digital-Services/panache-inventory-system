@@ -19,15 +19,22 @@ namespace InventorySystem.Helpers
     public class LabelPrintOptions
     {
         public string PrinterName { get; set; }
-        /// <summary>auto | tspl | gdi — blank/auto uses saved profile then heuristics.</summary>
-        public string Protocol { get; set; }
-        public double? LabelWidthMm { get; set; }
-        public double? LabelHeightMm { get; set; }
-        public double? LabelGapMm { get; set; }
         public int Copies { get; set; } = 1;
         public bool Landscape { get; set; }
         public bool Color { get; set; } = true;
         public string PageRange { get; set; } = "all";
+        public double LabelWidthMm { get; set; }
+        public double LabelHeightMm { get; set; }
+        public double LabelGapMm { get; set; } = -1;
+        public double MarginMm { get; set; } = -1;
+        public double MarginTopMm { get; set; } = -1;
+        public double MarginRightMm { get; set; } = -1;
+        public double MarginBottomMm { get; set; } = -1;
+        public double MarginLeftMm { get; set; } = -1;
+        public int Columns { get; set; } = -1; // -1 = use saved / auto
+        public string PaperMode { get; set; }
+        public double PageWidthMm { get; set; }
+        public double PageHeightMm { get; set; }
     }
 
     public class ThermalLabelHelper
@@ -37,17 +44,18 @@ namespace InventorySystem.Helpers
         private static int _pageNumber;
         private static HashSet<int> _allowedPages;
         private static bool _grayscale;
-        private static bool _thermalOneLabelMode;
-        private static Bitmap _currentLabelBmp;
 
-        // Label cell size in hundredths of an inch (~2.2" × 1.15")
-        private const int LabelWidth = 220;
-        private const int LabelHeight = 115;
-        private const int GapX = 12;
-        private const int GapY = 12;
-        private const int Cols = 3;
-        private const int RenderDpi = 203;
+        // Active layout for the current print job (hundredths of an inch)
+        private static int _labelWidth;
+        private static int _labelHeight;
+        private static int _gapX;
+        private static int _gapY;
+        private static int _maxCols;
+        private static bool _rollMode;
 
+        /// <summary>
+        /// Opens a compact themed PrintPreviewDialog (legacy path).
+        /// </summary>
         public static void GenerateLabelPDF(List<LabelPrintItem> items, IWin32Window owner = null)
         {
             if (items == null || items.Count == 0) return;
@@ -70,36 +78,13 @@ namespace InventorySystem.Helpers
             }
         }
 
+        /// <summary>
+        /// Prints labels directly using the chosen printer and options (no Chromium dialog).
+        /// </summary>
         public static void PrintLabels(List<LabelPrintItem> items, LabelPrintOptions options, IWin32Window owner = null)
         {
             if (items == null || items.Count == 0) return;
             options ??= new LabelPrintOptions();
-
-            // Resolve blank "System printer…" to Windows default (usually Xprinter)
-            if (string.IsNullOrWhiteSpace(options.PrinterName))
-                options.PrinterName = TsplRawPrint.ResolvePrinterName(null);
-
-            if (!string.IsNullOrWhiteSpace(options.Protocol)
-                || options.LabelWidthMm.HasValue
-                || options.LabelHeightMm.HasValue
-                || options.LabelGapMm.HasValue)
-            {
-                PrinterProfileStore.Remember(
-                    options.PrinterName,
-                    labelProtocol: options.Protocol,
-                    labelWidthMm: options.LabelWidthMm,
-                    labelHeightMm: options.LabelHeightMm,
-                    labelGapMm: options.LabelGapMm);
-            }
-
-            var mode = PrinterProfileStore.ResolveLabelProtocol(options.PrinterName, options.Protocol);
-
-            // Dual-mode Xprinter / TSPL labels — only when protocol says so
-            if (mode == PrintProtocol.Tspl)
-            {
-                PrintLabelsForThermal(items, options);
-                return;
-            }
 
             PrintDocument pd = BuildDocument(items, options);
             try
@@ -109,147 +94,7 @@ namespace InventorySystem.Helpers
             finally
             {
                 pd.Dispose();
-                DisposeLabelBmp();
             }
-        }
-
-        /// <summary>
-        /// Label mode only: TSPL (minimal BAR/BOX/BARCODE) → CPCL → GDI.
-        /// Never ESC/POS (that is for receipts).
-        /// </summary>
-        private static void PrintLabelsForThermal(List<LabelPrintItem> items, LabelPrintOptions options)
-        {
-            var queue = ExpandQueue(items);
-            var allowed = ParsePageRange(options.PageRange);
-            _grayscale = !options.Color;
-
-            var printItems = new List<LabelPrintItem>();
-            int pageNo = 0;
-            foreach (var item in queue)
-            {
-                pageNo++;
-                if (allowed != null && !allowed.Contains(pageNo))
-                    continue;
-                printItems.Add(item);
-            }
-
-            if (printItems.Count == 0)
-                throw new InvalidOperationException("No labels to print for the selected page range.");
-
-            int copies = Math.Max(1, options.Copies);
-            var profile = PrinterProfileStore.Get(options.PrinterName);
-            double wMm = options.LabelWidthMm ?? profile.LabelWidthMm;
-            double hMm = options.LabelHeightMm ?? profile.LabelHeightMm;
-            double gapMm = options.LabelGapMm ?? profile.LabelGapMm;
-            if (wMm < 20) wMm = TsplRawPrint.DefaultWidthMm;
-            if (hMm < 15) hMm = TsplRawPrint.DefaultHeightMm;
-            if (gapMm < 0) gapMm = TsplRawPrint.DefaultGapMm;
-
-            var labels = new List<(string, string, string)>();
-            foreach (var item in printItems)
-            {
-                labels.Add((
-                    item.Name ?? "",
-                    string.IsNullOrWhiteSpace(item.SKU) ? (item.Name ?? "0") : item.SKU,
-                    CurrencyService.Format(item.Price)));
-            }
-
-            var errors = new List<string>();
-
-            // 1) Minimal TSPL (+ CPCL inside PrintNativeLabels)
-            try
-            {
-                TsplRawPrint.PrintNativeLabels(
-                    options.PrinterName, labels, wMm, hMm, copies, "Panache Labels", gapMm);
-                return;
-            }
-            catch (Exception ex) { errors.Add("TSPL/CPCL: " + ex.Message); }
-
-            // 2) GDI via official driver with label page size
-            var labelPages = new List<Bitmap>();
-            try
-            {
-                foreach (var item in printItems)
-                    labelPages.Add(RenderLabelBitmapForTspl(item, wMm, hMm));
-                PrintLabelsViaGdi(options.PrinterName, labelPages, copies, wMm, hMm);
-                return;
-            }
-            catch (Exception ex) { errors.Add("GDI: " + ex.Message); }
-            finally
-            {
-                foreach (var b in labelPages)
-                {
-                    try { b.Dispose(); } catch { }
-                }
-            }
-
-            throw new InvalidOperationException(
-                "Barcode label print failed:\n- " + string.Join("\n- ", errors) +
-                "\n\nUse LABEL mode + thermal gap labels (~50×30 mm)." +
-                "\nIf still blank: labels may be non-thermal or loaded upside-down.");
-        }
-
-        private static void PrintLabelsViaGdi(
-            string printerName, List<Bitmap> pages, int copies, double widthMm, double heightMm)
-        {
-            if (pages == null || pages.Count == 0) return;
-            copies = Math.Max(1, Math.Min(99, copies));
-
-            int wHi = Math.Max(50, (int)Math.Round(widthMm / 25.4 * 100));
-            int hHi = Math.Max(50, (int)Math.Round(heightMm / 25.4 * 100));
-
-            for (int c = 0; c < copies; c++)
-            {
-                int index = 0;
-                using var pd = new PrintDocument();
-                ThermalPrintUtil.ApplyPrinter(pd, printerName, 1, false, true);
-                try
-                {
-                    pd.DefaultPageSettings.PaperSize = new PaperSize("BarcodeLabel", wHi, hHi);
-                }
-                catch
-                {
-                    pd.DefaultPageSettings.PaperSize = new PaperSize("Label", wHi, hHi);
-                }
-                pd.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
-                pd.OriginAtMargins = false;
-
-                pd.PrintPage += (s, e) =>
-                {
-                    e.HasMorePages = false;
-                    if (index >= pages.Count) return;
-                    var bmp = pages[index++];
-                    var dest = e.PageBounds;
-                    if (dest.Width < 8 || dest.Height < 8)
-                        dest = e.MarginBounds;
-                    e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-                    e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-                    e.Graphics.Clear(Color.White);
-                    e.Graphics.DrawImage(bmp, dest);
-                    e.HasMorePages = index < pages.Count;
-                };
-
-                pd.Print();
-            }
-        }
-
-        /// <summary>High-res label bitmap sized to physical mm at 203 DPI for TSPL.</summary>
-        private static Bitmap RenderLabelBitmapForTspl(LabelPrintItem item, double widthMm, double heightMm)
-        {
-            int wPx = TsplRawPrint.MmToDots(widthMm);
-            int hPx = TsplRawPrint.MmToDots(heightMm);
-            // Width must be multiple of 8 for clean TSPL packing
-            wPx = (wPx + 7) / 8 * 8;
-
-            var bmp = new Bitmap(wPx, hPx, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                g.Clear(Color.White);
-                g.SmoothingMode = SmoothingMode.None;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-                DrawLabel(g, item, new Rectangle(0, 0, wPx, hPx), largeThermal: true);
-            }
-            return bmp;
         }
 
         private static PrintDocument BuildDocument(List<LabelPrintItem> items, LabelPrintOptions options)
@@ -259,66 +104,95 @@ namespace InventorySystem.Helpers
             _pageNumber = 0;
             _allowedPages = ParsePageRange(options.PageRange);
             _grayscale = !options.Color;
-            _thermalOneLabelMode = ThermalPrintUtil.LooksLikeThermalPrinter(options.PrinterName);
+
+            var defaults = PrintSettings.GetSnapshot();
+            var resolved = PrintSettings.ResolveForPrinter(options.PrinterName, "label", defaults);
+
+            double wMm = options.LabelWidthMm > 0 ? options.LabelWidthMm : resolved.WidthMm;
+            double hMm = options.LabelHeightMm > 0 ? options.LabelHeightMm : resolved.HeightMm;
+            double gapMm = options.LabelGapMm >= 0 ? options.LabelGapMm : (resolved.GapMm >= 0 ? resolved.GapMm : defaults.LabelGapMm);
+            double uniMargin = options.MarginMm >= 0 ? options.MarginMm
+                : (resolved.MarginMm >= 0 ? resolved.MarginMm : defaults.LabelMarginMm);
+            double mTop = options.MarginTopMm >= 0 ? options.MarginTopMm
+                : (resolved.MarginTopMm >= 0 ? resolved.MarginTopMm : uniMargin);
+            double mRight = options.MarginRightMm >= 0 ? options.MarginRightMm
+                : (resolved.MarginRightMm >= 0 ? resolved.MarginRightMm : uniMargin);
+            double mBottom = options.MarginBottomMm >= 0 ? options.MarginBottomMm
+                : (resolved.MarginBottomMm >= 0 ? resolved.MarginBottomMm : uniMargin);
+            double mLeft = options.MarginLeftMm >= 0 ? options.MarginLeftMm
+                : (resolved.MarginLeftMm >= 0 ? resolved.MarginLeftMm : uniMargin);
+            int columns = options.Columns >= 0 ? options.Columns
+                : (resolved.Columns > 0 ? resolved.Columns : defaults.LabelColumns);
+            string mode = !string.IsNullOrWhiteSpace(options.PaperMode)
+                ? options.PaperMode
+                : (!string.IsNullOrWhiteSpace(resolved.PaperMode) ? resolved.PaperMode : defaults.LabelPaperMode);
+            double pageWMm = options.PageWidthMm > 0 ? options.PageWidthMm
+                : (resolved.PageWidthMm > 0 ? resolved.PageWidthMm : defaults.LabelPageWidthMm);
+            double pageHMm = options.PageHeightMm > 0 ? options.PageHeightMm
+                : (resolved.PageHeightMm > 0 ? resolved.PageHeightMm : defaults.LabelPageHeightMm);
+
+            _rollMode = string.Equals(mode, "roll", StringComparison.OrdinalIgnoreCase);
+
+            _labelWidth = Math.Max(1, PrintSettings.MmToHundredths(wMm));
+            _labelHeight = Math.Max(1, PrintSettings.MmToHundredths(hMm));
+            _gapX = PrintSettings.MmToHundredths(gapMm);
+            _gapY = _gapX;
+            _maxCols = _rollMode ? 1 : (columns > 0 ? Math.Min(4, columns) : 4);
+            int mt = PrintSettings.MmToHundredths(mTop);
+            int mr = PrintSettings.MmToHundredths(mRight);
+            int mb = PrintSettings.MmToHundredths(mBottom);
+            int ml = PrintSettings.MmToHundredths(mLeft);
 
             PrintDocument pd = new PrintDocument();
-            ThermalPrintUtil.ApplyPrinter(pd, options.PrinterName, options.Copies, options.Landscape, options.Color);
-
-            if (_thermalOneLabelMode)
+            if (_rollMode)
             {
-                // One physical label per page — avoids A4→TSPL conversion dumping BITMAP text
-                try
-                {
-                    pd.DefaultPageSettings.PaperSize = new PaperSize("BarcodeLabel", LabelWidth, LabelHeight);
-                }
-                catch
-                {
-                    pd.DefaultPageSettings.PaperSize = new PaperSize("Label", LabelWidth, LabelHeight);
-                }
-                pd.DefaultPageSettings.Margins = new Margins(4, 4, 4, 4);
-                pd.DefaultPageSettings.Landscape = false;
-                TrySelectLabelPaper(pd);
+                int pw = Math.Max(_labelWidth + ml + mr, PrintSettings.MmToHundredths(wMm));
+                int ph = Math.Max(_labelHeight + mt + mb, PrintSettings.MmToHundredths(hMm));
+                try { pd.DefaultPageSettings.PaperSize = new PaperSize("Label", pw, ph); }
+                catch { pd.DefaultPageSettings.PaperSize = new PaperSize("Label", pw, ph); }
+                pd.DefaultPageSettings.Margins = new Margins(ml, mr, mt, mb);
             }
             else
             {
-                try
-                {
-                    pd.DefaultPageSettings.PaperSize = new PaperSize("A4", 827, 1169);
-                }
-                catch
-                {
-                    pd.DefaultPageSettings.PaperSize = new PaperSize("A4", 827, 1169);
-                }
-                pd.DefaultPageSettings.Margins = new Margins(40, 40, 40, 40);
-                pd.DefaultPageSettings.Landscape = options.Landscape;
+                int pw = Math.Max(1, PrintSettings.MmToHundredths(pageWMm));
+                int ph = Math.Max(1, PrintSettings.MmToHundredths(pageHMm));
+                try { pd.DefaultPageSettings.PaperSize = new PaperSize("LabelSheet", pw, ph); }
+                catch { pd.DefaultPageSettings.PaperSize = new PaperSize("LabelSheet", pw, ph); }
+                pd.DefaultPageSettings.Margins = new Margins(ml, mr, mt, mb);
             }
+            pd.DefaultPageSettings.Landscape = options.Landscape;
+            pd.DefaultPageSettings.Color = options.Color;
+
+            if (!string.IsNullOrWhiteSpace(options.PrinterName))
+            {
+                try { pd.PrinterSettings.PrinterName = options.PrinterName; } catch { }
+            }
+
+            int copies = Math.Max(1, Math.Min(99, options.Copies));
+            try { pd.PrinterSettings.Copies = (short)copies; } catch { }
+
+            try
+            {
+                PrintSettings.SavePrinterProfile(options.PrinterName, "label", new PrinterJobProfile
+                {
+                    WidthMm = wMm,
+                    HeightMm = hMm,
+                    GapMm = gapMm,
+                    MarginMm = uniMargin,
+                    MarginTopMm = mTop,
+                    MarginRightMm = mRight,
+                    MarginBottomMm = mBottom,
+                    MarginLeftMm = mLeft,
+                    Columns = columns,
+                    PaperMode = mode,
+                    PageWidthMm = pageWMm,
+                    PageHeightMm = pageHMm
+                });
+            }
+            catch { }
 
             pd.PrintPage += Pd_PrintPage;
             return pd;
-        }
-
-        private static void TrySelectLabelPaper(PrintDocument pd)
-        {
-            try
-            {
-                PaperSize best = null;
-                int bestScore = int.MaxValue;
-                foreach (PaperSize ps in pd.PrinterSettings.PaperSizes)
-                {
-                    // Prefer small label stock close to our label size
-                    if (ps.Width < 150 || ps.Width > 400) continue;
-                    if (ps.Height < 80 || ps.Height > 500) continue;
-                    int score = Math.Abs(ps.Width - LabelWidth) + Math.Abs(ps.Height - LabelHeight);
-                    if (score < bestScore)
-                    {
-                        bestScore = score;
-                        best = ps;
-                    }
-                }
-                if (best != null)
-                    pd.DefaultPageSettings.PaperSize = best;
-            }
-            catch { }
         }
 
         private static HashSet<int> ParsePageRange(string range)
@@ -383,44 +257,22 @@ namespace InventorySystem.Helpers
             _pageNumber++;
             bool include = _allowedPages == null || _allowedPages.Contains(_pageNumber);
 
-            if (_thermalOneLabelMode)
-            {
-                // Skip pages outside range without drawing
-                while (!include && _queueIndex < _printQueue.Count)
-                {
-                    _queueIndex++;
-                    _pageNumber++;
-                    include = _allowedPages == null || _allowedPages.Contains(_pageNumber);
-                }
-
-                if (_queueIndex >= _printQueue.Count)
-                {
-                    e.HasMorePages = false;
-                    return;
-                }
-
-                DisposeLabelBmp();
-                _currentLabelBmp = RenderLabelBitmap(_printQueue[_queueIndex]);
-                _queueIndex++;
-
-                Rectangle bounds = e.MarginBounds;
-                if (bounds.Width < 10 || bounds.Height < 10)
-                    bounds = e.PageBounds;
-
-                ThermalPrintUtil.DrawPageBitmap(e.Graphics, _currentLabelBmp, bounds);
-                e.HasMorePages = _queueIndex < _printQueue.Count;
-                return;
-            }
-
-            // Office / A4 multi-label sheet
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.Clear(Color.White);
 
             Rectangle area = e.MarginBounds;
-            int cols = Math.Max(1, Math.Min(Cols, (area.Width + GapX) / (LabelWidth + GapX)));
-            int rows = Math.Max(1, (area.Height + GapY) / (LabelHeight + GapY));
+            int lw = Math.Max(40, _labelWidth);
+            int lh = Math.Max(30, _labelHeight);
+            int gx = Math.Max(0, _gapX);
+            int gy = Math.Max(0, _gapY);
+            int maxCols = Math.Max(1, _maxCols);
+            int cols = _rollMode
+                ? 1
+                : Math.Max(1, Math.Min(maxCols, (area.Width + gx) / (lw + gx)));
+            int rows = _rollMode
+                ? 1
+                : Math.Max(1, (area.Height + gy) / (lh + gy));
             int perPage = cols * rows;
 
             int drawn = 0;
@@ -430,14 +282,15 @@ namespace InventorySystem.Helpers
                 {
                     int col = drawn % cols;
                     int row = drawn / cols;
-                    int x = area.Left + col * (LabelWidth + GapX);
-                    int y = area.Top + row * (LabelHeight + GapY);
-                    DrawLabel(g, _printQueue[_queueIndex], new Rectangle(x, y, LabelWidth, LabelHeight));
+                    int x = area.Left + col * (lw + gx);
+                    int y = area.Top + row * (lh + gy);
+                    DrawLabel(g, _printQueue[_queueIndex], new Rectangle(x, y, lw, lh));
                 }
                 _queueIndex++;
                 drawn++;
             }
 
+            // If this page was skipped by range, keep going until an included page or end
             if (!include && _queueIndex < _printQueue.Count)
             {
                 e.HasMorePages = true;
@@ -446,6 +299,7 @@ namespace InventorySystem.Helpers
 
             if (_allowedPages != null && _queueIndex < _printQueue.Count)
             {
+                // More labels remain — only continue if any later page is allowed
                 int nextPage = _pageNumber + 1;
                 int remaining = _printQueue.Count - _queueIndex;
                 int maxPage = nextPage + Math.Max(0, (remaining + perPage - 1) / perPage);
@@ -461,31 +315,14 @@ namespace InventorySystem.Helpers
             e.HasMorePages = _queueIndex < _printQueue.Count;
         }
 
-        private static Bitmap RenderLabelBitmap(LabelPrintItem item)
+        private static void DrawLabel(Graphics g, LabelPrintItem item, Rectangle bounds)
         {
-            int wPx = Math.Max(120, (int)(LabelWidth / 100.0 * RenderDpi));
-            int hPx = Math.Max(60, (int)(LabelHeight / 100.0 * RenderDpi));
-            var bmp = new Bitmap(wPx, hPx);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                g.Clear(Color.White);
-                g.SmoothingMode = SmoothingMode.None;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
-                DrawLabel(g, item, new Rectangle(0, 0, wPx, hPx));
-            }
-            var mono = ThermalPrintUtil.ToMonoBitmap(bmp);
-            bmp.Dispose();
-            return mono;
-        }
-
-        private static void DrawLabel(Graphics g, LabelPrintItem item, Rectangle bounds, bool largeThermal = false)
-        {
-            Color borderColor = _grayscale ? Color.FromArgb(100, 100, 100) : Color.FromArgb(40, 40, 40);
+            Color borderColor = _grayscale ? Color.FromArgb(100, 100, 100) : Color.FromArgb(148, 163, 184);
             Color textColor = Color.Black;
-            Color accent = Color.Black;
+            Color accent = _grayscale ? Color.FromArgb(40, 40, 40) : Color.FromArgb(5, 150, 105);
 
-            using (var border = new Pen(borderColor, largeThermal ? 2f : 1f))
-                g.DrawRectangle(border, bounds.X, bounds.Y, bounds.Width - 1, bounds.Height - 1);
+            using (var border = new Pen(borderColor, Math.Max(1f, bounds.Height / 80f)))
+                g.DrawRectangle(border, bounds);
 
             var center = new StringFormat
             {
@@ -495,61 +332,57 @@ namespace InventorySystem.Helpers
             };
 
             string name = item.Name ?? "";
-            int nameMax = largeThermal ? 32 : 28;
-            if (name.Length > nameMax) name = name.Substring(0, nameMax - 3) + "...";
+            int maxName = Math.Max(12, Math.Min(40, bounds.Width / 7));
+            if (name.Length > maxName) name = name.Substring(0, Math.Max(1, maxName - 3)) + "...";
             string code = string.IsNullOrWhiteSpace(item.SKU) ? "—" : item.SKU;
             string priceStr = CurrencyService.Format(item.Price);
 
-            float scale = Math.Min(bounds.Width / 220f, bounds.Height / 115f);
-            if (scale <= 0) scale = 1f;
-            if (largeThermal) scale = Math.Max(scale, 1.6f);
-            float nameSize = Math.Max(largeThermal ? 12f : 7f, 8.5f * scale);
-            float skuSize = Math.Max(largeThermal ? 11f : 6f, 7f * scale);
-            float priceSize = Math.Max(largeThermal ? 13f : 7f, 9f * scale);
-            int pad = Math.Max(largeThermal ? 8 : 3, (int)(4 * scale));
-            int barcodeH = Math.Max(largeThermal ? 56 : 28, (int)(42 * scale));
+            float pad = Math.Max(2f, bounds.Width * 0.03f);
+            float nameH = Math.Max(10f, bounds.Height * 0.16f);
+            float barcodeH = Math.Max(18f, bounds.Height * 0.38f);
+            float codeH = Math.Max(9f, bounds.Height * 0.13f);
+            float priceH = Math.Max(11f, bounds.Height * 0.16f);
+            float namePt = Math.Max(5f, Math.Min(12f, bounds.Height * 0.07f));
+            float skuPt = Math.Max(4.5f, Math.Min(10f, bounds.Height * 0.055f));
+            float pricePt = Math.Max(5.5f, Math.Min(13f, bounds.Height * 0.075f));
 
-            using (var nameFont = new Font("Consolas", nameSize, FontStyle.Bold))
-            using (var skuFont = new Font("Consolas", skuSize, FontStyle.Bold))
-            using (var priceFont = new Font("Consolas", priceSize, FontStyle.Bold))
+            using (var nameFont = new Font("Segoe UI", namePt, FontStyle.Bold))
+            using (var skuFont = new Font("Consolas", skuPt))
+            using (var priceFont = new Font("Segoe UI", pricePt, FontStyle.Bold))
             using (var textBrush = new SolidBrush(textColor))
             using (var accentBrush = new SolidBrush(accent))
             {
-                var nameRect = new RectangleF(bounds.X + pad, bounds.Y + pad, bounds.Width - pad * 2, nameSize + 8);
+                float y = bounds.Y + pad;
+                var nameRect = new RectangleF(bounds.X + pad, y, bounds.Width - pad * 2, nameH);
                 g.DrawString(name, nameFont, textBrush, nameRect, center);
+                y += nameH + pad * 0.4f;
 
                 try
                 {
                     var bs = new BarcodeService();
-                    int bwWanted = Math.Max(80, bounds.Width - pad * 4);
-                    using (Bitmap barcode = bs.RenderCode128(code == "—" ? "0" : code, bwWanted, barcodeH))
+                    int targetW = Math.Max(40, (int)(bounds.Width - pad * 2));
+                    int targetH = Math.Max(16, (int)barcodeH);
+                    using (Bitmap barcode = bs.RenderCode128(code == "—" ? "0" : code, targetW, targetH))
                     {
-                        int bw = Math.Min(barcode.Width, bounds.Width - pad * 2);
-                        int bh = barcodeH;
+                        int bw = Math.Min(barcode.Width, targetW);
+                        int bh = Math.Min(barcode.Height, targetH);
                         int bx = bounds.X + (bounds.Width - bw) / 2;
-                        int by = bounds.Y + (int)(nameRect.Bottom + 2);
-                        g.InterpolationMode = InterpolationMode.NearestNeighbor;
-                        g.DrawImage(barcode, new Rectangle(bx, by, bw, bh));
+                        g.DrawImage(barcode, new Rectangle(bx, (int)y, bw, bh));
                     }
                 }
                 catch
                 {
                     // If barcode render fails, still show code text
                 }
+                y += barcodeH + pad * 0.3f;
 
-                float afterBarcode = bounds.Y + pad + nameSize + 10 + barcodeH + 4;
-                var codeRect = new RectangleF(bounds.X + pad, afterBarcode, bounds.Width - pad * 2, skuSize + 6);
+                var codeRect = new RectangleF(bounds.X + pad, y, bounds.Width - pad * 2, codeH);
                 g.DrawString(code, skuFont, textBrush, codeRect, center);
+                y += codeH;
 
-                var priceRect = new RectangleF(bounds.X + pad, codeRect.Bottom, bounds.Width - pad * 2, priceSize + 8);
+                var priceRect = new RectangleF(bounds.X + pad, y, bounds.Width - pad * 2, priceH);
                 g.DrawString(priceStr, priceFont, accentBrush, priceRect, center);
             }
-        }
-
-        private static void DisposeLabelBmp()
-        {
-            try { _currentLabelBmp?.Dispose(); } catch { }
-            _currentLabelBmp = null;
         }
     }
 }

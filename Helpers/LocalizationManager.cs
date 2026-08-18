@@ -109,6 +109,13 @@ namespace InventorySystem.Helpers
             return fallback;
         }
 
+        public static string GetStringLang(string key, bool arabic)
+        {
+            if (string.IsNullOrEmpty(key)) return "";
+            string res = LookupResource(key, arabic);
+            return string.IsNullOrEmpty(res) ? key : res;
+        }
+
         private class ValueBox<T> { public T Value { get; set; } public ValueBox(T val) { Value = val; } }
 
         private static ConditionalWeakTable<Control, string> _originalTexts = new ConditionalWeakTable<Control, string>();

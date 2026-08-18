@@ -10,7 +10,7 @@ namespace InventorySystem.Forms
 {
     public class BaseModalForm : Form
     {
-        /// <summary>Pixels reserved around the client so the gold outline is never covered.</summary>
+        /// <summary>Pixels reserved around the client so the brand outline is never covered.</summary>
         private const int BorderGutter = 4;
 
         private Label lblTitle;
@@ -55,7 +55,7 @@ namespace InventorySystem.Forms
             this.StartPosition = FormStartPosition.CenterParent;
 
             // Leave a ring around the docked layout so Fill children cannot paint over
-            // the gold outline. Without this, only corners stayed visible and the left
+            // the brand outline. Without this, only corners stayed visible and the left
             // edge looked broken wherever content/header/footer covered it.
             this.Padding = new Padding(BorderGutter);
 
@@ -228,7 +228,7 @@ namespace InventorySystem.Forms
             tlpRoot.Controls.Add(FooterPanel, 0, 2);
 
             // Topmost ring: paints after siblings (WS_EX_TRANSPARENT) so opaque
-            // content can never punch holes through the gold outline.
+            // content can never punch holes through the brand outline.
             _borderRing = new ModalBorderRing { RingColor = BorderColor };
             this.Controls.Add(_borderRing);
             _borderRing.BringToFront();
@@ -487,7 +487,7 @@ namespace InventorySystem.Forms
         }
 
         /// <summary>
-        /// Full-client overlay that draws the rounded gold outline after every sibling.
+        /// Full-client overlay that draws the rounded brand outline after every sibling.
         /// Mouse hits return HTTRANSPARENT so close/maximize/content keep working —
         /// WS_EX_TRANSPARENT alone is not enough for WinForms hit-testing.
         /// </summary>

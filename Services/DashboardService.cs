@@ -263,146 +263,43 @@ namespace InventorySystem.Services
 
         // - Notifications -
 
-        public List<Notification> GetNotifications()
+        public List<Notification> GetNotifications(string lang = null)
         {
             var notifications = new List<Notification>();
+            bool arabic = !string.IsNullOrEmpty(lang)
+                ? lang.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
+                : LocalizationManager.IsArabic;
+            string L(string key) => LocalizationManager.GetStringLang(key, arabic);
 
-            try
+            void TryAdd(string section, Action action)
             {
-                // 1. Low Stock
-                var lowStockParts = DatabaseHelper.ExecuteDataTable(
+                try { action(); }
+                catch (Exception ex) { ErrorLogger.LogError(ex, "GetNotifications:" + section); }
+            }
+
+            // Low stock and out of stock only
+            TryAdd("StockAlerts", () =>
+            {
+                var stockAlerts = DatabaseHelper.ExecuteDataTable(
                     "SELECT part_name, quantity_in_stock, minimum_stock_level FROM parts " +
-                    "WHERE quantity_in_stock <= minimum_stock_level AND date_deleted IS NULL LIMIT 5");
-                foreach (DataRow row in lowStockParts.Rows)
+                    "WHERE quantity_in_stock <= minimum_stock_level AND date_deleted IS NULL " +
+                    "ORDER BY quantity_in_stock ASC, part_name ASC");
+                foreach (DataRow row in stockAlerts.Rows)
                 {
+                    int qty = Convert.ToInt32(row["quantity_in_stock"]);
+                    bool outOfStock = qty <= 0;
                     notifications.Add(new Notification
                     {
-                        Type      = "LowStock",
-                        Title     = LocalizationManager.GetString("Notif_LowStock"),
-                        Message   = string.Format(LocalizationManager.GetString("Notif_LowStockMsg"), row["part_name"], row["quantity_in_stock"]),
+                        Type      = outOfStock ? "OutOfStock" : "LowStock",
+                        Title     = L(outOfStock ? "Notif_OutOfStock" : "Notif_LowStock"),
+                        Message   = outOfStock
+                            ? string.Format(L("Notif_OutOfStockMsg"), row["part_name"])
+                            : string.Format(L("Notif_LowStockMsg"), row["part_name"], qty),
                         Target    = "btnInventory",
                         Timestamp = DateTime.Now
                     });
                 }
-
-                // 2. Recent Orders (last 24h)
-                var recentOrders = DatabaseHelper.ExecuteDataTable(@"
-                    SELECT o.order_id, c.full_name, o.total_amount, o.order_date
-                    FROM orders o
-                    LEFT JOIN customers c ON o.customer_id = c.customer_id
-                    WHERE datetime(o.order_date) >= datetime('now', '-1 day')
-                    ORDER BY o.order_date DESC LIMIT 3");
-                foreach (DataRow row in recentOrders.Rows)
-                {
-                    string val          = CurrencyService.Format(Convert.ToDecimal(row["total_amount"]));
-                    string customerName = row["full_name"]?.ToString() ?? LocalizationManager.GetString("Notif_WalkIn");
-                    
-                    DateTime orderDate = DateTime.Now;
-                    if (row["order_date"] != DBNull.Value)
-                    {
-                        DateTime.TryParse(row["order_date"].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out orderDate);
-                    }
-
-                    notifications.Add(new Notification
-                    {
-                        Type      = "Order",
-                        Title     = LocalizationManager.GetString("Notif_RecentOrder"),
-                        Message   = string.Format(LocalizationManager.GetString("Notif_RecentOrderMsg"), row["order_id"], customerName, val),
-                        Target    = "btnHistory",
-                        Timestamp = orderDate
-                    });
-                }
-
-                // 3. Customer Payment Reminders
-                var customerReminders = DatabaseHelper.ExecuteDataTable(@"
-                    SELECT full_name, payment_due_date, current_balance, reminder_days
-                    FROM customers
-                    WHERE date_deleted IS NULL
-                      AND payment_due_date IS NOT NULL
-                      AND current_balance > 0
-                      AND (julianday(payment_due_date) - julianday('now')) <= reminder_days");
-                foreach (DataRow row in customerReminders.Rows)
-                {
-                    if (row["payment_due_date"] == DBNull.Value) continue;
-                    if (!DateTime.TryParse(row["payment_due_date"].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dueDate)) continue;
-
-                    int diff      = (dueDate.Date - DateTime.Today).Days;
-                    string status = diff < 0
-                        ? LocalizationManager.GetString("Notif_Overdue")
-                        : string.Format(LocalizationManager.GetString("Notif_DueIn"), diff);
-                    notifications.Add(new Notification
-                    {
-                        Type      = diff < 0 ? "Alert" : "Info",
-                        Title     = LocalizationManager.GetString("Notif_CustomerPaymentDue"),
-                        Message   = $"{row["full_name"]} - {status} ({CurrencyService.Format(Convert.ToDecimal(row["current_balance"]))})",
-                        Target    = "btnCustomers",
-                        Timestamp = dueDate
-                    });
-                }
-
-                // 4. Supplier Payment Reminders
-                var supplierReminders = DatabaseHelper.ExecuteDataTable(@"
-                    SELECT supplier_name, payment_due_date, balance_due, reminder_days
-                    FROM suppliers
-                    WHERE date_deleted IS NULL
-                      AND payment_due_date IS NOT NULL
-                      AND balance_due > 0
-                      AND (julianday(payment_due_date) - julianday('now')) <= reminder_days");
-                foreach (DataRow row in supplierReminders.Rows)
-                {
-                    if (row["payment_due_date"] == DBNull.Value) continue;
-                    if (!DateTime.TryParse(row["payment_due_date"].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dueDate)) continue;
-
-                    int diff      = (dueDate.Date - DateTime.Today).Days;
-                    string status = diff < 0
-                        ? LocalizationManager.GetString("Notif_Overdue")
-                        : string.Format(LocalizationManager.GetString("Notif_DueIn"), diff);
-                    notifications.Add(new Notification
-                    {
-                        Type      = diff < 0 ? "Alert" : "Info",
-                        Title     = LocalizationManager.GetString("Notif_SupplierPaymentDue"),
-                        Message   = $"{row["supplier_name"]} - {status} ({CurrencyService.Format(Convert.ToDecimal(row["balance_due"]))})",
-                        Target    = "btnSuppliers",
-                        Timestamp = dueDate
-                    });
-                }
-
-                // 5. Unpaid Expenses
-                int unpaidCount = DatabaseHelper.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM expenses WHERE is_paid = 0 AND date_deleted IS NULL");
-                if (unpaidCount > 0)
-                {
-                    notifications.Add(new Notification
-                    {
-                        Type      = "Alert",
-                        Title     = LocalizationManager.GetString("Notif_UnpaidExpenses"),
-                        Message   = string.Format(LocalizationManager.GetString("Notif_UnpaidExpensesMsg"), unpaidCount),
-                        Target    = "btnMonthlyExpenses",
-                        Timestamp = DateTime.Now
-                    });
-                }
-
-                // 6. Month-end expense report
-                if (DateTime.Now.Day >= 25)
-                {
-                    decimal total = new ExpenseService().GetTotalExpenses(DateTime.Now.Month, DateTime.Now.Year);
-                    if (total > 0)
-                    {
-                        notifications.Add(new Notification
-                        {
-                            Type      = "Info",
-                            Title     = LocalizationManager.GetString("Notif_MonthlyExpensesReady"),
-                            Message   = string.Format(LocalizationManager.GetString("Notif_MonthlyExpensesReadyMsg"), CurrencyService.Format(total)),
-                            Target    = "btnMonthlyExpenses",
-                            Timestamp = DateTime.Now
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorLogger.LogError(ex, "GetNotifications");
-            }
+            });
 
             return notifications;
         }

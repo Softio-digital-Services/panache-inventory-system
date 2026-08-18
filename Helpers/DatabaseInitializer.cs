@@ -27,6 +27,8 @@ namespace InventorySystem.Helpers
             // Ensure Softio Super Admin always exists
             EnsureSoftioSuperAdmin();
 
+            FeatureFlags.EnsureTable();
+
             // Repair: Standardise status values (fix Arabic UI bug)
             DatabaseHelper.ExecuteNonQuery(
                 "UPDATE parts SET status = 'Active' WHERE status NOT IN ('Active', 'Inactive') AND date_deleted IS NULL;"

@@ -183,18 +183,12 @@ namespace InventorySystem.Forms
             ThemeConfig.ApplyStandardDeleteButton(btnDeleteSelected, "Parts_Delete");
 
             btnImport.Size = new Size(100, 35);
-            btnImport.FlatStyle = FlatStyle.Flat;
-            btnImport.FlatAppearance.BorderSize = 0;
-            btnImport.Cursor = Cursors.Hand;
             btnImport.Click += BtnImport_Click;
-            btnImport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnImport, e.Graphics, "import", "Parts_Import", Color.FromArgb(139, 92, 246), Color.FromArgb(139, 92, 246), true);
+            ThemeConfig.ApplyStandardImportButton(btnImport, "Parts_Import");
 
             btnExport.Size = new Size(100, 35);
-            btnExport.FlatStyle = FlatStyle.Flat;
-            btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.Cursor = Cursors.Hand;
             btnExport.Click += BtnExport_Click;
-            btnExport.Paint += (s, e) => ThemeConfig.DrawIconButton(btnExport, e.Graphics, "export", "Parts_Export", ThemeConfig.PrimaryColor, ThemeConfig.PrimaryColor, true);
+            ThemeConfig.ApplyStandardExportButton(btnExport, "Parts_Export");
 
             var actionButtons = new Control[] { btnDeleteSelected, btnImport, btnExport, btnAdd };
             TableLayoutPanel tlpHeader = ThemeConfig.CreateGlobalFormHeader(lblInventoryTitle, txtSearch, actionButtons);
@@ -1518,7 +1512,6 @@ namespace InventorySystem.Forms
             if (!UserSession.IsAdmin)
             {
                 if (btnAdd != null)    btnAdd.Visible = false;
-                if (btnImport != null) btnImport.Visible = false;
                 var ctrlDel = this.Controls.Find("btnDeleteSelected", true);
                 if (ctrlDel.Length > 0) ctrlDel[0].Visible = false;
             }

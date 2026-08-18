@@ -1,20 +1,26 @@
-# Car Parts Inventory Management System
+# Panache Inventory Management System
 
 ## 📋 Overview
 
-Complete inventory management system for car parts businesses with POS, customer management, supplier tracking, and comprehensive reporting.
+Complete inventory management system with POS, customer management, supplier tracking, and comprehensive reporting.
 
 ## 🚀 Quick Start
 
-### Run published web app (Otargi-style WebView2)
+### Run published web app (WebView2)
 
 ```text
 dist\app\PanacheInventorySystem.exe
 ```
 
-This opens the full Panache web UI (dashboard, inventory, POS, reports, …) with scale support.
+This opens the Panache web UI (dashboard, inventory, POS, reports, …). Hardware scale / sell-by-weight can be enabled by Softio Super Admin in Settings.
 
 Refresh `dist` after code changes:
+
+```powershell
+.\publish.bat
+```
+
+Or:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\installer\build.ps1
@@ -40,7 +46,7 @@ bin\Debug\net8.0-windows\win-x64\PanacheInventorySystem.exe
 
 1. **License Activation** (if prompted)
 2. **Default Login** — Softio.Admin / Softio@2026!
-3. **Database** — `Data\inventory.db` next to the exe (created on first run)
+3. **Database** — created automatically under `%LocalAppData%\PanacheInventory\Data\inventory.db` (no SQL Server needed)
 
 ## ✨ Features
 
@@ -69,40 +75,32 @@ bin\Debug\net8.0-windows\win-x64\PanacheInventorySystem.exe
 ## 📁 Project Structure
 
 ```
-InventorySystem-Final/
-├── bin/Debug/
-│   ├── CarPartsInventorySystem.exe    ← Main Application
-│   ├── Data/carparts.mdf              ← Database
-│   ├── Assets/                        ← UI Icons
-│   └── Logs/                          ← Error Logs
+panache-inventory-system/
+├── wwwroot/                 ← Web UI (served in WebView2)
+├── Forms/                   ← Host window + supporting WinForms
+├── Helpers/                 ← DB, print, license, theme
+├── Services/                ← Business logic
+├── Plugins/                 ← Optional menu plugins
+├── Data/                    ← C# data models (not the SQLite file)
 ├── Database/
-│   ├── SetupDatabase.bat              ← Database Setup
-│   ├── CreateCarPartsDatabase.sql     ← Schema
-│   └── *.ps1                          ← Helper Scripts
-├── Forms/                             ← UI Forms
-├── Helpers/                           ← Utility Classes
-├── Services/                          ← Business Logic
-├── Controls/                          ← Custom Controls
-├── Data/                              ← Data Models
-└── Templates/
-    └── Parts_Import_Template.csv      ← Import Template
+│   └── pos_cert.pfx         ← Local HTTPS cert for the embedded API
+├── Assets/                  ← Icons / branding
+├── Templates/               ← CSV import templates
+├── installer/               ← Inno Setup script + build.ps1
+├── publish.bat              ← Publish app + PanacheSetup.exe
+└── dist/                    ← Publish output (app + setup)
 ```
 
 ## 🔧 Configuration
 
-### Database Connection
-Edit `Helpers\DatabaseConfig.cs`:
-```csharp
-public static string ConnectionString = 
-    @"Data Source=(LocalDB)\MSSQLLocalDB;
-      AttachDbFilename=|DataDirectory|\Data\carparts.mdf;
-      Integrated Security=True";
-```
+### Database
+SQLite file lives in `%LocalAppData%\PanacheInventory\Data\inventory.db` so the app can save data even when installed under Program Files.
+Schema updates run automatically at startup. An old `Data\inventory.db` next to the exe is copied once on first launch after upgrade.
 
 ### Theme Customization
 Edit `Helpers\ThemeConfig.cs`:
 ```csharp
-public static Color PrimaryColor = Color.FromArgb(59, 130, 246);
+public static Color PrimaryColor = Color.FromArgb(212, 175, 55) // Panache gold #D4AF37;
 public static Color AccentColor = Color.FromArgb(16, 185, 129);
 ```
 
@@ -155,22 +153,17 @@ P002,Oil Filter,Filters,100,20,8.99,B2-Shelf1,Active
 
 ## 🗄️ Database Management
 
-### Backup Database
-```powershell
-copy "bin\Debug\Data\carparts.mdf" "Backup\carparts_backup_$(Get-Date -Format 'yyyyMMdd').mdf"
-```
+Backups and the live database use `%LocalAppData%\PanacheInventory\`:
 
-### Reset Database
-```powershell
-cd Database
-.\SetupDatabase.bat
-```
+- **Database:** `Data\inventory.db`
+- **Backups:** `Backups\` (also available in the web UI Backup tab)
+- **Logs:** `Logs\`
 
-### Initialize Sample Data
-```powershell
-cd Database
-.\InitCategories.ps1
-```
+Use the in-app **Backup & Restore** plugin or copy `inventory.db` while the app is closed.
+
+## 🎨 Branding another client app
+
+See **[BRANDING.md](BRANDING.md)** for the full checklist (rename exe, colors, logo, installer, quotation info). The Otargi repo is the reference branded fork.
 
 ## 🐛 Troubleshooting
 

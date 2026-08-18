@@ -1,60 +1,92 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
-using System.Text.Json;
 
 namespace InventorySystem
 {
     /// <summary>
-    /// Centralized database and file path configuration (SQLite)
+    /// Centralized database and file path configuration (SQLite).
+    /// User data lives under LocalAppData so installs under Program Files still work
+    /// for non-admin users.
     /// </summary>
     public static class DatabaseConfig
     {
-        /// <summary>
-        /// The SQLite database file is stored next to the .exe in a /Data subfolder.
-        /// This works on any Windows PC without any SQL Server installation.
-        /// </summary>
+        private static readonly string UserDataRoot = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PanacheInventory");
+
         public static string ConnectionString
         {
             get
             {
                 string dbPath = DatabasePath;
-                // Ensure directory exists
                 string dir = Path.GetDirectoryName(dbPath);
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
-
                 return $"Data Source={dbPath};";
             }
         }
 
         /// <summary>
-        /// Full path to the SQLite .db file.
-        /// Stored in the application's Data folder, portable with the exe.
+        /// SQLite file: %LocalAppData%\PanacheInventory\Data\inventory.db
+        /// Migrates once from the old Program Files\...\Data\inventory.db if present.
         /// </summary>
         public static string DatabasePath
         {
             get
             {
-                string appPath = Application.StartupPath;
-                string dir = Path.Combine(appPath, "Data");
+                string dir = Path.Combine(UserDataRoot, "Data");
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
-                return Path.Combine(dir, "inventory.db");
+
+                string path = Path.Combine(dir, "inventory.db");
+                TryMigrateLegacyDatabase(path);
+                return path;
             }
         }
 
-        /// <summary>
-        /// Gets the parts images directory path
-        /// </summary>
         public static string PartsImagesDirectory
         {
             get
             {
-                string imagesPath = Path.Combine(Application.StartupPath, "Parts_Images");
+                string imagesPath = Path.Combine(UserDataRoot, "Parts_Images");
                 if (!Directory.Exists(imagesPath))
                     Directory.CreateDirectory(imagesPath);
                 return imagesPath;
+            }
+        }
+
+        /// <summary>Writable root for logs, backups, and other user files.</summary>
+        public static string UserDataDirectory
+        {
+            get
+            {
+                if (!Directory.Exists(UserDataRoot))
+                    Directory.CreateDirectory(UserDataRoot);
+                return UserDataRoot;
+            }
+        }
+
+        private static void TryMigrateLegacyDatabase(string newPath)
+        {
+            try
+            {
+                if (File.Exists(newPath)) return;
+
+                string legacy = Path.Combine(Application.StartupPath, "Data", "inventory.db");
+                if (!File.Exists(legacy)) return;
+
+                File.Copy(legacy, newPath, overwrite: false);
+                foreach (string suffix in new[] { "-wal", "-shm" })
+                {
+                    string side = legacy + suffix;
+                    if (File.Exists(side))
+                        File.Copy(side, newPath + suffix, overwrite: false);
+                }
+            }
+            catch
+            {
+                // First-run create is fine if copy fails
             }
         }
     }

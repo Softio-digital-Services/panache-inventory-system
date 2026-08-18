@@ -11,10 +11,13 @@ build_output.txt
 *.userosscache
 *.sln.docstates
 
-# Database files (local only - don't commit .mdf/.ldf)
+# Legacy SQL Server LocalDB artifacts (app uses SQLite)
 Database/*.mdf
 Database/*.ldf
 Database/*.log
+Database/*.ps1
+Database/*.bat
+Database/*.sql
 
 # NuGet
 packages/
@@ -32,10 +35,10 @@ dist/app/Logs/
 dist/app/Data/*.db-shm
 dist/app/Data/*.db-wal
 scratch/
+scripts/
 
 # Local backups / crash dumps
 _backup_pre_otargi_web/
 crash.txt
 server_error.txt
 *.db
-!Data/inventory.db

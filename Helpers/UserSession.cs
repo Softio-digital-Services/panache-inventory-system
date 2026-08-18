@@ -14,6 +14,11 @@ namespace InventorySystem.Helpers
         public static bool IsStaff => Role?.Equals("Staff", StringComparison.OrdinalIgnoreCase) ?? false;
         public static bool IsAccountant => Role?.Equals("Accountant", StringComparison.OrdinalIgnoreCase) ?? false;
 
+        /// <summary>Built-in Softio Super Admin — only this account can toggle Softio-managed features.</summary>
+        public static bool IsSoftioSuperAdmin =>
+            !string.IsNullOrWhiteSpace(Username)
+            && Username.Trim().Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase);
+
         public static void Clear()
         {
             Username = "Guest";
