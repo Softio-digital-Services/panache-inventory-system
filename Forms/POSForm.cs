@@ -410,7 +410,7 @@ namespace InventorySystem.Forms
             }
             decimal tax = _orderPanel.ApplyVat ? totalAmount * 0.11m : 0;
             decimal ship = _orderPanel.ApplyShipping ? _orderPanel.ShippingAmount : 0;
-            decimal disc = _orderPanel.ApplyDiscount ? _orderPanel.DiscountAmount : 0;
+            decimal disc = _orderPanel.GetDiscountMoney();
             totalAmount = Math.Max(0, totalAmount + tax + ship - disc);
 
             DateTime? dDate = _shippingDetails != null && !string.IsNullOrWhiteSpace(_shippingDetails.ShippingTo) ? _shippingDetails.DeliveryDate : (DateTime?)null;
@@ -1519,7 +1519,7 @@ namespace InventorySystem.Forms
             decimal s = 0; foreach (DataRow r in cartTable.Rows) if (r.RowState != DataRowState.Deleted) s += (decimal)r["Total"];
             decimal t = (_orderPanel?.ApplyVat ?? false) ? (s * 0.11m) : 0;
             decimal ship = (_orderPanel?.ApplyShipping ?? false) ? (_orderPanel?.ShippingAmount ?? 0) : 0;
-            decimal disc = (_orderPanel?.ApplyDiscount ?? false) ? (_orderPanel?.DiscountAmount ?? 0) : 0;
+            decimal disc = _orderPanel?.GetDiscountMoney() ?? 0;
 
             g.DrawString("Subtotal:", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(s), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20;
             if (t > 0) { g.DrawString("VAT (11%):", fS, Brushes.Black, m, y); g.DrawString(CurrencyService.Format(t), fS, Brushes.Black, new Rectangle(m, y, w, 20), rA); y += 20; }

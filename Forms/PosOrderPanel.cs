@@ -119,7 +119,14 @@ namespace InventorySystem.Forms
         public bool ApplyShipping => _chkShip != null && _chkShip.Checked;
         public decimal ShippingAmount => _numShipping?.Value ?? 0m;
         public bool ApplyDiscount => _chkDiscount != null && _chkDiscount.Checked;
+        /// <summary>Discount percent (0–100) from the POS input.</summary>
         public decimal DiscountAmount => _numDiscount?.Value ?? 0m;
+        /// <summary>Money amount = subtotal × discount%.</summary>
+        public decimal GetDiscountMoney()
+        {
+            if (!ApplyDiscount) return 0m;
+            return Math.Round(GetSubtotal() * DiscountAmount / 100m, 2, MidpointRounding.AwayFromZero);
+        }
 
         public ShippingDetailsForm ShippingDetails
         {
@@ -163,7 +170,7 @@ namespace InventorySystem.Forms
             if (_lblSubtotalTitle != null) _lblSubtotalTitle.Text = L("POS_Subtotal", "Subtotal");
             if (_lblVatTitle != null) _lblVatTitle.Text = L("POS_VAT", "VAT (11%)");
             if (_lblShipTitle != null) _lblShipTitle.Text = L("POS_Shipping", "Shipping");
-            if (_lblDiscountTitle != null) _lblDiscountTitle.Text = L("POS_Discount", "Discount");
+            if (_lblDiscountTitle != null) _lblDiscountTitle.Text = L("POS_Discount", "Discount (%)");
             if (_lblTotalTitle != null) _lblTotalTitle.Text = L("POS_TotalPayable", "Total");
             if (_lblCurrency != null) _lblCurrency.Text = L("POS_Currency", "Currency");
             if (_btnReturn != null) _btnReturn.Text = L("POS_ItemReturn", "Return");
@@ -309,7 +316,7 @@ namespace InventorySystem.Forms
             decimal s = GetSubtotal();
             decimal t = ApplyVat ? s * 0.11m : 0;
             decimal ship = ApplyShipping ? ShippingAmount : 0;
-            decimal disc = ApplyDiscount ? DiscountAmount : 0;
+            decimal disc = GetDiscountMoney();
             return Math.Max(0, s + t + ship - disc);
         }
 
@@ -654,6 +661,8 @@ namespace InventorySystem.Forms
 
             _chkDiscount = SoftCheck();
             _numDiscount = AmountInput();
+            _numDiscount.Maximum = 100;
+            _numDiscount.DecimalPlaces = 1;
             _pnlDiscAmount = WrapAmountInput(_numDiscount);
             _chkDiscount.CheckedChanged += (s, e) =>
             {
@@ -666,7 +675,7 @@ namespace InventorySystem.Forms
                 _orders[_activeIndex].DiscountAmount = _numDiscount.Value;
                 UpdateTotal();
             };
-            _lblDiscountTitle = TinyLabel(LocalizationManager.GetString("POS_Discount", "Discount"));
+            _lblDiscountTitle = TinyLabel(LocalizationManager.GetString("POS_Discount", "Discount (%)"));
             _lblDiscountVal = TinyValue("$0.00");
             grid.Controls.Add(MoneyRow(_lblDiscountTitle, _lblDiscountVal, _chkDiscount, _pnlDiscAmount), 0, 3);
 
@@ -1287,7 +1296,7 @@ namespace InventorySystem.Forms
             decimal s = GetSubtotal();
             decimal t = ApplyVat ? s * 0.11m : 0;
             decimal ship = ApplyShipping ? ShippingAmount : 0;
-            decimal disc = ApplyDiscount ? DiscountAmount : 0;
+            decimal disc = GetDiscountMoney();
             if (_lblSubtotalVal != null) _lblSubtotalVal.Text = CurrencyService.Format(s);
             if (_lblTaxVal != null)
             {

@@ -87,7 +87,18 @@ const T = {
         col_items: 'Items', col_order_id: 'Order ID',
         all: 'All', in_stock: 'In Stock', low_stock: 'Low Stock', out_of_stock: 'Out of Stock',
         pos_out_of_stock_title: 'Out of stock',
-        pos_out_of_stock_msg: '"{0}" is out of stock and cannot be added.',
+        pos_out_of_stock_msg: '"{0}" is out of stock.',
+        pos_sell_anyway: 'Sell anyway (no stock)',
+        quick_sale: 'Quick Sale',
+        quick_sale_hint: 'Sell without adding stock, or ring up a one-off item.',
+        quick_sale_existing: 'Existing product',
+        quick_sale_custom: 'Custom item',
+        quick_sale_skip_stock: "Don't deduct from inventory",
+        quick_sale_badge: 'No stock',
+        add_to_cart: 'Add to cart',
+        qs_pick_product: 'Select a product',
+        qs_need_name: 'Enter an item name',
+        qs_need_price: 'Enter a valid price',
         ok: 'OK',
         return: 'Return', empty_cart: 'Cart is empty', empty_list: 'No records', loading: 'Loading…',
         login_failed: 'Invalid username or password', checkout_ok: 'Sale completed',
@@ -146,11 +157,38 @@ const T = {
         about_copyright: '© 2026 Softio Services. All Rights Reserved.',
         adjust_stock: 'Adjust Stock', quote: 'Quote', draft: 'Draft', details: 'Details',
         receive_payment: 'Receive Payment', pay_supplier: 'Pay Supplier',
+        supplier_debt_products: 'Add product',
+        supplier_as_debt: 'Debt / Pay later',
+        supplier_unadded_hint: 'Products from this supplier — click to fill, or use Import to inventory',
+        supplier_mark_paid: 'Mark paid',
+        supplier_mark_debt: 'Mark debt',
+        supplier_added_inv: 'In inventory',
+        supplier_not_added: 'Not in inventory',
+        supplier_purchase_ok: 'Purchase line saved',
+        supplier_from_supplier: 'From supplier',
+        supplier_import_inv: 'Import to inventory',
+        supplier_import_selected: 'Import selected',
+        supplier_select_all: 'Select all',
+        supplier_none_selected: 'Select at least one product',
+        supplier_import_ok_created: 'Product created in inventory',
+        supplier_import_ok_updated: 'Stock updated (qty added)',
+        supplier_pick_supplier: 'Choose supplier',
+        supplier_seed_demo: 'Load demo data',
+        supplier_seed_ok: 'Demo data loaded',
+        debt_unpaid_orders: 'Unpaid orders',
+        debt_selected_total: 'Selected to pay',
+        debt_clear_selection: 'Clear selection',
+        debt_pay_order: 'Pay toward order',
+        debt_remaining: 'Remaining',
+        debt_no_orders: 'No unpaid orders for this customer.',
+        debt_recent_payments: 'Recent payments',
+        debt_select_or_amount: 'Select items/orders or enter an amount',
+        debt_orders_owed: 'Open orders: {0}',
         manage_categories: 'Manage Categories', rename: 'Rename', stock_ok: 'Stock updated',
         payment_ok: 'Payment recorded', restore_backup: 'Restore', confirm_restore: 'Restore this backup? All current data will be replaced.',
         add_exp_category: 'Add Category', recurring: 'Recurring', one_time: 'One-time', recurring_monthly: 'Recurring monthly', add_expense_category_option: '+ Add new category', note: 'Note', walk_in: 'Walk-in',
         walk_in_customer: 'Walk-in Customer', new_order: 'New Order',
-        vat_label: 'VAT (11%)', shipping: 'Shipping', discount: 'Discount',
+        vat_label: 'VAT (11%)', shipping: 'Shipping', discount: 'Discount (%)',
         total_payable: 'Total Payable', currency: 'Currency',
         return_items: 'Return', save_draft: 'Save Draft', quotation: 'Quotation',
         customer_bill: 'Pay Later', place_order: 'Pay Now',
@@ -348,7 +386,18 @@ const T = {
         col_items: 'العناصر', col_order_id: 'رقم الطلب',
         all: 'الكل', in_stock: 'متوفر', low_stock: 'منخفض', out_of_stock: 'نفد',
         pos_out_of_stock_title: 'نفد المخزون',
-        pos_out_of_stock_msg: '"{0}" نفد من المخزون ولا يمكن إضافته.',
+        pos_out_of_stock_msg: '"{0}" نفد من المخزون.',
+        pos_sell_anyway: 'بيع بدون خصم مخزون',
+        quick_sale: 'بيع سريع',
+        quick_sale_hint: 'بيع دون إضافة للمخزون، أو تسجيل صنف لمرة واحدة.',
+        quick_sale_existing: 'منتج موجود',
+        quick_sale_custom: 'صنف مخصص',
+        quick_sale_skip_stock: 'لا تخصم من المخزون',
+        quick_sale_badge: 'بدون مخزون',
+        add_to_cart: 'أضف للسلة',
+        qs_pick_product: 'اختر منتجاً',
+        qs_need_name: 'أدخل اسم الصنف',
+        qs_need_price: 'أدخل سعراً صالحاً',
         ok: 'حسناً',
         return: 'مرتجع', empty_cart: 'السلة فارغة', empty_list: 'لا توجد سجلات', loading: 'جاري التحميل…',
         login_failed: 'اسم المستخدم أو كلمة المرور غير صحيحة', checkout_ok: 'تمت عملية البيع',
@@ -405,11 +454,38 @@ const T = {
         about_copyright: '© 2026 Softio Services. جميع الحقوق محفوظة.',
         adjust_stock: 'تعديل المخزون', quote: 'عرض سعر', draft: 'مسودة', details: 'التفاصيل',
         receive_payment: 'استلام دفعة', pay_supplier: 'دفع للمورد',
+        supplier_debt_products: 'إضافة منتج',
+        supplier_as_debt: 'دين / دفع لاحقاً',
+        supplier_unadded_hint: 'منتجات هذا المورد — اضغط للتعبئة أو استورد للمخزون',
+        supplier_mark_paid: 'تعيين كمدفوع',
+        supplier_mark_debt: 'تعيين كدين',
+        supplier_added_inv: 'في المخزون',
+        supplier_not_added: 'ليس في المخزون',
+        supplier_purchase_ok: 'تم حفظ بند الشراء',
+        supplier_from_supplier: 'من المورد',
+        supplier_import_inv: 'استيراد للمخزون',
+        supplier_import_selected: 'استيراد المحدد',
+        supplier_select_all: 'تحديد الكل',
+        supplier_none_selected: 'حدد منتجاً واحداً على الأقل',
+        supplier_import_ok_created: 'تم إنشاء المنتج في المخزون',
+        supplier_import_ok_updated: 'تم تحديث الكمية في المخزون',
+        supplier_pick_supplier: 'اختر المورد',
+        supplier_seed_demo: 'تحميل بيانات تجريبية',
+        supplier_seed_ok: 'تم تحميل البيانات التجريبية',
+        debt_unpaid_orders: 'طلبات غير مدفوعة',
+        debt_selected_total: 'المبلغ المحدد',
+        debt_clear_selection: 'مسح التحديد',
+        debt_pay_order: 'دفع على الطلب',
+        debt_remaining: 'المتبقي',
+        debt_no_orders: 'لا توجد طلبات غير مدفوعة لهذا العميل.',
+        debt_recent_payments: 'الدفعات الأخيرة',
+        debt_select_or_amount: 'حدد أصنافاً/طلبات أو أدخل مبلغاً',
+        debt_orders_owed: 'طلبات مفتوحة: {0}',
         manage_categories: 'إدارة الفئات', rename: 'إعادة تسمية', stock_ok: 'تم تحديث المخزون',
         payment_ok: 'تم تسجيل الدفعة', restore_backup: 'استعادة', confirm_restore: 'استعادة هذه النسخة؟ سيتم استبدال جميع البيانات الحالية.',
         add_exp_category: 'إضافة فئة', recurring: 'متكرر', one_time: 'مرة واحدة', recurring_monthly: 'مصروف شهري متكرر', add_expense_category_option: '+ إضافة فئة جديدة', note: 'ملاحظة', walk_in: 'عميل عابر',
         walk_in_customer: 'عميل عابر', new_order: 'طلب جديد',
-        vat_label: 'ضريبة (11%)', shipping: 'الشحن', discount: 'خصم',
+        vat_label: 'ضريبة (11%)', shipping: 'الشحن', discount: 'خصم (%)',
         total_payable: 'الإجمالي المستحق', currency: 'العملة',
         return_items: 'مرتجع', save_draft: 'حفظ مسودة', quotation: 'عرض سعر',
         customer_bill: 'ادفع لاحقاً', place_order: 'ادفع الآن',
@@ -523,7 +599,7 @@ const T = {
     }
 };
 
-let lang = localStorage.getItem('generic_lang') || localStorage.getItem('panache_lang') || localStorage.getItem('otargi_lang') || 'en';
+let lang = localStorage.getItem('panache_lang') || localStorage.getItem('generic_lang') || localStorage.getItem('otargi_lang') || 'en';
 let currentUser = null;
 let featureFlags = { scaleEnabled: false };
 let printSettings = {
@@ -560,7 +636,7 @@ const LABEL_PRESETS = {
 let products = [], categories = [], sales = [], customers = [], suppliers = [], users = [];
 let expenses = [], quotations = [], currencies = [], barcodeItems = [], expenseCategories = [];
 let dashboard = null, reportSummary = null, reportTop = [];
-let cart = [], invCat = 'all', posCat = 'all', invFilter = 'all', invView = 'table';
+let cart = [], invCat = 'all', posCat = 'all', invFilter = 'all', invView = 'card';
 let invSelected = new Set();
 let barcodeSelected = new Set();
 let returnOrderId = null, returnItemsCache = [];
@@ -645,7 +721,7 @@ async function loadFeatureFlags() {
         applyFeatureFlags(f);
         if (currentUser) {
             currentUser.features = f;
-            sessionStorage.setItem('generic_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('panache_user', JSON.stringify(currentUser));
         }
     } catch {
         applyFeatureFlags(currentUser?.features || { scaleEnabled: false });
@@ -1024,60 +1100,94 @@ function formatPosStock(p) {
 function makeCartLine(p, qty = 1, price = null, opts = {}) {
     const tiers = productPriceTiers(p);
     const unit = price != null ? Number(price) : (tiers[0] || 0);
+    const skipStock = !!(opts.skipStock || opts.allowZeroStock || opts.custom || p?.isStockTracked === false
+        || p?.isService || p?.itemType === 'Service');
     return {
-        id: p.id,
-        name: opts.name || p.name,
+        id: p?.id || 0,
+        name: opts.name || p?.name || '',
         price: unit,
         qty,
-        max: (p.isService || p.itemType === 'Service' || p.isStockTracked === false) ? 9999 : (Number(p.stock) || 0),
-        prices: tiers,
+        max: skipStock ? 9999 : ((p.isService || p.itemType === 'Service' || p.isStockTracked === false) ? 9999 : (Number(p.stock) || 0)),
+        prices: tiers.length ? tiers : [unit],
         lineKey: opts.lineKey || null,
         weighted: !!(opts.lineKey || opts.weighted || opts.weightKg),
         weightKg: opts.weightKg != null ? Number(opts.weightKg) : null,
         stockQty: opts.stockQty != null ? Number(opts.stockQty) : null,
-        sellByWeight: isSellByWeight(p)
+        sellByWeight: isSellByWeight(p),
+        skipStock,
+        custom: !!opts.custom
     };
 }
 
 function addToCart(id, qty = 1, opts = {}) {
     const p = products.find(x => x.id === id); if (!p) return false;
     lastTappedProductId = id;
-    if (!isPosProductAvailable(p) && !opts.allowZeroStock) {
-        showOutOfStockPopup(p.name);
+    const skipStock = !!(opts.skipStock || opts.allowZeroStock);
+    if (!isPosProductAvailable(p) && !skipStock) {
         return false;
     }
     // Weighted / price-embedded scale lines stay as separate cart rows.
     if (opts.lineKey || opts.weighted) {
-        if (isSellByWeight(p) && opts.stockQty > 0 && p.isStockTracked !== false) {
+        if (isSellByWeight(p) && opts.stockQty > 0 && p.isStockTracked !== false && !skipStock) {
             if (opts.stockQty > (Number(p.stock) || 0)) {
-                showOutOfStockPopup(p.name);
                 return false;
             }
         }
-        const row = makeCartLine(p, qty, opts.price != null ? opts.price : null, opts);
+        const row = makeCartLine(p, qty, opts.price != null ? opts.price : null, { ...opts, skipStock });
         cart.push(row);
         renderCart();
         return true;
     }
-    if (isSellByWeight(p)) {
+    if (isSellByWeight(p) && !opts.weighted) {
         toast(tr('weigh_first'), 'info');
         return false;
     }
-    const line = cart.find(x => x.id === id && !x.weighted);
+    const line = cart.find(x => x.id === id && !x.weighted && !!x.skipStock === !!skipStock);
     if (line) {
         if (line.qty + qty > line.max) {
-            showOutOfStockPopup(p.name);
+            if (!skipStock) showOutOfStockPopup(p.name);
             return false;
         }
         line.qty += qty;
     } else {
-        const row = makeCartLine(p, qty, opts.price != null ? opts.price : null, opts);
+        const row = makeCartLine(p, qty, opts.price != null ? opts.price : null, { ...opts, skipStock });
         if (row.qty > row.max) {
-            showOutOfStockPopup(p.name);
+            if (!skipStock) showOutOfStockPopup(p.name);
             return false;
         }
         cart.push(row);
     }
+    renderCart();
+    return true;
+}
+
+function addCustomCartLine(name, price, qty = 1) {
+    const cleanName = String(name || '').trim();
+    const unit = Number(price);
+    const q = Math.max(1, Math.min(9999, parseInt(qty, 10) || 1));
+    if (!cleanName) {
+        toast(tr('qs_need_name'), 'error');
+        return false;
+    }
+    if (!(unit > 0)) {
+        toast(tr('qs_need_price'), 'error');
+        return false;
+    }
+    cart.push({
+        id: 0,
+        name: cleanName,
+        price: unit,
+        qty: q,
+        max: 9999,
+        prices: [unit],
+        lineKey: `custom-${Date.now()}`,
+        weighted: false,
+        weightKg: null,
+        stockQty: null,
+        sellByWeight: false,
+        skipStock: true,
+        custom: true
+    });
     renderCart();
     return true;
 }
@@ -1194,7 +1304,8 @@ function getPosTotals() {
     const discOn = document.getElementById('pos-disc')?.checked;
     const vat = vatOn ? sub * POS_VAT_RATE : 0;
     const ship = shipOn ? (parseFloat(document.getElementById('pos-ship-amt')?.value) || 0) : 0;
-    const disc = discOn ? (parseFloat(document.getElementById('pos-disc-amt')?.value) || 0) : 0;
+    const discPct = discOn ? Math.min(100, Math.max(0, parseFloat(document.getElementById('pos-disc-amt')?.value) || 0)) : 0;
+    const disc = +(sub * discPct / 100).toFixed(2);
     const calc = Math.max(0, sub + vat + ship - disc);
     const totalInp = document.getElementById('pos-total-amt');
     let manual = posTotalManual;
@@ -1322,7 +1433,7 @@ function hideApp() {
     const tools = document.getElementById('titlebar-tools');
     if (tools) tools.hidden = true;
     currentUser = null;
-    sessionStorage.removeItem('otargi_user');
+    sessionStorage.removeItem('panache_user');
     const userInput = document.getElementById('login-user');
     const passInput = document.getElementById('login-pass');
     if (userInput) userInput.value = '';
@@ -1799,7 +1910,9 @@ function renderPOS() {
             const p = products.find(x => x.id === id);
             if (!p) return;
             if (!isPosProductAvailable(p)) {
-                await showOutOfStockPopup(p.name);
+                if (await showOutOfStockPopup(p.name)) {
+                    addToCart(id, 1, { allowZeroStock: true, skipStock: true });
+                }
                 return;
             }
             scaleManager.selectForWeighing(p);
@@ -1813,7 +1926,15 @@ function renderPOS() {
             const id = Number(card.dataset.id);
             const p = products.find(x => x.id === id);
             if (!isPosProductAvailable(p)) {
-                await showOutOfStockPopup(p?.name);
+                if (await showOutOfStockPopup(p?.name)) {
+                    if (isSellByWeight(p)) {
+                        scaleManager.selectForWeighing(p);
+                        renderPOS();
+                        document.getElementById('scaleManualWeight')?.focus();
+                    } else {
+                        addToCart(id, 1, { allowZeroStock: true, skipStock: true });
+                    }
+                }
                 return;
             }
             if (isSellByWeight(p)) {
@@ -1856,6 +1977,7 @@ function updateInvBulkBtn() {
     const btn = document.getElementById('btn-bulk-delete-inventory');
     if (!btn) return;
     btn.hidden = invSelected.size === 0;
+    if (typeof updateInvActionsSlide === 'function') updateInvActionsSlide();
 }
 
 function renderInventory() {
@@ -1864,14 +1986,26 @@ function renderInventory() {
     const canEdit = can('admin');
     const tableWrap = document.getElementById('inv-table-wrap');
     const cardsEl = document.getElementById('inv-cards');
-    if (tableWrap) tableWrap.hidden = invView !== 'table';
-    if (cardsEl) cardsEl.hidden = invView !== 'card';
+    if (tableWrap) {
+        const showTable = invView === 'table';
+        tableWrap.hidden = !showTable;
+        if (showTable) tableWrap.removeAttribute('hidden');
+        else tableWrap.setAttribute('hidden', '');
+    }
+    if (cardsEl) {
+        const showCards = invView === 'card';
+        cardsEl.hidden = !showCards;
+        if (showCards) cardsEl.removeAttribute('hidden');
+        else cardsEl.setAttribute('hidden', '');
+    }
 
     document.getElementById('btn-inv-table')?.classList.toggle('active', invView === 'table');
     document.getElementById('btn-inv-cards')?.classList.toggle('active', invView === 'card');
 
     if (invView === 'table') {
-        document.getElementById('inv-body').innerHTML = list.length ? list.map(p => `
+        const body = document.getElementById('inv-body');
+        if (!body) return;
+        body.innerHTML = list.length ? list.map(p => `
             <tr class="${p.isInactive ? 'inv-row-inactive' : ''}">
                 <td>${canEdit ? `<input type="checkbox" class="inv-row-check" data-inv-id="${p.id}" ${invSelected.has(p.id) ? 'checked' : ''}>` : ''}</td>
                 <td>${productThumb(p)}</td>
@@ -1938,6 +2072,9 @@ function renderInventory() {
     document.querySelectorAll('[data-del-product]').forEach(btn => btn.onclick = () => deleteProduct(Number(btn.dataset.delProduct)));
     document.querySelectorAll('[data-adjust-product]').forEach(btn => btn.onclick = () => openStockModal(Number(btn.dataset.adjustProduct)));
     updateInvBulkBtn();
+    requestAnimationFrame(() => {
+        if (typeof updateInvActionsSlide === 'function') updateInvActionsSlide();
+    });
 }
 
 function renderPosStats() {
@@ -2196,7 +2333,7 @@ function renderCart() {
             }).join('');
             return `<div class="cart-item" data-i="${i}">
                 <div class="cart-item-top">
-                    <div class="cart-item-info"><strong>${escapeHtml(item.name)}</strong></div>
+                    <div class="cart-item-info"><strong>${escapeHtml(item.name)}</strong>${item.skipStock || item.custom ? `<span class="cart-item-badge">${escapeHtml(tr('quick_sale_badge'))}</span>` : ''}</div>
                     <strong class="cart-line-total">${posMoney(item.price * item.qty)}</strong>
                 </div>
                 <div class="cart-item-controls">
@@ -2508,7 +2645,7 @@ function renderCustomers() {
         return `<tr class="${owed > 0 ? 'row-has-debt' : ''}"><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone || '—')}</td><td>${escapeHtml(c.email || '—')}</td>
         <td class="${owed > 0 ? 'cell-debt' : ''}">${money(owed)}</td><td>${escapeHtml(c.type || '—')}</td>
         <td>${actionBtns(`data-edit-customer="${c.id}"`, `data-del-customer="${c.id}"`,
-            `<button type="button" class="btn-icon" title="${tr('details')}" data-details-customer="${c.id}"><span class="material-symbols-rounded">info</span></button>`)}</td></tr>`;
+            `<button type="button" class="btn-icon" title="${tr('details')}" data-details-customer="${c.id}"><span class="material-symbols-rounded">visibility</span></button>`)}</td></tr>`;
     }).join('')
         : `<tr><td colspan="6" class="empty-state">${tr('empty_list')}</td></tr>`;
     document.querySelectorAll('[data-edit-customer]').forEach(btn => btn.onclick = () => openCustomerModal(Number(btn.dataset.editCustomer)));
@@ -2524,11 +2661,13 @@ function renderSuppliers() {
         <td>${escapeHtml(s.phone || '—')}</td><td>${escapeHtml(s.email || '—')}</td>
         <td>${money(s.balance ?? 0)}</td>
         <td>${actionBtns(`data-edit-supplier="${s.id}"`, `data-del-supplier="${s.id}"`,
-            `<button type="button" class="btn-icon" title="${tr('details')}" data-details-supplier="${s.id}"><span class="material-symbols-rounded">info</span></button>`)}</td></tr>`).join('')
+            `<button type="button" class="btn-icon" title="${tr('supplier_debt_products')}" data-purchases-supplier="${s.id}"><span class="material-symbols-rounded">inventory_2</span></button>` +
+            `<button type="button" class="btn-icon" title="${tr('details')}" data-details-supplier="${s.id}"><span class="material-symbols-rounded">visibility</span></button>`)}</td></tr>`).join('')
         : `<tr><td colspan="6" class="empty-state">${tr('empty_list')}</td></tr>`;
     document.querySelectorAll('[data-edit-supplier]').forEach(btn => btn.onclick = () => openSupplierModal(Number(btn.dataset.editSupplier)));
     document.querySelectorAll('[data-del-supplier]').forEach(btn => btn.onclick = () => deleteSupplier(Number(btn.dataset.delSupplier)));
     document.querySelectorAll('[data-details-supplier]').forEach(btn => btn.onclick = () => openSupplierDetails(Number(btn.dataset.detailsSupplier)));
+    document.querySelectorAll('[data-purchases-supplier]').forEach(btn => btn.onclick = () => openSupplierPurchases(Number(btn.dataset.purchasesSupplier)));
 }
 
 function renderExpenses() {
@@ -2975,7 +3114,7 @@ function updateSettingsLangLabel() {
 
 function toggleLanguage() {
     lang = lang === 'en' ? 'ar' : 'en';
-    localStorage.setItem('generic_lang', lang);
+    localStorage.setItem('panache_lang', lang);
     applyI18n();
     renderAll();
     updateSettingsLangLabel();
@@ -3210,7 +3349,12 @@ async function openReturn(orderId) {
 }
 
 function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(id) {
+    const wasActive = document.getElementById(id)?.classList.contains('active');
+    document.getElementById(id).classList.remove('active');
+    if (id === 'product-modal' && wasActive && fsImportQueue?.awaitingSave)
+        onFsImportProductCancelled();
+}
 
 function confirmDialog(message, options = {}) {
     const {
@@ -3263,16 +3407,156 @@ function isPosProductAvailable(p) {
     return (Number(p.stock) || 0) > 0;
 }
 
-async function showOutOfStockPopup(productName) {
-    await confirmDialog(
+async function showOutOfStockPopup(productName, options = {}) {
+    const allowSellAnyway = options.allowSellAnyway !== false;
+    if (!allowSellAnyway) {
+        await confirmDialog(
+            tr('pos_out_of_stock_msg').replace('{0}', productName || ''),
+            {
+                title: tr('pos_out_of_stock_title'),
+                confirmText: tr('ok'),
+                danger: false,
+                hideCancel: true,
+            }
+        );
+        return false;
+    }
+    return confirmDialog(
         tr('pos_out_of_stock_msg').replace('{0}', productName || ''),
         {
             title: tr('pos_out_of_stock_title'),
-            confirmText: tr('ok'),
+            confirmText: tr('pos_sell_anyway'),
+            cancelText: tr('cancel'),
             danger: false,
-            hideCancel: true,
+            hideCancel: false,
         }
     );
+}
+
+function fillQuickSaleProductList(filter = '') {
+    const sel = document.getElementById('qs-product');
+    if (!sel) return;
+    const q = String(filter || '').trim().toLowerCase();
+    if (!q) {
+        sel.innerHTML = '';
+        sel.hidden = true;
+        return;
+    }
+    sel.hidden = false;
+    const list = (products || []).filter(p => {
+        if (p.isInactive || p.status === 'Inactive') return false;
+        const fields = [p.name, p.sku, p.barcode].map(x => String(x || '').trim().toLowerCase()).filter(Boolean);
+        // Match typed letters from the start of the name/sku/barcode, or any word in the name
+        return fields.some(f => {
+            if (f.startsWith(q)) return true;
+            return f.split(/\s+/).some(word => word.startsWith(q));
+        });
+    }).slice(0, 80);
+    sel.innerHTML = list.map(p =>
+        `<option value="${p.id}">${escapeHtml(p.name)}</option>`
+    ).join('');
+    if (list.length) {
+        sel.selectedIndex = 0;
+        syncQuickSalePriceFromProduct();
+    } else {
+        const price = document.getElementById('qs-price');
+        if (price) price.value = '';
+    }
+}
+
+function syncQuickSalePriceFromProduct() {
+    const id = Number(document.getElementById('qs-product')?.value);
+    const p = products.find(x => x.id === id);
+    const price = document.getElementById('qs-price');
+    if (price && p) price.value = Number(p.price || 0).toFixed(2);
+}
+
+function setQuickSaleTab(tab) {
+    document.querySelectorAll('.qs-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.qsTab === tab);
+    });
+    const prod = document.getElementById('qs-panel-product');
+    const custom = document.getElementById('qs-panel-custom');
+    if (prod) prod.hidden = tab !== 'product';
+    if (custom) custom.hidden = tab !== 'custom';
+    if (tab === 'product') syncQuickSalePriceFromProduct();
+}
+
+function openQuickSaleModal() {
+    setQuickSaleTab('product');
+    const search = document.getElementById('qs-product-search');
+    if (search) search.value = '';
+    const qty = document.getElementById('qs-qty');
+    if (qty) qty.value = '1';
+    const skip = document.getElementById('qs-skip-stock');
+    if (skip) skip.checked = true;
+    const customName = document.getElementById('qs-custom-name');
+    if (customName) customName.value = '';
+    fillQuickSaleProductList(''); // clears list until user types
+    const price = document.getElementById('qs-price');
+    if (price) price.value = '';
+    openModal('quick-sale-modal');
+    applyI18n();
+    setTimeout(() => (search || document.getElementById('qs-custom-name'))?.focus(), 40);
+}
+
+function wireQuickSaleModal() {
+    if (wireQuickSaleModal._done) return;
+    wireQuickSaleModal._done = true;
+    document.querySelectorAll('.qs-tab').forEach(btn => {
+        btn.addEventListener('click', () => setQuickSaleTab(btn.dataset.qsTab || 'product'));
+    });
+    document.getElementById('qs-product-search')?.addEventListener('input', (e) => {
+        fillQuickSaleProductList(e.target.value);
+    });
+    document.getElementById('qs-product')?.addEventListener('change', syncQuickSalePriceFromProduct);
+    document.getElementById('btn-qs-add')?.addEventListener('click', () => {
+        const tab = document.querySelector('.qs-tab.active')?.dataset.qsTab || 'product';
+        const qty = Math.max(1, Math.min(9999, parseInt(document.getElementById('qs-qty')?.value, 10) || 1));
+        const priceRaw = document.getElementById('qs-price')?.value;
+        const price = Number(priceRaw);
+        if (!(price > 0)) {
+            toast(tr('qs_need_price'), 'error');
+            return;
+        }
+        if (tab === 'custom') {
+            if (!addCustomCartLine(document.getElementById('qs-custom-name')?.value, price, qty)) return;
+            closeModal('quick-sale-modal');
+            toast(tr('saved_ok'), 'success');
+            return;
+        }
+        const id = Number(document.getElementById('qs-product')?.value);
+        const p = products.find(x => x.id === id);
+        if (!p) {
+            toast(tr('qs_pick_product'), 'error');
+            return;
+        }
+        const skipStock = !!document.getElementById('qs-skip-stock')?.checked || !isPosProductAvailable(p);
+        if (isSellByWeight(p)) {
+            // Weight items still need weighing; queue the scale with skip-stock intent
+            if (!isPosProductAvailable(p) && !skipStock) {
+                toast(tr('weigh_first'), 'info');
+                return;
+            }
+            scaleManager.selectForWeighing(p);
+            closeModal('quick-sale-modal');
+            renderPOS();
+            document.getElementById('scaleManualWeight')?.focus();
+            toast(tr('weigh_first'), 'info');
+            return;
+        }
+        const ok = addToCart(id, qty, {
+            price,
+            skipStock,
+            allowZeroStock: skipStock
+        });
+        if (!ok) {
+            toast(tr('qs_pick_product'), 'error');
+            return;
+        }
+        closeModal('quick-sale-modal');
+        toast(tr('saved_ok'), 'success');
+    });
 }
 
 function fillCategorySelect(sel) {
@@ -3631,7 +3915,11 @@ function buildProductPayload() {
         price2: Number(document.getElementById('p-price2')?.value) || 0,
         price3: Number(document.getElementById('p-price3')?.value) || 0,
         price4: Number(document.getElementById('p-price4')?.value) || 0,
-        supplierId: suppVal ? Number(suppVal) : null
+        supplierId: suppVal ? Number(suppVal) : null,
+        supplierPurchaseItemId: (() => {
+            const v = Number(document.getElementById('p-supplier-purchase-id')?.value);
+            return v > 0 ? v : null;
+        })()
     };
 }
 
@@ -3673,6 +3961,8 @@ function fillProductForm(p) {
 function resetProductForm() {
     document.getElementById('product-form').reset();
     document.getElementById('p-id').value = '';
+    const link = document.getElementById('p-supplier-purchase-id');
+    if (link) link.value = '';
     document.getElementById('p-sales').checked = true;
     document.getElementById('p-purchase').checked = false;
     document.getElementById('p-inactive').checked = false;
@@ -3692,6 +3982,8 @@ function openProductModal(id) {
     const title = document.getElementById('product-modal-title');
     fillCategorySelect(document.getElementById('p-category'));
     fillSupplierSelect(document.getElementById('p-supplier'));
+    const link = document.getElementById('p-supplier-purchase-id');
+    if (link) link.value = '';
     if (id) {
         const p = products.find(x => x.id === id);
         if (!p) return;
@@ -3699,9 +3991,12 @@ function openProductModal(id) {
         if (title) title.textContent = tr(isService ? 'edit_service' : 'edit_product');
         document.getElementById('p-id').value = id;
         fillProductForm(p);
+        const panel = document.getElementById('p-supplier-purchases');
+        if (panel) panel.hidden = true;
     } else {
         if (title) title.textContent = tr('add_product');
         resetProductForm();
+        refreshProductSupplierPurchases();
     }
     openModal('product-modal');
 }
@@ -3740,7 +4035,7 @@ async function submitStockAdjust(e) {
     } catch (err) { toast(err.message, 'error'); }
 }
 
-function openCustomerDetails(id) {
+async function openCustomerDetails(id) {
     const c = customers.find(x => x.id === id);
     if (!c) return;
     document.getElementById('cust-pay-id').value = id;
@@ -3756,6 +4051,242 @@ function openCustomerDetails(id) {
             <div><strong>${tr('col_type')}:</strong> ${escapeHtml(c.type || '—')}</div>
         </div>`;
     openModal('customer-details-modal');
+    applyI18n();
+    await loadCustomerDebtPanel(id);
+}
+
+async function loadCustomerDebtPanel(customerId) {
+    const panel = document.getElementById('customer-debt-panel');
+    const list = document.getElementById('customer-debt-orders');
+    const summary = document.getElementById('customer-debt-summary');
+    const pays = document.getElementById('customer-debt-payments');
+    if (!panel || !list) return;
+    panel.hidden = false;
+    list.innerHTML = `<div class="empty-state">${tr('loading')}</div>`;
+    try {
+        const debt = await api('/api/customers/' + customerId + '/debt');
+        window._customerDebt = debt;
+        const orders = debt.orders || [];
+        summary.textContent = tr('debt_orders_owed').replace('{0}', money(debt.ordersRemaining ?? 0))
+            + ` · ${tr('col_balance')}: ${money(debt.balance ?? 0)}`;
+        if (!orders.length) {
+            list.innerHTML = `<div class="empty-state">${tr('debt_no_orders')}</div>`;
+        } else {
+            list.innerHTML = orders.map(o => {
+                const items = (o.items || []).map(it => `
+                    <div class="debt-item" data-order-item="${it.orderItemId}" data-order="${o.orderId}" data-remain="${it.remaining}">
+                        <input type="checkbox" class="debt-item-check" data-order-item="${it.orderItemId}" data-order="${o.orderId}" data-remain="${it.remaining}">
+                        <label class="debt-item-name" title="${escapeHtml(it.name)}">${escapeHtml(it.name)} × ${it.qty}</label>
+                        <span class="debt-item-amt">${money(it.remaining)}</span>
+                        <input type="number" class="debt-item-pay" min="0" step="0.01" max="${Number(it.remaining).toFixed(2)}"
+                            placeholder="0" data-order-item="${it.orderItemId}" data-order="${o.orderId}" data-remain="${it.remaining}">
+                    </div>`).join('');
+                return `<div class="debt-order" data-order="${o.orderId}" data-remain="${o.remaining}">
+                    <div class="debt-order-head">
+                        <label>
+                            <input type="checkbox" class="debt-order-check" data-order="${o.orderId}" data-remain="${o.remaining}">
+                            <span>#${o.orderId}</span>
+                        </label>
+                        <span class="debt-order-meta">${escapeHtml(o.orderDate || '')}</span>
+                        <span class="debt-order-rem">${tr('debt_remaining')}: ${money(o.remaining)}</span>
+                        <input type="number" class="debt-order-pay" min="0" step="0.01" max="${Number(o.remaining).toFixed(2)}"
+                            placeholder="${tr('debt_pay_order')}" data-order="${o.orderId}" data-remain="${o.remaining}" title="${tr('debt_pay_order')}">
+                    </div>
+                    <div class="debt-items">${items || `<div class="empty-state" style="padding:0.5rem;">—</div>`}</div>
+                </div>`;
+            }).join('');
+            wireDebtSelectionHandlers();
+        }
+        updateDebtSelectedTotal();
+        if (pays) {
+            const recent = debt.recentPayments || [];
+            if (recent.length) {
+                pays.hidden = false;
+                pays.innerHTML = `<h4>${tr('debt_recent_payments')}</h4><ul>` +
+                    recent.map(p => `<li><strong>${escapeHtml(p.date || '')}</strong> · ${money(p.amount)} · ${escapeHtml(p.notes || '')}</li>`).join('') +
+                    `</ul>`;
+            } else {
+                pays.hidden = true;
+                pays.innerHTML = '';
+            }
+        }
+    } catch (e) {
+        list.innerHTML = `<div class="empty-state">${escapeHtml(e.message || tr('debt_no_orders'))}</div>`;
+    }
+}
+
+function wireDebtSelectionHandlers() {
+    const root = document.getElementById('customer-debt-orders');
+    if (!root || root.dataset.wired === '1') {
+        // re-bind after re-render
+    }
+    root.querySelectorAll('.debt-order-check').forEach(chk => {
+        chk.onchange = () => {
+            const oid = chk.dataset.order;
+            const remain = Number(chk.dataset.remain) || 0;
+            const payInp = root.querySelector(`.debt-order-pay[data-order="${oid}"]`);
+            // Order-level only — do not auto-select/fill every line (that settled the whole order)
+            if (chk.checked) {
+                root.querySelectorAll(`.debt-item-check[data-order="${oid}"]`).forEach(ic => { ic.checked = false; });
+                root.querySelectorAll(`.debt-item-pay[data-order="${oid}"]`).forEach(ip => { ip.value = ''; });
+                if (payInp && !(Number(payInp.value) > 0)) payInp.value = remain.toFixed(2);
+            } else if (payInp) {
+                payInp.value = '';
+            }
+            updateDebtSelectedTotal();
+        };
+    });
+    root.querySelectorAll('.debt-item-check').forEach(chk => {
+        chk.onchange = () => {
+            const remain = Number(chk.dataset.remain) || 0;
+            const payInp = root.querySelector(`.debt-item-pay[data-order-item="${chk.dataset.orderItem}"]`);
+            const oid = chk.dataset.order;
+            if (chk.checked && payInp && !(Number(payInp.value) > 0)) payInp.value = remain.toFixed(2);
+            if (!chk.checked && payInp) payInp.value = '';
+            // Item selection wins: clear order-level pay so we don't double-allocate
+            if (chk.checked && oid) {
+                const oChk = root.querySelector(`.debt-order-check[data-order="${oid}"]`);
+                const oPay = root.querySelector(`.debt-order-pay[data-order="${oid}"]`);
+                if (oChk) oChk.checked = false;
+                if (oPay) oPay.value = '';
+            }
+            updateDebtSelectedTotal();
+        };
+    });
+    root.querySelectorAll('.debt-order-pay, .debt-item-pay').forEach(inp => {
+        inp.oninput = () => {
+            const v = Number(inp.value);
+            if (inp.classList.contains('debt-order-pay')) {
+                const oid = inp.dataset.order;
+                if (v > 0) {
+                    const chk = root.querySelector(`.debt-order-check[data-order="${oid}"]`);
+                    if (chk) chk.checked = true;
+                    root.querySelectorAll(`.debt-item-check[data-order="${oid}"]`).forEach(ic => { ic.checked = false; });
+                    root.querySelectorAll(`.debt-item-pay[data-order="${oid}"]`).forEach(ip => { ip.value = ''; });
+                } else {
+                    const chk = root.querySelector(`.debt-order-check[data-order="${oid}"]`);
+                    if (chk) chk.checked = false;
+                }
+            } else {
+                const oid = inp.dataset.order;
+                if (v > 0) {
+                    const chk = root.querySelector(`.debt-item-check[data-order-item="${inp.dataset.orderItem}"]`);
+                    if (chk) chk.checked = true;
+                    const oChk = root.querySelector(`.debt-order-check[data-order="${oid}"]`);
+                    const oPay = root.querySelector(`.debt-order-pay[data-order="${oid}"]`);
+                    if (oChk) oChk.checked = false;
+                    if (oPay) oPay.value = '';
+                } else {
+                    const chk = root.querySelector(`.debt-item-check[data-order-item="${inp.dataset.orderItem}"]`);
+                    if (chk) chk.checked = false;
+                }
+            }
+            updateDebtSelectedTotal();
+        };
+    });
+}
+
+function collectDebtAllocations() {
+    const root = document.getElementById('customer-debt-orders');
+    const allocations = [];
+    if (!root) return allocations;
+
+    // Prefer explicit item amounts when present
+    const itemPays = [...root.querySelectorAll('.debt-item-pay')];
+    const ordersWithItemPay = new Set();
+    itemPays.forEach(inp => {
+        const amt = Number(inp.value);
+        if (!(amt > 0)) return;
+        const max = Number(inp.dataset.remain) || amt;
+        const amount = Math.min(amt, max);
+        allocations.push({
+            orderId: Number(inp.dataset.order),
+            orderItemId: Number(inp.dataset.orderItem),
+            amount
+        });
+        ordersWithItemPay.add(String(inp.dataset.order));
+    });
+
+    root.querySelectorAll('.debt-order-pay').forEach(inp => {
+        const oid = String(inp.dataset.order);
+        if (ordersWithItemPay.has(oid)) return; // already allocating by lines
+        const amt = Number(inp.value);
+        if (!(amt > 0)) return;
+        const max = Number(inp.dataset.remain) || amt;
+        allocations.push({
+            orderId: Number(oid),
+            orderItemId: null,
+            amount: Math.min(amt, max)
+        });
+    });
+
+    return allocations;
+}
+
+function updateDebtSelectedTotal() {
+    const allocs = collectDebtAllocations();
+    const total = allocs.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+    const sel = document.getElementById('debt-pay-selected');
+    if (sel) sel.value = money(total);
+    // Do not auto-write #cust-pay-amount — selection total is shown above; amount is optional override
+}
+
+async function submitCustomerDebtPayment() {
+    const id = document.getElementById('cust-pay-id')?.value;
+    if (!id) return;
+    const allocations = collectDebtAllocations();
+    const typedAmount = Number(document.getElementById('cust-pay-amount')?.value);
+    const note = document.getElementById('cust-pay-note')?.value?.trim() || '';
+    let amount = 0;
+    if (allocations.length) {
+        const selected = allocations.reduce((s, a) => s + a.amount, 0);
+        // Use selection total unless user typed a smaller amount to pay (partial)
+        amount = (typedAmount > 0 && typedAmount + 0.004 < selected) ? typedAmount : selected;
+        // Cap allocation lines to the payment amount (FIFO) so server/UI stay consistent
+        if (amount + 0.004 < selected) {
+            let left = amount;
+            for (const a of allocations) {
+                if (left < 0.01) { a.amount = 0; continue; }
+                const take = Math.min(a.amount, left);
+                a.amount = take;
+                left -= take;
+            }
+            // drop zeroed lines
+            for (let i = allocations.length - 1; i >= 0; i--) {
+                if (!(allocations[i].amount > 0.004)) allocations.splice(i, 1);
+            }
+        }
+    } else {
+        amount = typedAmount;
+    }
+    if (!(amount > 0)) {
+        toast(tr('debt_select_or_amount'), 'error');
+        return;
+    }
+    try {
+        await api('/api/customers/' + id + '/payment', {
+            method: 'POST',
+            body: JSON.stringify({ amount, note, allocations })
+        });
+        toast(tr('payment_ok'), 'success');
+        await loadData();
+        const c = customers.find(x => x.id === Number(id));
+        if (c) {
+            document.getElementById('customer-details-info').innerHTML = `
+                <div style="line-height:1.8;">
+                    <div><strong>${tr('col_name')}:</strong> ${escapeHtml(c.name)}</div>
+                    <div><strong>${tr('col_phone')}:</strong> ${escapeHtml(c.phone || '—')}</div>
+                    <div><strong>${tr('col_email')}:</strong> ${escapeHtml(c.email || '—')}</div>
+                    <div><strong>${tr('col_address')}:</strong> ${escapeHtml(c.address || '—')}</div>
+                    <div><strong>${tr('col_balance')}:</strong> ${money(c.balance)}</div>
+                    <div><strong>${tr('col_type')}:</strong> ${escapeHtml(c.type || '—')}</div>
+                </div>`;
+        }
+        document.getElementById('cust-pay-amount').value = '';
+        document.getElementById('cust-pay-note').value = '';
+        await loadCustomerDebtPanel(Number(id));
+        renderCustomers();
+    } catch (err) { toast(err.message, 'error'); }
 }
 
 function openSupplierDetails(id) {
@@ -3774,6 +4305,668 @@ function openSupplierDetails(id) {
             <div><strong>${tr('col_balance')}:</strong> ${money(s.balance ?? 0)}</div>
         </div>`;
     openModal('supplier-details-modal');
+}
+
+async function openSupplierPurchases(id) {
+    const s = suppliers.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('sp-supplier-id').value = id;
+    const title = document.getElementById('supplier-purchases-title');
+    if (title) title.textContent = `${tr('supplier_debt_products')} — ${s.name}`;
+    const sub = document.getElementById('supplier-purchases-sub');
+    if (sub) sub.textContent = `${tr('col_balance')}: ${money(s.balance ?? 0)}`;
+    clearSupplierPurchaseFormFields();
+    fillSpCategoryList();
+    wireSupplierPurchaseLookup();
+    openModal('supplier-purchases-modal');
+    applyI18n();
+    await loadSupplierPurchasesList(id);
+    setTimeout(() => document.getElementById('sp-name')?.focus(), 40);
+}
+
+function clearSupplierPurchaseFormFields() {
+    document.getElementById('sp-name').value = '';
+    document.getElementById('sp-category').value = '';
+    document.getElementById('sp-qty').value = '1';
+    document.getElementById('sp-price').value = '0';
+    document.getElementById('sp-note').value = '';
+    document.getElementById('sp-status').value = 'debt';
+    const partId = document.getElementById('sp-part-id');
+    if (partId) partId.value = '';
+    hideSpSuggest();
+}
+
+function fillSpCategoryList() {
+    const dl = document.getElementById('sp-category-list');
+    if (!dl) return;
+    const cats = Array.isArray(categories) ? categories : [];
+    dl.innerHTML = cats.map(c => `<option value="${escapeHtml(typeof c === 'string' ? c : (c.name || c))}">`).join('');
+}
+
+function hideSpSuggest() {
+    const box = document.getElementById('sp-suggest');
+    if (box) {
+        box.hidden = true;
+        box.innerHTML = '';
+    }
+}
+
+function searchProductsForSupplierLookup(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const list = (products || []).filter(p => {
+        if (p.isInactive || p.status === 'Inactive') return false;
+        if (!q) return false;
+        return [p.name, p.sku, p.barcode, p.category].some(x => String(x || '').toLowerCase().includes(q));
+    });
+    // Prefer exact barcode/sku matches first
+    const exact = findProductByScan(query);
+    if (exact && !list.some(x => x.id === exact.id)) list.unshift(exact);
+    list.sort((a, b) => {
+        const an = String(a.name || '').toLowerCase();
+        const bn = String(b.name || '').toLowerCase();
+        const aExact = an === q || String(a.barcode || '').toLowerCase() === q || String(a.sku || '').toLowerCase() === q;
+        const bExact = bn === q || String(b.barcode || '').toLowerCase() === q || String(b.sku || '').toLowerCase() === q;
+        if (aExact !== bExact) return aExact ? -1 : 1;
+        return an.localeCompare(bn);
+    });
+    return list.slice(0, 12);
+}
+
+function applyInventoryProductToSupplierForm(p) {
+    if (!p) return;
+    document.getElementById('sp-name').value = p.name || '';
+    document.getElementById('sp-category').value = p.category || 'General';
+    const cost = Number(p.cost ?? p.purchasePrice ?? 0);
+    const price = cost > 0 ? cost : Number(p.price ?? 0);
+    document.getElementById('sp-price').value = price > 0 ? price.toFixed(2) : '0';
+    const partId = document.getElementById('sp-part-id');
+    if (partId) partId.value = String(p.id || '');
+    if (!(Number(document.getElementById('sp-qty').value) > 0))
+        document.getElementById('sp-qty').value = '1';
+    hideSpSuggest();
+}
+
+function renderSpSuggest(query) {
+    const box = document.getElementById('sp-suggest');
+    if (!box) return;
+    const q = String(query || '').trim();
+    if (q.length < 1) {
+        hideSpSuggest();
+        return;
+    }
+    const list = searchProductsForSupplierLookup(q);
+    if (!list.length) {
+        box.hidden = false;
+        box.innerHTML = `<div class="sp-suggest-item" style="cursor:default;color:var(--text-muted);">${escapeHtml(tr('empty_list'))} — ${escapeHtml(tr('add'))}</div>`;
+        return;
+    }
+    box.hidden = false;
+    box.innerHTML = list.map((p, i) => `
+        <button type="button" class="sp-suggest-item${i === 0 ? ' active' : ''}" data-sp-pick="${p.id}">
+            <span>
+                <strong>${escapeHtml(p.name)}</strong>
+                <div class="sp-suggest-meta">${escapeHtml(p.category || '')}${p.barcode ? ' · ' + escapeHtml(p.barcode) : ''}${p.sku ? ' · ' + escapeHtml(p.sku) : ''}</div>
+            </span>
+            <span class="sp-suggest-meta">${money(p.cost > 0 ? p.cost : p.price)}</span>
+        </button>`).join('');
+    box.querySelectorAll('[data-sp-pick]').forEach(btn => {
+        btn.onclick = () => {
+            const p = products.find(x => x.id === Number(btn.dataset.spPick));
+            applyInventoryProductToSupplierForm(p);
+            document.getElementById('sp-qty')?.focus();
+        };
+    });
+}
+
+function trySpBarcodeOrSelect(query) {
+    const exact = findProductByScan(query);
+    if (exact) {
+        applyInventoryProductToSupplierForm(exact);
+        document.getElementById('sp-qty')?.focus();
+        return true;
+    }
+    const list = searchProductsForSupplierLookup(query);
+    if (list.length === 1) {
+        applyInventoryProductToSupplierForm(list[0]);
+        document.getElementById('sp-qty')?.focus();
+        return true;
+    }
+    renderSpSuggest(query);
+    return false;
+}
+
+function wireSupplierPurchaseLookup() {
+    if (wireSupplierPurchaseLookup._done) return;
+    wireSupplierPurchaseLookup._done = true;
+    const input = document.getElementById('sp-name');
+    if (!input) return;
+    let debounce = null;
+    input.addEventListener('input', () => {
+        const partId = document.getElementById('sp-part-id');
+        if (partId) partId.value = '';
+        clearTimeout(debounce);
+        debounce = setTimeout(() => renderSpSuggest(input.value), 120);
+    });
+    input.addEventListener('keydown', (e) => {
+        const box = document.getElementById('sp-suggest');
+        const items = [...(box?.querySelectorAll('[data-sp-pick]') || [])];
+        const active = box?.querySelector('.sp-suggest-item.active');
+        let idx = items.indexOf(active);
+        if (e.key === 'ArrowDown' && items.length) {
+            e.preventDefault();
+            items.forEach(x => x.classList.remove('active'));
+            idx = Math.min(items.length - 1, idx + 1);
+            if (idx < 0) idx = 0;
+            items[idx].classList.add('active');
+            items[idx].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (e.key === 'ArrowUp' && items.length) {
+            e.preventDefault();
+            items.forEach(x => x.classList.remove('active'));
+            idx = Math.max(0, idx - 1);
+            items[idx].classList.add('active');
+            items[idx].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (e.key === 'Escape') {
+            hideSpSuggest();
+            return;
+        }
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (active && !box?.hidden) {
+                active.click();
+                return;
+            }
+            trySpBarcodeOrSelect(input.value);
+        }
+    });
+    input.addEventListener('blur', () => {
+        // allow click on suggestion
+        setTimeout(() => hideSpSuggest(), 180);
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.sp-lookup')) hideSpSuggest();
+    });
+}
+
+async function importSupplierPurchaseToInventory(itemId, supplierIdHint) {
+    let it = null;
+    const sidHint = Number(supplierIdHint) || 0;
+    if (sidHint > 0) {
+        const items = await api('/api/suppliers/' + sidHint + '/purchases?unadded=1');
+        it = (items || []).find(x => x.id === Number(itemId));
+        if (!it) {
+            const all = await api('/api/suppliers/' + sidHint + '/purchases');
+            it = (all || []).find(x => x.id === Number(itemId));
+        }
+    }
+    if (!it) {
+        for (const s of (suppliers || [])) {
+            try {
+                const items = await api('/api/suppliers/' + s.id + '/purchases');
+                it = (items || []).find(x => x.id === Number(itemId));
+                if (it) break;
+            } catch { /* continue */ }
+        }
+    }
+    if (!it) throw new Error(tr('empty_list'));
+    startFsImportQueue([it], Number(it.supplierId) || sidHint);
+}
+
+/** Queue of supplier purchase lines to open in Add/Edit Product. Line leaves list only after Save (LinkToPart). */
+let fsImportQueue = null;
+
+function startFsImportQueue(items, supplierId) {
+    const list = (items || []).filter(Boolean);
+    if (!list.length) return;
+    fsImportQueue = {
+        supplierId: Number(supplierId) || Number(list[0].supplierId) || 0,
+        items: list,
+        index: 0,
+        awaitingSave: false
+    };
+    closeModal('from-supplier-modal');
+    closeModal('supplier-purchases-modal');
+    openNextFsImportItem();
+}
+
+function openNextFsImportItem() {
+    if (!fsImportQueue) return;
+    if (fsImportQueue.index >= fsImportQueue.items.length) {
+        const sid = fsImportQueue.supplierId;
+        fsImportQueue = null;
+        reopenFromSupplierAfterQueue(sid);
+        return;
+    }
+    const it = fsImportQueue.items[fsImportQueue.index];
+    fsImportQueue.awaitingSave = true;
+    openSupplierPurchaseInProductForm(it);
+}
+
+function reopenFromSupplierAfterQueue(sid) {
+    if (!sid) return;
+    openFromSupplierModal();
+    const sel = document.getElementById('fs-supplier');
+    if (sel) sel.value = String(sid);
+    loadFromSupplierList();
+}
+
+/** Called after product form Save succeeds while importing from supplier. */
+function onFsImportProductSaved() {
+    if (!fsImportQueue) return;
+    fsImportQueue.awaitingSave = false;
+    fsImportQueue.index += 1;
+    openNextFsImportItem();
+}
+
+/** Called when product modal closes without Save — keep line visible, continue or finish queue. */
+function onFsImportProductCancelled() {
+    if (!fsImportQueue || !fsImportQueue.awaitingSave) return;
+    fsImportQueue.awaitingSave = false;
+    fsImportQueue.index += 1;
+    openNextFsImportItem();
+}
+
+function findProductByNameAndSupplier(name, supplierId) {
+    const n = String(name || '').trim().toLowerCase();
+    const sid = Number(supplierId);
+    if (!n || !sid) return null;
+    return (products || []).find(p =>
+        String(p.name || '').trim().toLowerCase() === n &&
+        Number(p.supplierId) === sid &&
+        !p.isInactive && p.status !== 'Inactive'
+    ) || null;
+}
+
+function ensureCategoryOption(catName) {
+    const cat = document.getElementById('p-category');
+    if (!cat || !catName) return;
+    fillCategorySelect(cat);
+    if (cat.value === catName) return;
+    const exists = [...cat.options].some(o => o.value === catName);
+    if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = catName;
+        opt.textContent = catName;
+        cat.appendChild(opt);
+    }
+    cat.value = catName;
+}
+
+function openSupplierPurchaseInProductForm(it) {
+    const supplierId = Number(it.supplierId);
+    const qtyAdd = Math.max(1, Math.round(Number(it.quantity) || 1));
+    const unitPrice = Number(it.unitPrice) || 0;
+    const catName = (it.category || 'General').trim() || 'General';
+
+    const existing = (it.partId && products.find(p => p.id === Number(it.partId)))
+        || findProductByNameAndSupplier(it.name, supplierId);
+
+    if (existing) {
+        openProductModal(existing.id);
+        document.getElementById('p-supplier-purchase-id').value = String(it.id);
+        document.getElementById('p-stock').value = (Number(existing.stock) || 0) + qtyAdd;
+        document.getElementById('p-cost').value = unitPrice > 0 ? unitPrice : (existing.cost ?? 0);
+        ensureCategoryOption(catName);
+        const sel = document.getElementById('p-supplier');
+        if (sel && supplierId) sel.value = String(supplierId);
+        document.getElementById('p-purchase').checked = true;
+        document.getElementById('p-track-stock').checked = true;
+        if (typeof calculateProductMargins === 'function') calculateProductMargins();
+    } else {
+        openProductModal(null);
+        document.getElementById('p-supplier-purchase-id').value = String(it.id);
+        document.getElementById('p-name').value = it.name || '';
+        ensureCategoryOption(catName);
+        document.getElementById('p-stock').value = qtyAdd;
+        document.getElementById('p-cost').value = unitPrice;
+        const sell = document.getElementById('p-price');
+        if (sell && !(Number(sell.value) > 0) && unitPrice > 0)
+            sell.value = (Math.round(unitPrice * 1.25 * 100) / 100).toFixed(2);
+        const sel = document.getElementById('p-supplier');
+        if (sel && supplierId) sel.value = String(supplierId);
+        document.getElementById('p-purchase').checked = true;
+        document.getElementById('p-track-stock').checked = true;
+        document.getElementById('p-sales').checked = true;
+        if (typeof onProductTypeChange === 'function') onProductTypeChange();
+        if (typeof calculateProductMargins === 'function') calculateProductMargins();
+    }
+}
+
+async function loadSupplierPurchasesList(supplierId) {
+    const el = document.getElementById('supplier-purchases-list');
+    if (!el) return;
+    el.innerHTML = `<div class="empty-state">${tr('loading')}</div>`;
+    try {
+        const items = await api('/api/suppliers/' + supplierId + '/purchases');
+        if (!items?.length) {
+            el.innerHTML = `<div class="empty-state">${tr('empty_list')}</div>`;
+            return;
+        }
+        el.innerHTML = items.map(it => {
+            const status = String(it.paymentStatus || 'Unpaid').toLowerCase();
+            const isPaid = status === 'paid';
+            const badge = isPaid ? tr('paid') : (status === 'partial' ? 'Partial' : tr('unpaid'));
+            const badgeCls = isPaid ? 'in-stock' : 'low-stock';
+            return `<div class="supp-purchase-row" data-id="${it.id}">
+                <div>
+                    <strong>${escapeHtml(it.name)}</strong>
+                    <div class="supp-purchase-meta">
+                        ${tr('col_category')}: ${escapeHtml(it.category || 'General')}
+                        · ${tr('col_qty')}: ${Number(it.quantity)} · ${tr('col_price')}: ${money(it.unitPrice)} · ${tr('col_amount')}: ${money(it.lineTotal)}
+                        · <span class="badge ${badgeCls}">${badge}</span>
+                        · ${it.addedToInventory ? tr('supplier_added_inv') : tr('supplier_not_added')}
+                        ${it.remaining > 0.004 ? ` · ${tr('debt_remaining')}: ${money(it.remaining)}` : ''}
+                    </div>
+                </div>
+                <div class="supp-purchase-actions">
+                    <button type="button" class="btn btn-primary btn-sm" data-sp-import="${it.id}">${tr('supplier_import_inv')}</button>
+                    ${it.remaining > 0.004
+                        ? `<button type="button" class="btn btn-secondary btn-sm" data-sp-pay="${it.id}">${tr('supplier_mark_paid')}</button>`
+                        : `<button type="button" class="btn btn-secondary btn-sm" data-sp-debt="${it.id}">${tr('supplier_mark_debt')}</button>`}
+                    <button type="button" class="btn-icon btn-icon-danger" title="${tr('delete')}" data-sp-del="${it.id}"><span class="material-symbols-rounded">delete</span></button>
+                </div>
+            </div>`;
+        }).join('');
+
+        el.querySelectorAll('[data-sp-import]').forEach(btn => btn.onclick = async () => {
+            try {
+                await importSupplierPurchaseToInventory(Number(btn.dataset.spImport), supplierId);
+            } catch (e) { toast(e.message, 'error'); }
+        });
+        el.querySelectorAll('[data-sp-pay]').forEach(btn => btn.onclick = async () => {
+            try {
+                await api('/api/supplier-purchases/' + btn.dataset.spPay + '/pay', { method: 'POST', body: JSON.stringify({}) });
+                toast(tr('payment_ok'), 'success');
+                await loadData();
+                await loadSupplierPurchasesList(supplierId);
+                const s = suppliers.find(x => x.id === supplierId);
+                const sub = document.getElementById('supplier-purchases-sub');
+                if (sub && s) sub.textContent = `${tr('col_balance')}: ${money(s.balance ?? 0)}`;
+            } catch (e) { toast(e.message, 'error'); }
+        });
+        el.querySelectorAll('[data-sp-debt]').forEach(btn => btn.onclick = async () => {
+            try {
+                await api('/api/supplier-purchases/' + btn.dataset.spDebt + '/debt', { method: 'POST' });
+                toast(tr('saved_ok'), 'success');
+                await loadData();
+                await loadSupplierPurchasesList(supplierId);
+                const s = suppliers.find(x => x.id === supplierId);
+                const sub = document.getElementById('supplier-purchases-sub');
+                if (sub && s) sub.textContent = `${tr('col_balance')}: ${money(s.balance ?? 0)}`;
+            } catch (e) { toast(e.message, 'error'); }
+        });
+        el.querySelectorAll('[data-sp-del]').forEach(btn => btn.onclick = async () => {
+            if (!await confirmDialog(tr('confirm_delete'))) return;
+            try {
+                await api('/api/supplier-purchases/' + btn.dataset.spDel + '/delete', { method: 'POST' });
+                toast(tr('deleted_ok'), 'success');
+                await loadData();
+                await loadSupplierPurchasesList(supplierId);
+            } catch (e) { toast(e.message, 'error'); }
+        });
+    } catch (e) {
+        el.innerHTML = `<div class="empty-state">${escapeHtml(e.message || tr('empty_list'))}</div>`;
+    }
+}
+
+async function addSupplierPurchaseLine() {
+    const supplierId = Number(document.getElementById('sp-supplier-id')?.value);
+    const name = document.getElementById('sp-name')?.value?.trim();
+    const category = document.getElementById('sp-category')?.value?.trim() || 'General';
+    const qty = Number(document.getElementById('sp-qty')?.value) || 1;
+    const price = Number(document.getElementById('sp-price')?.value) || 0;
+    const note = document.getElementById('sp-note')?.value?.trim() || '';
+    const isPaid = document.getElementById('sp-status')?.value === 'paid';
+    if (!supplierId || !name) {
+        toast(tr('col_name'), 'error');
+        return;
+    }
+    try {
+        await api('/api/suppliers/' + supplierId + '/purchases', {
+            method: 'POST',
+            body: JSON.stringify({ name, category, quantity: qty, unitPrice: price, isPaid, notes: note })
+        });
+        toast(tr('supplier_purchase_ok'), 'success');
+        clearSupplierPurchaseFormFields();
+        await loadData();
+        await loadSupplierPurchasesList(supplierId);
+        const s = suppliers.find(x => x.id === supplierId);
+        const sub = document.getElementById('supplier-purchases-sub');
+        if (sub && s) sub.textContent = `${tr('col_balance')}: ${money(s.balance ?? 0)}`;
+        setTimeout(() => document.getElementById('sp-name')?.focus(), 40);
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+function applySupplierPurchaseToProductForm(it, supplierId) {
+    document.getElementById('p-name').value = it.name || '';
+    document.getElementById('p-cost').value = Number(it.unitPrice) || 0;
+    document.getElementById('p-stock').value = Number(it.quantity) || 0;
+    const cat = document.getElementById('p-category');
+    if (cat && it.category) {
+        fillCategorySelect(cat);
+        cat.value = it.category;
+        if (cat.value !== it.category) {
+            // category may not exist yet — leave and let save create via payload
+            const opt = document.createElement('option');
+            opt.value = it.category;
+            opt.textContent = it.category;
+            cat.appendChild(opt);
+            cat.value = it.category;
+        }
+    }
+    const track = document.getElementById('p-track-stock');
+    if (track) track.checked = true;
+    const sel = document.getElementById('p-supplier');
+    if (sel && supplierId) sel.value = String(supplierId);
+    const link = document.getElementById('p-supplier-purchase-id');
+    if (link) link.value = String(it.id || '');
+    const purchase = document.getElementById('p-purchase');
+    if (purchase) purchase.checked = true;
+    if (typeof onProductTypeChange === 'function') onProductTypeChange();
+    if (typeof calculateProductMargins === 'function') calculateProductMargins();
+    refreshProductSupplierPurchases();
+    document.querySelectorAll('.p-supplier-purchase-chip').forEach(c => {
+        c.classList.toggle('active', Number(c.dataset.id) === Number(it.id));
+    });
+}
+
+async function refreshProductSupplierPurchases() {
+    const panel = document.getElementById('p-supplier-purchases');
+    const list = document.getElementById('p-supplier-purchases-list');
+    const sid = document.getElementById('p-supplier')?.value;
+    const purchaseIdEl = document.getElementById('p-supplier-purchase-id');
+    if (!panel || !list) return;
+    if (!sid || editingProductId) {
+        panel.hidden = true;
+        list.innerHTML = '';
+        if (purchaseIdEl && !editingProductId) purchaseIdEl.value = '';
+        return;
+    }
+    try {
+        const items = await api('/api/suppliers/' + sid + '/purchases');
+        if (!items?.length) {
+            panel.hidden = true;
+            list.innerHTML = '';
+            return;
+        }
+        panel.hidden = false;
+        const selectedId = Number(purchaseIdEl?.value) || 0;
+        list.innerHTML = items.map(it => `
+            <button type="button" class="p-supplier-purchase-chip ${selectedId === it.id ? 'active' : ''}" data-id="${it.id}">
+                <span>${escapeHtml(it.name)} · ${escapeHtml(it.category || '')} · ${tr('col_qty')}: ${Number(it.quantity)}</span>
+                <span>${money(it.unitPrice)}</span>
+            </button>`).join('');
+        list.querySelectorAll('.p-supplier-purchase-chip').forEach(btn => {
+            btn.onclick = () => {
+                const it = items.find(x => x.id === Number(btn.dataset.id));
+                if (it) applySupplierPurchaseToProductForm(it, Number(sid));
+            };
+        });
+    } catch {
+        panel.hidden = true;
+        list.innerHTML = '';
+    }
+}
+
+function updateInvActionsSlide() {
+    const scroller = document.getElementById('inv-actions-scroller');
+    const slide = document.getElementById('inv-actions-slide');
+    const thumb = document.getElementById('inv-actions-slide-thumb');
+    if (!scroller || !slide || !thumb) return;
+    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    const needs = maxScroll > 2;
+    slide.classList.toggle('is-scrollable', needs);
+    const trackW = slide.clientWidth || scroller.clientWidth;
+    if (!trackW) return;
+    if (!needs) {
+        thumb.style.width = '100%';
+        thumb.style.transform = 'translateX(0)';
+        thumb.style.opacity = '0.4';
+        return;
+    }
+    thumb.style.opacity = '1';
+    const ratio = scroller.clientWidth / Math.max(1, scroller.scrollWidth);
+    const thumbW = Math.max(28, trackW * ratio);
+    const maxLeft = Math.max(0, trackW - thumbW);
+    const sl = Math.min(maxScroll, Math.max(0, Math.abs(scroller.scrollLeft)));
+    const left = maxScroll > 0 ? (sl / maxScroll) * maxLeft : 0;
+    thumb.style.width = thumbW + 'px';
+    thumb.style.transform = `translateX(${left}px)`;
+}
+
+function initInvActionsSlide() {
+    const scroller = document.getElementById('inv-actions-scroller');
+    const slide = document.getElementById('inv-actions-slide');
+    if (!scroller || !slide || slide.dataset.bound === '1') return;
+    slide.dataset.bound = '1';
+
+    const scrollToRatio = (ratio) => {
+        const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+        if (maxScroll <= 2) return;
+        scroller.scrollLeft = Math.min(1, Math.max(0, ratio)) * maxScroll;
+        updateInvActionsSlide();
+    };
+
+    scroller.addEventListener('scroll', updateInvActionsSlide, { passive: true });
+    scroller.addEventListener('wheel', e => {
+        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+        if (scroller.scrollWidth <= scroller.clientWidth + 2) return;
+        e.preventDefault();
+        scroller.scrollLeft += e.deltaY;
+        updateInvActionsSlide();
+    }, { passive: false });
+
+    window.addEventListener('resize', updateInvActionsSlide);
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(updateInvActionsSlide).observe(scroller);
+        new ResizeObserver(updateInvActionsSlide).observe(slide);
+    }
+
+    let dragging = false;
+    slide.addEventListener('pointerdown', e => {
+        if (scroller.scrollWidth <= scroller.clientWidth + 2) return;
+        dragging = true;
+        slide.setPointerCapture?.(e.pointerId);
+        const rect = slide.getBoundingClientRect();
+        scrollToRatio((e.clientX - rect.left) / rect.width);
+        e.preventDefault();
+    });
+    slide.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const rect = slide.getBoundingClientRect();
+        scrollToRatio((e.clientX - rect.left) / rect.width);
+    });
+    const endDrag = () => { dragging = false; };
+    slide.addEventListener('pointerup', endDrag);
+    slide.addEventListener('pointercancel', endDrag);
+
+    requestAnimationFrame(updateInvActionsSlide);
+    setTimeout(updateInvActionsSlide, 50);
+    setTimeout(updateInvActionsSlide, 300);
+    setTimeout(updateInvActionsSlide, 1000);
+}
+
+function openFromSupplierModal() {
+    fillSupplierSelect(document.getElementById('fs-supplier'));
+    document.getElementById('fs-list').innerHTML = `<div class="empty-state">${tr('supplier_pick_supplier')}</div>`;
+    const tb = document.getElementById('fs-toolbar');
+    if (tb) tb.hidden = true;
+    const all = document.getElementById('fs-select-all');
+    if (all) all.checked = false;
+    openModal('from-supplier-modal');
+    applyI18n();
+}
+
+async function loadFromSupplierList() {
+    const sid = document.getElementById('fs-supplier')?.value;
+    const el = document.getElementById('fs-list');
+    const tb = document.getElementById('fs-toolbar');
+    if (!el) return;
+    if (!sid) {
+        el.innerHTML = `<div class="empty-state">${tr('supplier_pick_supplier')}</div>`;
+        if (tb) tb.hidden = true;
+        return;
+    }
+    el.innerHTML = `<div class="empty-state">${tr('loading')}</div>`;
+    if (tb) tb.hidden = true;
+    try {
+        const items = await api('/api/suppliers/' + sid + '/purchases?unadded=1');
+        window._fsListCache = items || [];
+        if (!items?.length) {
+            el.innerHTML = `<div class="empty-state">${tr('empty_list')}</div>`;
+            return;
+        }
+        if (tb) tb.hidden = false;
+        el.innerHTML = items.map(it => `
+            <div class="supp-purchase-row" data-fs-id="${it.id}">
+                <input type="checkbox" class="fs-check" data-fs-check="${it.id}" aria-label="select">
+                <div>
+                    <strong>${escapeHtml(it.name)}</strong>
+                    <div class="supp-purchase-meta">
+                        ${tr('col_category')}: ${escapeHtml(it.category || 'General')}
+                        · ${tr('col_qty')}: ${Number(it.quantity)} · ${money(it.unitPrice)}
+                    </div>
+                </div>
+                <div class="supp-purchase-actions">
+                    <button type="button" class="btn btn-primary btn-sm" data-fs-import="${it.id}">${tr('supplier_import_inv')}</button>
+                </div>
+            </div>`).join('');
+        const syncSelectAll = () => {
+            const boxes = [...el.querySelectorAll('[data-fs-check]')];
+            const allEl = document.getElementById('fs-select-all');
+            if (allEl) allEl.checked = boxes.length > 0 && boxes.every(b => b.checked);
+        };
+        el.querySelectorAll('[data-fs-check]').forEach(cb => cb.onchange = syncSelectAll);
+        el.querySelectorAll('[data-fs-import]').forEach(btn => btn.onclick = async () => {
+            try {
+                await importSupplierPurchaseToInventory(Number(btn.dataset.fsImport), sid);
+            } catch (e) { toast(e.message, 'error'); }
+        });
+        syncSelectAll();
+    } catch (e) {
+        el.innerHTML = `<div class="empty-state">${escapeHtml(e.message || tr('empty_list'))}</div>`;
+    }
+}
+
+function importSelectedFromSupplier() {
+    const sid = Number(document.getElementById('fs-supplier')?.value) || 0;
+    const el = document.getElementById('fs-list');
+    if (!sid || !el) return;
+    const ids = [...el.querySelectorAll('[data-fs-check]:checked')].map(cb => Number(cb.dataset.fsCheck));
+    if (!ids.length) {
+        toast(tr('supplier_none_selected'), 'error');
+        return;
+    }
+    const cache = window._fsListCache || [];
+    const selected = ids.map(id => cache.find(x => x.id === id)).filter(Boolean);
+    if (!selected.length) {
+        toast(tr('supplier_none_selected'), 'error');
+        return;
+    }
+    startFsImportQueue(selected, sid);
 }
 
 function renderCategoriesManage() {
@@ -3867,12 +5060,13 @@ async function placeOrder(status, opts = {}) {
     else if (delta > 0.004) shippingAmount = +(shippingAmount + delta).toFixed(2);
     const payload = {
         items: cart.map(x => ({
-            id: x.id,
+            id: x.id || 0,
             name: x.name,
             price: x.price,
             qty: x.qty,
-            stockQty: x.stockQty > 0 ? x.stockQty : 0,
-            weightKg: x.weightKg || 0
+            stockQty: x.skipStock || x.custom ? 0 : (x.stockQty > 0 ? x.stockQty : 0),
+            weightKg: x.weightKg || 0,
+            skipStock: !!(x.skipStock || x.custom || !x.id)
         })),
         status,
         vatAmount,
@@ -4595,6 +5789,14 @@ async function navigateTo(target, updateHash = true) {
     }
     if (target === 'reports') { await loadReports(); renderReports(); }
     if (target === 'history') { await loadHistory(); renderHistory(); }
+    if (target === 'inventory') {
+        requestAnimationFrame(() => {
+            if (typeof updateInvActionsSlide === 'function') updateInvActionsSlide();
+        });
+        setTimeout(() => {
+            if (typeof updateInvActionsSlide === 'function') updateInvActionsSlide();
+        }, 80);
+    }
     if (target === 'settings') {
         await loadLicense();
         renderLicense();
@@ -4625,7 +5827,7 @@ function setupAuth() {
                 })
             });
             currentUser = user;
-            sessionStorage.setItem('generic_user', JSON.stringify(user));
+            sessionStorage.setItem('panache_user', JSON.stringify(user));
             applyFeatureFlags(user.features || { scaleEnabled: false });
             document.getElementById('login-pass').value = '';
             document.getElementById('login-user').value = '';
@@ -4680,16 +5882,25 @@ function setupActions() {
         const payload = buildProductPayload();
         const pid = document.getElementById('p-id').value;
         try {
+            let res;
             if (pid) {
-                await api('/api/products/' + pid + '/update', { method: 'POST', body: JSON.stringify(payload) });
+                res = await api('/api/products/' + pid + '/update', { method: 'POST', body: JSON.stringify(payload) });
             } else {
-                await api('/api/add-item', { method: 'POST', body: JSON.stringify(payload) });
+                res = await api('/api/add-item', { method: 'POST', body: JSON.stringify(payload) });
             }
+            if (res?.barcode) payload.barcode = res.barcode;
+            const inFsQueue = !!(fsImportQueue && fsImportQueue.awaitingSave);
+            if (inFsQueue) fsImportQueue.awaitingSave = false; // prevent cancel handler on close
             closeModal('product-modal'); editingProductId = null;
             suppressSignalRReload(2000);
             if (!pid) insertOptimisticProduct(payload);
             toast(tr(pid ? 'saved_ok' : 'product_ok'), 'success');
             await loadData();
+            if (inFsQueue) {
+                onFsImportProductSaved();
+            } else if (document.getElementById('from-supplier-modal')?.classList.contains('active')) {
+                await loadFromSupplierList();
+            }
         } catch (err) { toast(err.message, 'error'); }
     };
 
@@ -4762,15 +5973,17 @@ function setupActions() {
 
     document.getElementById('customer-payment-form')?.addEventListener('submit', async e => {
         e.preventDefault();
-        const id = document.getElementById('cust-pay-id').value;
-        const amount = Number(document.getElementById('cust-pay-amount').value);
-        const note = document.getElementById('cust-pay-note').value.trim();
-        try {
-            await api('/api/customers/' + id + '/payment', { method: 'POST', body: JSON.stringify({ amount, note }) });
-            closeModal('customer-details-modal');
-            toast(tr('payment_ok'), 'success');
-            await loadData();
-        } catch (err) { toast(err.message, 'error'); }
+        await submitCustomerDebtPayment();
+    });
+    document.getElementById('btn-debt-pay')?.addEventListener('click', () => submitCustomerDebtPayment());
+    document.getElementById('btn-debt-select-none')?.addEventListener('click', () => {
+        const root = document.getElementById('customer-debt-orders');
+        if (!root) return;
+        root.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = false; });
+        root.querySelectorAll('.debt-order-pay, .debt-item-pay').forEach(i => { i.value = ''; });
+        const amt = document.getElementById('cust-pay-amount');
+        if (amt) amt.value = '';
+        updateDebtSelectedTotal();
     });
 
     document.getElementById('supplier-payment-form')?.addEventListener('submit', async e => {
@@ -4785,6 +5998,20 @@ function setupActions() {
             await loadData();
         } catch (err) { toast(err.message, 'error'); }
     });
+
+    document.getElementById('btn-sp-add')?.addEventListener('click', () => addSupplierPurchaseLine());
+    document.getElementById('p-supplier')?.addEventListener('change', () => {
+        const link = document.getElementById('p-supplier-purchase-id');
+        if (link) link.value = '';
+        refreshProductSupplierPurchases();
+    });
+    document.getElementById('btn-from-supplier')?.addEventListener('click', () => openFromSupplierModal());
+    document.getElementById('fs-supplier')?.addEventListener('change', () => loadFromSupplierList());
+    document.getElementById('fs-select-all')?.addEventListener('change', e => {
+        document.querySelectorAll('#fs-list [data-fs-check]').forEach(cb => { cb.checked = e.target.checked; });
+    });
+    document.getElementById('btn-fs-import-selected')?.addEventListener('click', () => importSelectedFromSupplier());
+    initInvActionsSlide();
 
     document.getElementById('btn-manage-exp-cats')?.addEventListener('click', async () => {
         try { expenseCategories = await api('/api/expense-categories'); } catch { expenseCategories = []; }
@@ -5002,6 +6229,8 @@ function setupActions() {
         updateShippingButton();
         renderCart();
     };
+    document.getElementById('btn-quick-sale')?.addEventListener('click', () => openQuickSaleModal());
+    wireQuickSaleModal();
     document.getElementById('btn-checkout').onclick = () => placeOrder('Completed', { isPaid: true });
     document.getElementById('btn-quote')?.addEventListener('click', () => placeOrder('Quotation'));
     document.getElementById('btn-draft')?.addEventListener('click', () => placeOrder('Draft'));
@@ -5187,8 +6416,14 @@ function setupActions() {
 
     document.getElementById('inv-search').oninput = () => renderInventory();
     document.getElementById('inv-filter')?.addEventListener('change', e => { invFilter = e.target.value; renderInventory(); });
-    document.getElementById('btn-inv-table')?.addEventListener('click', () => { invView = 'table'; renderInventory(); });
-    document.getElementById('btn-inv-cards')?.addEventListener('click', () => { invView = 'card'; renderInventory(); });
+    document.getElementById('btn-inv-table')?.addEventListener('click', () => {
+        invView = 'table';
+        renderInventory();
+    });
+    document.getElementById('btn-inv-cards')?.addEventListener('click', () => {
+        invView = 'card';
+        renderInventory();
+    });
     document.getElementById('inv-select-all')?.addEventListener('change', e => {
         const list = filteredProducts(document.getElementById('inv-search')?.value, invCat, { invMode: true });
         if (e.target.checked) list.forEach(p => invSelected.add(p.id));
@@ -6187,14 +7422,17 @@ const scaleManager = {
             return;
         }
         const linePrice = this.calcLinePrice(product, weight);
-        const stockQty = Math.max(1, Math.round(weight * 1000));
+        const skipStock = !isPosProductAvailable(product);
+        const stockQty = skipStock ? 0 : Math.max(1, Math.round(weight * 1000));
         const ok = addToCart(product.id, 1, {
             name: `${product.name} (${weight.toFixed(3)} ${tr('unit_kg')})`,
             price: linePrice,
             lineKey: `${product.id}-w-${Date.now()}`,
             weighted: true,
             weightKg: weight,
-            stockQty
+            stockQty,
+            skipStock,
+            allowZeroStock: skipStock
         });
         if (ok === false) return;
         toast(tr('weigh_added').replace('{0}', product.name).replace('{1}', weight.toFixed(3)), 'success');
@@ -6283,7 +7521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        const saved = sessionStorage.getItem('generic_user') || sessionStorage.getItem('panache_user') || sessionStorage.getItem('otargi_user');
+        const saved = sessionStorage.getItem('panache_user') || sessionStorage.getItem('generic_user') || sessionStorage.getItem('otargi_user');
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
@@ -6294,7 +7532,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch {
                 sessionStorage.removeItem('generic_user');
                 sessionStorage.removeItem('panache_user');
-                sessionStorage.removeItem('otargi_user');
+                sessionStorage.removeItem('panache_user');
             }
         }
     } catch (e) {

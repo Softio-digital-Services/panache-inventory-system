@@ -126,6 +126,9 @@ namespace InventorySystem.Services
 
         public void SaveProductService(InventorySystem.Data.PartData p)
         {
+            int? excludeId = p.Id > 0 ? p.Id : (int?)null;
+            p.Barcode = EnsureUniqueBarcode(p.Barcode, excludeId);
+
             int categoryId = GetCategoryId(p.CategoryName);
             bool isNew = p.Id == 0;
             
@@ -244,6 +247,22 @@ namespace InventorySystem.Services
                 parameters.Add(new SqliteParameter("@id", excludePartId.Value));
             }
             return DatabaseHelper.ExecuteScalar<int>(sql, parameters.ToArray()) > 0;
+        }
+
+        /// <summary>Returns existing barcode, or generates a unique CODE128-friendly code.</summary>
+        public string EnsureUniqueBarcode(string barcode, int? excludePartId = null)
+        {
+            if (!string.IsNullOrWhiteSpace(barcode))
+                return barcode.Trim();
+
+            for (int attempt = 0; attempt < 25; attempt++)
+            {
+                string code = "BC" + DateTime.Now.ToString("yyMMddHHmmss") + Random.Shared.Next(100, 999);
+                if (!BarcodeExists(code, excludePartId))
+                    return code;
+                System.Threading.Thread.Sleep(2);
+            }
+            return "BC" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpperInvariant();
         }
 
         public DataRow GetPartByBarcodeOrNumber(string query)

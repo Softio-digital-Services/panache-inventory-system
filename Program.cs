@@ -82,6 +82,7 @@ namespace InventorySystem
 
                 // Ensure schema is up to date (add missing columns)
                 DatabaseHelper.EnsureSchema();
+                try { DatabaseHelper.SeedDemoData(force: false); } catch { }
 
                 // Initialize currency tables and load cached rates
                 InventorySystem.Services.CurrencyService.EnsureTable();
@@ -785,8 +786,23 @@ namespace InventorySystem
 
                         var part = MapProductPayload(body, 0);
                         new InventoryService().SaveProductService(part);
+                        int newId = 0;
+                        try
+                        {
+                            newId = DatabaseHelper.ExecuteScalar<int>(
+                                @"SELECT id FROM parts
+                                  WHERE part_name = @n AND date_deleted IS NULL
+                                  ORDER BY id DESC LIMIT 1",
+                                new Microsoft.Data.Sqlite.SqliteParameter("@n", body.Name.Trim()));
+                        }
+                        catch { }
+                        if (body.SupplierPurchaseItemId.HasValue && body.SupplierPurchaseItemId.Value > 0 && newId > 0)
+                        {
+                            try { new SupplierPurchaseService().LinkToPart(body.SupplierPurchaseItemId.Value, newId); }
+                            catch { }
+                        }
                         _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' added");
-                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, id = newId, barcode = part.Barcode });
                     }
                     catch (Exception ex)
                     {
@@ -842,7 +858,8 @@ namespace InventorySystem
                                 PartName = item.Name ?? "",
                                 Quantity = item.Qty,
                                 UnitPrice = item.Price,
-                                StockDeductQty = item.StockQty > 0 ? item.StockQty : 0
+                                StockDeductQty = item.StockQty > 0 ? item.StockQty : 0,
+                                SkipStock = item.SkipStock || item.Id <= 0
                             });
                         }
 
@@ -939,9 +956,13 @@ namespace InventorySystem
                     try
                     {
                         var dt = DatabaseHelper.ExecuteDataTable(
-                            @"SELECT oi.part_id, p.part_name, p.description, p.part_image, oi.quantity, oi.price
+                            @"SELECT COALESCE(oi.part_id, 0) AS part_id,
+                                     COALESCE(NULLIF(TRIM(oi.item_name), ''), p.part_name, 'Quick Sale') AS part_name,
+                                     COALESCE(p.description, '') AS description,
+                                     COALESCE(p.part_image, '') AS part_image,
+                                     oi.quantity, oi.price
                               FROM order_items oi
-                              JOIN parts p ON oi.part_id = p.id
+                              LEFT JOIN parts p ON oi.part_id = p.id
                               WHERE oi.order_id = @id",
                             new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
 
@@ -950,7 +971,7 @@ namespace InventorySystem
                         {
                             items.Add(new
                             {
-                                partId = Convert.ToInt32(row["part_id"]),
+                                partId = Convert.ToInt32(row["part_id"] == DBNull.Value ? 0 : row["part_id"]),
                                 name = row["part_name"].ToString(),
                                 description = row["description"] == DBNull.Value ? "" : row["description"].ToString(),
                                 image = row["part_image"] == DBNull.Value ? "" : row["part_image"].ToString(),
@@ -1636,8 +1657,13 @@ namespace InventorySystem
                             return Microsoft.AspNetCore.Http.Results.Conflict(new { error = "Barcode already exists for another item." });
                         var part = MapProductPayload(body, id);
                         new InventoryService().SaveProductService(part);
+                        if (body.SupplierPurchaseItemId.HasValue && body.SupplierPurchaseItemId.Value > 0)
+                        {
+                            try { new SupplierPurchaseService().LinkToPart(body.SupplierPurchaseItemId.Value, id); }
+                            catch { }
+                        }
                         _ = InventoryBroadcaster.Broadcast("InventoryChanged", $"Item '{body.Name}' updated");
-                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, barcode = part.Barcode });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
@@ -1735,18 +1761,47 @@ namespace InventorySystem
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
 
+                app.MapGet("/api/customers/{id:int}/debt", (int id) =>
+                {
+                    try
+                    {
+                        var debt = new CustomerDebtService().GetDebtDetails(id);
+                        return Microsoft.AspNetCore.Http.Results.Ok(debt);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
                 app.MapPost("/api/customers/{id:int}/payment", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
                 {
                     try
                     {
-                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PaymentPayload>(
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<DebtPaymentPayload>(
                             request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        if (body == null || body.Amount == 0)
+                        if (body == null || body.Amount == 0 && (body.Allocations == null || body.Allocations.Count == 0))
                             return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Amount required" });
-                        // Receiving payment reduces balance (negative delta)
-                        new CustomerService().UpdateBalance(id, -Math.Abs(body.Amount));
-                        DatabaseHelper.LogTransaction("CUSTOMER_PAYMENT", id.ToString(), $"Payment {body.Amount:F2}: {body.Note}");
-                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+
+                        var allocs = new System.Collections.Generic.List<CustomerDebtService.AllocationDto>();
+                        if (body.Allocations != null)
+                        {
+                            foreach (var a in body.Allocations)
+                            {
+                                allocs.Add(new CustomerDebtService.AllocationDto
+                                {
+                                    OrderId = a.OrderId,
+                                    OrderItemId = a.OrderItemId,
+                                    Amount = a.Amount
+                                });
+                            }
+                        }
+
+                        decimal amount = body.Amount;
+                        if (amount <= 0 && allocs.Count > 0)
+                            amount = allocs.Sum(x => x.Amount);
+
+                        decimal applied = new CustomerDebtService().ApplyPayment(id, amount, body.Note, allocs);
+                        DatabaseHelper.LogTransaction("CUSTOMER_PAYMENT", id.ToString(), $"Debt payment {applied:F2}: {body.Note}");
+                        _ = InventoryBroadcaster.Broadcast("CustomersChanged", $"Payment for customer #{id}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true, applied });
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
@@ -1765,6 +1820,101 @@ namespace InventorySystem
                             new Microsoft.Data.Sqlite.SqliteParameter("@id", id));
                         DatabaseHelper.LogTransaction("SUPPLIER_PAYMENT", id.ToString(), $"Paid supplier: {body.Amount:F2} {body.Note}");
                         return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                // - Supplier purchase / debt products -
+                app.MapGet("/api/suppliers/{id:int}/purchases", (int id, string unadded) =>
+                {
+                    try
+                    {
+                        bool onlyUnadded = string.Equals(unadded, "1", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(unadded, "true", StringComparison.OrdinalIgnoreCase);
+                        var list = new SupplierPurchaseService().ListForSupplier(id, onlyUnadded);
+                        return Microsoft.AspNetCore.Http.Results.Ok(list);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/suppliers/{id:int}/purchases", async (int id, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<SupplierPurchasePayload>(
+                            request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null || string.IsNullOrWhiteSpace(body.Name))
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Name required" });
+                        bool isPaid = body.IsPaid || string.Equals(body.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase);
+                        var item = new SupplierPurchaseService().AddItem(id, body.Name, body.Category, body.Quantity, body.UnitPrice, isPaid, body.Notes);
+                        _ = InventoryBroadcaster.Broadcast("SuppliersChanged", $"Purchase for supplier #{id}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(item);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/supplier-purchases/{itemId:int}/pay", async (int itemId, Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        decimal? amt = null;
+                        try
+                        {
+                            var body = await System.Text.Json.JsonSerializer.DeserializeAsync<PaymentPayload>(
+                                request.Body, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            if (body != null && body.Amount > 0) amt = body.Amount;
+                        }
+                        catch { }
+                        var item = new SupplierPurchaseService().UpdatePayment(itemId, markPaid: true, payAmount: amt);
+                        _ = InventoryBroadcaster.Broadcast("SuppliersChanged", $"Paid supplier purchase #{itemId}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(item);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/supplier-purchases/{itemId:int}/debt", (int itemId) =>
+                {
+                    try
+                    {
+                        var item = new SupplierPurchaseService().UpdatePayment(itemId, markPaid: false);
+                        _ = InventoryBroadcaster.Broadcast("SuppliersChanged", $"Debt supplier purchase #{itemId}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(item);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/supplier-purchases/{itemId:int}/delete", (int itemId) =>
+                {
+                    try
+                    {
+                        new SupplierPurchaseService().DeleteItem(itemId);
+                        _ = InventoryBroadcaster.Broadcast("SuppliersChanged", $"Deleted supplier purchase #{itemId}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(new { success = true });
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/supplier-purchases/{itemId:int}/import-to-inventory", (int itemId) =>
+                {
+                    try
+                    {
+                        var result = new SupplierPurchaseService().ImportToInventory(itemId);
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", result.Message);
+                        _ = InventoryBroadcaster.Broadcast("SuppliersChanged", $"Imported purchase #{itemId}");
+                        return Microsoft.AspNetCore.Http.Results.Ok(result);
+                    }
+                    catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
+                });
+
+                app.MapPost("/api/dev/seed-demo", () =>
+                {
+                    try
+                    {
+                        var summary = DatabaseHelper.SeedDemoData(force: true);
+                        _ = InventoryBroadcaster.Broadcast("InventoryChanged", "Demo seed");
+                        _ = InventoryBroadcaster.Broadcast("SuppliersChanged", "Demo seed");
+                        _ = InventoryBroadcaster.Broadcast("CustomersChanged", "Demo seed");
+                        return Microsoft.AspNetCore.Http.Results.Ok(summary);
                     }
                     catch (Exception ex) { return Microsoft.AspNetCore.Http.Results.Problem(ex.Message); }
                 });
@@ -2674,6 +2824,7 @@ namespace InventorySystem
             public decimal Price3 { get; set; }
             public decimal Price4 { get; set; }
             public int? SupplierId { get; set; }
+            public int? SupplierPurchaseItemId { get; set; }
         }
 
         private static InventorySystem.Data.PartData MapProductPayload(ProductPayload body, int id)
@@ -2868,6 +3019,31 @@ namespace InventorySystem
             public decimal Amount { get; set; }
             public string Note { get; set; }
         }
+
+        private class SupplierPurchasePayload
+        {
+            public string Name { get; set; }
+            public string Category { get; set; }
+            public decimal Quantity { get; set; } = 1;
+            public decimal UnitPrice { get; set; }
+            public bool IsPaid { get; set; }
+            public string PaymentStatus { get; set; }
+            public string Notes { get; set; }
+        }
+
+        private class DebtPaymentPayload
+        {
+            public decimal Amount { get; set; }
+            public string Note { get; set; }
+            public System.Collections.Generic.List<DebtAllocationPayload> Allocations { get; set; }
+        }
+
+        private class DebtAllocationPayload
+        {
+            public int? OrderId { get; set; }
+            public int? OrderItemId { get; set; }
+            public decimal Amount { get; set; }
+        }
         private class CheckoutItem
         {
             public int Id { get; set; }
@@ -2877,6 +3053,8 @@ namespace InventorySystem
             /// <summary>Grams (or other stock units) to deduct for weighed lines; 0 = use Qty.</summary>
             public int StockQty { get; set; }
             public decimal WeightKg { get; set; }
+            /// <summary>Sell without reducing inventory (car stock / quick sale).</summary>
+            public bool SkipStock { get; set; }
         }
 
         private class ReturnPayload

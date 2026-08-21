@@ -413,11 +413,167 @@ namespace InventorySystem
                 if (!ColumnExists("orders", "shipping_address")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN shipping_address TEXT;");
                 if (!ColumnExists("orders", "delivery_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN delivery_date TEXT;");
                 if (!ColumnExists("orders", "due_date")) ExecuteNonQuery("ALTER TABLE orders ADD COLUMN due_date TEXT;");
+
+                // Custom / quick-sale line label (when part_id is null or name overridden)
+                if (!ColumnExists("order_items", "item_name")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN item_name TEXT;");
+                if (!ColumnExists("order_items", "amount_paid")) ExecuteNonQuery("ALTER TABLE order_items ADD COLUMN amount_paid REAL DEFAULT 0;");
+
+                ExecuteNonQuery(@"
+                    CREATE TABLE IF NOT EXISTS supplier_purchase_items (
+                        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                        supplier_id     INTEGER NOT NULL,
+                        item_name       TEXT NOT NULL,
+                        category        TEXT,
+                        quantity        REAL NOT NULL DEFAULT 1,
+                        unit_price      REAL NOT NULL DEFAULT 0,
+                        payment_status  TEXT NOT NULL DEFAULT 'Unpaid',
+                        amount_paid     REAL NOT NULL DEFAULT 0,
+                        part_id         INTEGER,
+                        notes           TEXT,
+                        created_at      TEXT DEFAULT (datetime('now', 'localtime')),
+                        date_deleted    TEXT
+                    );");
+                if (!ColumnExists("supplier_purchase_items", "category"))
+                    ExecuteNonQuery("ALTER TABLE supplier_purchase_items ADD COLUMN category TEXT;");
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogError(ex, "EnsureSchema failed");
             }
+        }
+
+        /// <summary>
+        /// Insert demo categories, suppliers, products, customers, and supplier purchase lines for testing.
+        /// Skips when sentinel supplier already exists unless force=true.
+        /// </summary>
+        public static object SeedDemoData(bool force = false)
+        {
+            EnsureSchema();
+            int exists = ExecuteScalar<int>(
+                "SELECT COUNT(*) FROM suppliers WHERE supplier_name = @n AND date_deleted IS NULL",
+                new SqliteParameter("@n", "Demo Auto Supply"));
+            if (exists > 0 && !force)
+                return new { seeded = false, reason = "Demo data already present" };
+
+            void EnsureCategory(string name)
+            {
+                int c = ExecuteScalar<int>("SELECT COUNT(*) FROM categories WHERE category_name = @n",
+                    new SqliteParameter("@n", name));
+                if (c == 0)
+                    ExecuteNonQuery("INSERT INTO categories (category_name, description) VALUES (@n, 'Demo')",
+                        new SqliteParameter("@n", name));
+            }
+
+            EnsureCategory("Oils");
+            EnsureCategory("Filters");
+            EnsureCategory("Brakes");
+            EnsureCategory("Electrical");
+            EnsureCategory("General");
+
+            int EnsureSupplier(string name, string phone, string contact)
+            {
+                object idObj = ExecuteScalar<object>(
+                    "SELECT id FROM suppliers WHERE supplier_name = @n AND date_deleted IS NULL",
+                    new SqliteParameter("@n", name));
+                if (idObj != null && idObj != DBNull.Value)
+                    return Convert.ToInt32(idObj);
+                ExecuteNonQuery(
+                    @"INSERT INTO suppliers (supplier_name, phone, email, address, contact_person, balance_due, type, date_added)
+                      VALUES (@n, @p, '', '', @c, 0, 'Company', datetime('now'))",
+                    new SqliteParameter("@n", name),
+                    new SqliteParameter("@p", phone),
+                    new SqliteParameter("@c", contact));
+                return (int)ExecuteScalar<long>("SELECT last_insert_rowid()");
+            }
+
+            int sid1 = EnsureSupplier("Demo Auto Supply", "03111111", "Ahmad");
+            int sid2 = EnsureSupplier("Demo Parts Hub", "03222222", "Sara");
+
+            int EnsureCustomer(string name, string phone, decimal bal)
+            {
+                object idObj = ExecuteScalar<object>(
+                    "SELECT customer_id FROM customers WHERE full_name = @n AND date_deleted IS NULL",
+                    new SqliteParameter("@n", name));
+                if (idObj != null && idObj != DBNull.Value)
+                    return Convert.ToInt32(idObj);
+                ExecuteNonQuery(
+                    @"INSERT INTO customers (full_name, phone, email, address, type, credit_limit, current_balance, date_added)
+                      VALUES (@n, @p, '', '', 'Retail', 2000, @b, datetime('now'))",
+                    new SqliteParameter("@n", name),
+                    new SqliteParameter("@p", phone),
+                    new SqliteParameter("@b", bal));
+                return (int)ExecuteScalar<long>("SELECT last_insert_rowid()");
+            }
+
+            EnsureCustomer("Demo Walk-in Ali", "03999901", 150);
+            EnsureCustomer("Demo Garage Karim", "03999902", 420);
+
+            int CatId(string name)
+            {
+                object o = ExecuteScalar<object>("SELECT id FROM categories WHERE category_name = @n",
+                    new SqliteParameter("@n", name));
+                return o == null || o == DBNull.Value ? 1 : Convert.ToInt32(o);
+            }
+
+            void EnsurePart(string name, string cat, int supplierId, decimal cost, decimal price, int stock)
+            {
+                int found = ExecuteScalar<int>(
+                    @"SELECT COUNT(*) FROM parts WHERE LOWER(TRIM(part_name)) = LOWER(TRIM(@n))
+                        AND supplier_id = @sid AND date_deleted IS NULL",
+                    new SqliteParameter("@n", name),
+                    new SqliteParameter("@sid", supplierId));
+                if (found > 0) return;
+                string sku = "DEMO-" + Guid.NewGuid().ToString("N").Substring(0, 6).ToUpperInvariant();
+                string barcode = "BC" + Guid.NewGuid().ToString("N").Substring(0, 10).ToUpperInvariant();
+                ExecuteNonQuery(
+                    @"INSERT INTO parts (part_name, part_number, description, category_id, supplier_id,
+                         purchase_price, selling_price, quantity_in_stock, minimum_stock_level,
+                         status, date_added, item_type, is_sales_item, is_purchase_item, is_stock_tracked, barcode)
+                      VALUES (@n, @sku, 'Demo', @cat, @sid, @cost, @price, @stock, 2,
+                              'Active', datetime('now'), 'Product', 1, 1, 1, @bc)",
+                    new SqliteParameter("@n", name),
+                    new SqliteParameter("@sku", sku),
+                    new SqliteParameter("@cat", CatId(cat)),
+                    new SqliteParameter("@sid", supplierId),
+                    new SqliteParameter("@cost", cost),
+                    new SqliteParameter("@price", price),
+                    new SqliteParameter("@stock", stock),
+                    new SqliteParameter("@bc", barcode));
+            }
+
+            EnsurePart("Engine Oil 5W30 1L", "Oils", sid1, 4.50m, 7.00m, 24);
+            EnsurePart("Oil Filter Standard", "Filters", sid1, 2.00m, 4.50m, 40);
+            EnsurePart("Brake Pads Front", "Brakes", sid2, 12.00m, 22.00m, 10);
+            EnsurePart("Battery 60Ah", "Electrical", sid2, 55.00m, 85.00m, 5);
+
+            var purchaseSvc = new InventorySystem.Services.SupplierPurchaseService();
+            purchaseSvc.EnsureTable();
+
+            // Unadded lines (for import testing) + one debt / one paid
+            void AddPurchase(int sid, string name, string cat, decimal qty, decimal price, bool paid)
+            {
+                int dup = ExecuteScalar<int>(
+                    @"SELECT COUNT(*) FROM supplier_purchase_items
+                      WHERE supplier_id = @sid AND item_name = @n AND date_deleted IS NULL AND part_id IS NULL",
+                    new SqliteParameter("@sid", sid),
+                    new SqliteParameter("@n", name));
+                if (dup > 0 && !force) return;
+                purchaseSvc.AddItem(sid, name, cat, qty, price, paid, "Demo seed");
+            }
+
+            AddPurchase(sid1, "Air Filter Cabin", "Filters", 15, 3.25m, false);
+            AddPurchase(sid1, "Engine Oil 5W30 1L", "Oils", 12, 4.75m, true); // exists → import should add stock
+            AddPurchase(sid2, "Spark Plug Iridium", "Electrical", 20, 6.00m, false);
+            AddPurchase(sid2, "Brake Fluid DOT4", "Brakes", 8, 5.50m, false);
+            AddPurchase(sid2, "Brake Pads Front", "Brakes", 4, 11.50m, false); // exists → add stock
+
+            return new
+            {
+                seeded = true,
+                suppliers = new[] { "Demo Auto Supply", "Demo Parts Hub" },
+                categories = new[] { "Oils", "Filters", "Brakes", "Electrical" },
+                note = "Open Suppliers → Add product, or Inventory → From supplier to import lines."
+            };
         }
 
         private static bool ColumnExists(string tableName, string columnName)

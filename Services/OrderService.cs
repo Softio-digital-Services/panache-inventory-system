@@ -14,6 +14,8 @@ namespace InventorySystem.Services
         public int Quantity { get; set; }
         /// <summary>When &gt; 0, stock is reduced by this amount instead of Quantity (e.g. grams for weighed items).</summary>
         public int StockDeductQty { get; set; }
+        /// <summary>When true, sale is recorded but inventory is not reduced (car stock / quick sale).</summary>
+        public bool SkipStock { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Total => Quantity * UnitPrice;
     }
@@ -69,13 +71,7 @@ namespace InventorySystem.Services
                  // Still insert items so we can retrieve them, but DON'T update stock
                  foreach (var item in items)
                  {
-                    string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)";
-                    DatabaseHelper.ExecuteNonQuery(sqlItem,
-                        new SqliteParameter("@oid", orderId),
-                        new SqliteParameter("@pid", item.PartId),
-                        new SqliteParameter("@qty", item.Quantity),
-                        new SqliteParameter("@price", item.UnitPrice)
-                    );
+                    InsertOrderItem(orderId, item);
                  }
                  GlobalEvents.RaiseOrdersUpdated();
                  return orderId;
@@ -84,16 +80,12 @@ namespace InventorySystem.Services
             // 3. Process Items & Update Stock (Normally)
             foreach (var item in items)
             {
-                // Insert Order Item
-                string sqlItem = "INSERT INTO order_items (order_id, part_id, quantity, price) VALUES (@oid, @pid, @qty, @price)";
-                DatabaseHelper.ExecuteNonQuery(sqlItem,
-                    new SqliteParameter("@oid", orderId),
-                    new SqliteParameter("@pid", item.PartId),
-                    new SqliteParameter("@qty", item.Quantity),
-                    new SqliteParameter("@price", item.UnitPrice)
-                );
+                InsertOrderItem(orderId, item);
 
-                // Update Stock (weighed chocolate lines deduct grams via StockDeductQty)
+                // Skip stock for quick-sale / car-stock lines, custom items, or untracked parts
+                if (item.SkipStock || item.PartId <= 0)
+                    continue;
+
                 int stockQty = item.StockDeductQty > 0 ? item.StockDeductQty : item.Quantity;
                 string sqlStock = "UPDATE parts SET quantity_in_stock = quantity_in_stock - @qty WHERE id = @pid AND is_stock_tracked = 1 AND (item_type IS NULL OR item_type != 'Service')";
                 DatabaseHelper.ExecuteNonQuery(sqlStock,
@@ -249,15 +241,19 @@ namespace InventorySystem.Services
         public List<OrderItem> GetOrderItems(int orderId)
         {
              string sql = @"
-                SELECT i.part_id, p.part_name, i.quantity, i.price, p.description, p.part_image
+                SELECT COALESCE(i.part_id, 0),
+                       COALESCE(NULLIF(TRIM(i.item_name), ''), p.part_name, 'Quick Sale'),
+                       i.quantity, i.price,
+                       COALESCE(p.description, ''),
+                       COALESCE(p.part_image, '')
                 FROM order_items i
-                JOIN parts p ON i.part_id = p.id
+                LEFT JOIN parts p ON i.part_id = p.id
                 WHERE i.order_id = @oid";
              
              return DatabaseHelper.ExecuteQuery(sql, reader => new OrderItem 
              {
-                 PartId = reader.GetInt32(0),
-                 PartName = reader.GetString(1),
+                 PartId = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                 PartName = reader.IsDBNull(1) ? "Quick Sale" : reader.GetString(1),
                  Quantity = reader.GetInt32(2),
                  UnitPrice = reader.GetDecimal(3),
                  Description = reader.IsDBNull(4) ? "" : reader.GetString(4),
@@ -270,6 +266,19 @@ namespace InventorySystem.Services
              // Delete items first
              DatabaseHelper.ExecuteNonQuery($"DELETE FROM order_items WHERE order_id = {orderId}");
              DatabaseHelper.ExecuteNonQuery($"DELETE FROM orders WHERE order_id = {orderId}");
+        }
+
+        private static void InsertOrderItem(int orderId, OrderItem item)
+        {
+            object partId = item.PartId > 0 ? (object)item.PartId : DBNull.Value;
+            string itemName = string.IsNullOrWhiteSpace(item.PartName) ? null : item.PartName.Trim();
+            DatabaseHelper.ExecuteNonQuery(
+                "INSERT INTO order_items (order_id, part_id, quantity, price, item_name) VALUES (@oid, @pid, @qty, @price, @iname)",
+                new SqliteParameter("@oid", orderId),
+                new SqliteParameter("@pid", partId),
+                new SqliteParameter("@qty", item.Quantity),
+                new SqliteParameter("@price", item.UnitPrice),
+                new SqliteParameter("@iname", (object)itemName ?? DBNull.Value));
         }
     }
 }
