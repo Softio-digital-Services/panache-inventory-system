@@ -82,7 +82,7 @@ namespace InventorySystem
 
                 // Ensure schema is up to date (add missing columns)
                 DatabaseHelper.EnsureSchema();
-                try { DatabaseHelper.SeedDemoData(force: false); } catch { }
+                // Demo seed is opt-in via POST /api/dev/seed-demo — do not auto-fill new installs
 
                 // Initialize currency tables and load cached rates
                 InventorySystem.Services.CurrencyService.EnsureTable();

@@ -42,3 +42,9 @@ _backup_pre_otargi_web/
 crash.txt
 server_error.txt
 *.db
+
+# Local SQLite databases (ship empty — created on first run)
+Data/*.db
+**/Data/inventory.db
+dist/app/Data/*.db
+
