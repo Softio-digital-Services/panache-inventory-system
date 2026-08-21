@@ -524,7 +524,7 @@
                         <div class="pos-order-title-row">
                             <h2 data-i18n="new_order">New Order</h2>
                             <div class="pos-order-title-actions">
-                                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-sale" data-i18n="quick_sale">Quick Sale</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-sale" hidden data-i18n="quick_sale">Quick Sale</button>
                                 <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-cart" data-i18n="clear">Clear</button>
                             </div>
                         </div>
@@ -840,6 +840,18 @@
                         <span data-i18n="feature_scale_enable">Enable scale / sell-by-weight</span>
                     </label>
                     <p id="feature-scale-status" class="form-hint"></p>
+                </div>
+                                <div class="card settings-card settings-card-wide" id="softio-quicksale-card" hidden>
+                    <div class="settings-card-header">
+                        <span class="material-symbols-rounded" aria-hidden="true">bolt</span>
+                        <h3 data-i18n="feature_quicksale_title">Quick Sale</h3>
+                    </div>
+                    <p class="form-hint settings-card-hint" data-i18n="feature_quicksale_hint">Only Softio Super Admin can enable Quick Sale on the POS (sell without stock / custom items).</p>
+                    <label class="p-check settings-check-row">
+                        <input type="checkbox" id="feature-quicksale-toggle">
+                        <span data-i18n="feature_quicksale_enable">Enable Quick Sale</span>
+                    </label>
+                    <p id="feature-quicksale-status" class="form-hint"></p>
                 </div>
                 <div class="card settings-card settings-card-wide" id="print-settings-card">
                     <div class="settings-card-header">
@@ -2108,6 +2120,6 @@ Accepted By: __________________________</p>
 
     <div id="toast" class="toast"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script src="app.js?v=20260821qsprefix" charset="utf-8"></script>
+    <script src="app.js?v=20260821qsflag" charset="utf-8"></script>
 </body>
 </html>

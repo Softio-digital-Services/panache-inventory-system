@@ -147,6 +147,13 @@ const T = {
         feature_scale_off: 'Scale feature is OFF.',
         feature_scale_saved: 'Scale feature updated',
         feature_scale_denied: 'Only Softio Super Admin can change this',
+        feature_quicksale_title: 'Quick Sale',
+        feature_quicksale_hint: 'Only Softio Super Admin can enable Quick Sale on the POS (sell without stock / custom items).',
+        feature_quicksale_enable: 'Enable Quick Sale',
+        feature_quicksale_on: 'Quick Sale is ON — the POS Quick Sale button is available.',
+        feature_quicksale_off: 'Quick Sale is OFF.',
+        feature_quicksale_saved: 'Quick Sale feature updated',
+        feature_quicksale_denied: 'Only Softio Super Admin can change this',
         trial_ok: 'Trial started', trial_used: 'Trial already used', copied: 'Copied',
         cannot_delete_super_admin: 'Super Admin cannot be deleted',
         about_us: 'About Us', about_company: 'Softio', about_app_name: 'Panache Inventory',
@@ -446,6 +453,13 @@ const T = {
         feature_scale_off: 'ميزة الميزان مطفأة.',
         feature_scale_saved: 'تم تحديث ميزة الميزان',
         feature_scale_denied: 'يمكن لمشرف Softio فقط تغيير هذا الإعداد',
+        feature_quicksale_title: 'بيع سريع',
+        feature_quicksale_hint: 'يمكن لمشرف Softio فقط تفعيل البيع السريع في نقطة البيع (بيع دون مخزون / أصناف مخصصة).',
+        feature_quicksale_enable: 'تفعيل البيع السريع',
+        feature_quicksale_on: 'البيع السريع مفعّل — زر البيع السريع متاح في نقطة البيع.',
+        feature_quicksale_off: 'البيع السريع مطفأ.',
+        feature_quicksale_saved: 'تم تحديث ميزة البيع السريع',
+        feature_quicksale_denied: 'يمكن لمشرف Softio فقط تغيير هذا الإعداد',
         trial_ok: 'تم بدء الفترة التجريبية', trial_used: 'تم استخدام التجربة مسبقاً', copied: 'تم النسخ',
         cannot_delete_super_admin: 'لا يمكن حذف المسؤول الأعلى',
         about_us: 'من نحن', about_company: 'Softio', about_app_name: 'نظام مخزون Panache', about_version: 'الإصدار 1.0.2 Platinum',
@@ -601,7 +615,7 @@ const T = {
 
 let lang = localStorage.getItem('panache_lang') || localStorage.getItem('generic_lang') || localStorage.getItem('otargi_lang') || 'en';
 let currentUser = null;
-let featureFlags = { scaleEnabled: false };
+let featureFlags = { scaleEnabled: false, quickSaleEnabled: false };
 let printSettings = {
     labelWidthMm: 60,
     labelHeightMm: 36,
@@ -687,9 +701,11 @@ function isSoftioSuperAdmin() {
 
 function applyFeatureFlags(flags) {
     featureFlags = {
-        scaleEnabled: !!(flags?.scaleEnabled ?? flags?.ScaleEnabled)
+        scaleEnabled: !!(flags?.scaleEnabled ?? flags?.ScaleEnabled),
+        quickSaleEnabled: !!(flags?.quickSaleEnabled ?? flags?.QuickSaleEnabled)
     };
     document.body.classList.toggle('feature-scale', featureFlags.scaleEnabled);
+    document.body.classList.toggle('feature-quicksale', featureFlags.quickSaleEnabled);
 
     const scalePanel = document.getElementById('scalePanel');
     if (scalePanel) scalePanel.hidden = !featureFlags.scaleEnabled;
@@ -697,17 +713,33 @@ function applyFeatureFlags(flags) {
     const sellFs = document.getElementById('p-sell-by-fieldset');
     if (sellFs) sellFs.hidden = !featureFlags.scaleEnabled;
 
+    const qsBtn = document.getElementById('btn-quick-sale');
+    if (qsBtn) qsBtn.hidden = !featureFlags.quickSaleEnabled;
+
     const softioCard = document.getElementById('softio-scale-card');
     if (softioCard) softioCard.hidden = !isSoftioSuperAdmin();
 
+    const softioQsCard = document.getElementById('softio-quicksale-card');
+    if (softioQsCard) softioQsCard.hidden = !isSoftioSuperAdmin();
+
     const toggle = document.getElementById('feature-scale-toggle');
     if (toggle) toggle.checked = featureFlags.scaleEnabled;
+
+    const qsToggle = document.getElementById('feature-quicksale-toggle');
+    if (qsToggle) qsToggle.checked = featureFlags.quickSaleEnabled;
 
     const status = document.getElementById('feature-scale-status');
     if (status) {
         status.textContent = featureFlags.scaleEnabled
             ? tr('feature_scale_on')
             : tr('feature_scale_off');
+    }
+
+    const qsStatus = document.getElementById('feature-quicksale-status');
+    if (qsStatus) {
+        qsStatus.textContent = featureFlags.quickSaleEnabled
+            ? tr('feature_quicksale_on')
+            : tr('feature_quicksale_off');
     }
 
     if (featureFlags.scaleEnabled) {
@@ -724,7 +756,7 @@ async function loadFeatureFlags() {
             sessionStorage.setItem('panache_user', JSON.stringify(currentUser));
         }
     } catch {
-        applyFeatureFlags(currentUser?.features || { scaleEnabled: false });
+        applyFeatureFlags(currentUser?.features || { scaleEnabled: false, quickSaleEnabled: false });
     }
 }
 
@@ -3483,6 +3515,10 @@ function setQuickSaleTab(tab) {
 }
 
 function openQuickSaleModal() {
+    if (!featureFlags.quickSaleEnabled) {
+        toast(tr('feature_quicksale_off'), 'error');
+        return;
+    }
     setQuickSaleTab('product');
     const search = document.getElementById('qs-product-search');
     if (search) search.value = '';
@@ -5828,7 +5864,7 @@ function setupAuth() {
             });
             currentUser = user;
             sessionStorage.setItem('panache_user', JSON.stringify(user));
-            applyFeatureFlags(user.features || { scaleEnabled: false });
+            applyFeatureFlags(user.features || { scaleEnabled: false, quickSaleEnabled: false });
             document.getElementById('login-pass').value = '';
             document.getElementById('login-user').value = '';
             showApp();
@@ -7512,7 +7548,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                         username: currentUser?.username || ''
                     })
                 });
-                applyFeatureFlags({ scaleEnabled: !!res.scaleEnabled });
+                applyFeatureFlags({
+                    scaleEnabled: !!res.scaleEnabled,
+                    quickSaleEnabled: !!(res.quickSaleEnabled ?? featureFlags.quickSaleEnabled)
+                });
                 toast(tr('feature_scale_saved'), 'success');
                 try { await loadData(); renderAll?.(); } catch { /* ignore */ }
             } catch (err) {
@@ -7521,11 +7560,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        document.getElementById('feature-quicksale-toggle')?.addEventListener('change', async (e) => {
+            if (!isSoftioSuperAdmin()) {
+                e.target.checked = featureFlags.quickSaleEnabled;
+                toast(tr('feature_quicksale_denied'), 'error');
+                return;
+            }
+            const enabled = !!e.target.checked;
+            try {
+                const res = await api('/api/features/quicksale', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        enabled,
+                        username: currentUser?.username || ''
+                    })
+                });
+                applyFeatureFlags({
+                    scaleEnabled: !!(res.scaleEnabled ?? featureFlags.scaleEnabled),
+                    quickSaleEnabled: !!res.quickSaleEnabled
+                });
+                toast(tr('feature_quicksale_saved'), 'success');
+            } catch (err) {
+                e.target.checked = featureFlags.quickSaleEnabled;
+                toast(err.message || tr('feature_quicksale_denied'), 'error');
+            }
+        });
+
         const saved = sessionStorage.getItem('panache_user') || sessionStorage.getItem('generic_user') || sessionStorage.getItem('otargi_user');
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
-                applyFeatureFlags(currentUser.features || { scaleEnabled: false });
+                applyFeatureFlags(currentUser.features || { scaleEnabled: false, quickSaleEnabled: false });
                 showApp();
                 await loadFeatureFlags();
                 await loadData();

@@ -4,16 +4,23 @@ using Microsoft.Data.Sqlite;
 namespace InventorySystem.Helpers
 {
     /// <summary>
-    /// Runtime feature flags persisted in SQLite. Softio Super Admin controls scale.
+    /// Runtime feature flags persisted in SQLite. Softio Super Admin controls toggles.
     /// </summary>
     public static class FeatureFlags
     {
         public const string ScaleEnabledKey = "feature.scale.enabled";
+        public const string QuickSaleEnabledKey = "feature.quicksale.enabled";
 
         public static bool ScaleEnabled
         {
             get => GetBool(ScaleEnabledKey, false);
             set => SetBool(ScaleEnabledKey, value);
+        }
+
+        public static bool QuickSaleEnabled
+        {
+            get => GetBool(QuickSaleEnabledKey, false);
+            set => SetBool(QuickSaleEnabledKey, value);
         }
 
         public static bool GetBool(string key, bool defaultValue = false)

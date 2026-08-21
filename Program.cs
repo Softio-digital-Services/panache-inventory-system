@@ -733,7 +733,7 @@ namespace InventorySystem
                                 isStaff = true,
                                 isAccountant = true,
                                 isSoftioSuperAdmin = true,
-                                features = new { scaleEnabled = FeatureFlags.ScaleEnabled }
+                                features = new { scaleEnabled = FeatureFlags.ScaleEnabled, quickSaleEnabled = FeatureFlags.QuickSaleEnabled }
                             });
 
                         var dt = DatabaseHelper.ExecuteDataTable(
@@ -760,7 +760,7 @@ namespace InventorySystem
                             isStaff,
                             isAccountant,
                             isSoftioSuperAdmin = isSoftio,
-                            features = new { scaleEnabled = FeatureFlags.ScaleEnabled }
+                            features = new { scaleEnabled = FeatureFlags.ScaleEnabled, quickSaleEnabled = FeatureFlags.QuickSaleEnabled }
                         });
                     }
                     catch (Exception ex)
@@ -2573,11 +2573,12 @@ namespace InventorySystem
                 // Scale API (TM-A17 / COM) — gated by Softio feature flag at runtime
                 ScaleApiBootstrap.MapEndpoints(app);
 
-                // Feature flags (scale on/off — Softio Super Admin only for writes)
+                // Feature flags (scale / quick sale — Softio Super Admin only for writes)
                 app.MapGet("/api/features", () =>
                     Microsoft.AspNetCore.Http.Results.Ok(new
                     {
-                        scaleEnabled = FeatureFlags.ScaleEnabled
+                        scaleEnabled = FeatureFlags.ScaleEnabled,
+                        quickSaleEnabled = FeatureFlags.QuickSaleEnabled
                     }));
 
                 app.MapPut("/api/features/scale", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
@@ -2610,7 +2611,40 @@ namespace InventorySystem
                         return Microsoft.AspNetCore.Http.Results.Ok(new
                         {
                             success = true,
-                            scaleEnabled = FeatureFlags.ScaleEnabled
+                            scaleEnabled = FeatureFlags.ScaleEnabled,
+                            quickSaleEnabled = FeatureFlags.QuickSaleEnabled
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Microsoft.AspNetCore.Http.Results.Problem(ex.Message);
+                    }
+                });
+
+                app.MapPut("/api/features/quicksale", async (Microsoft.AspNetCore.Http.HttpRequest request) =>
+                {
+                    try
+                    {
+                        var body = await System.Text.Json.JsonSerializer.DeserializeAsync<ScaleFeaturePayload>(
+                            request.Body,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (body == null)
+                            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = "Invalid body" });
+
+                        bool isSoftio = !string.IsNullOrWhiteSpace(body.Username)
+                            && body.Username.Trim().Equals("Softio.Admin", StringComparison.OrdinalIgnoreCase);
+                        if (!isSoftio)
+                            return Microsoft.AspNetCore.Http.Results.Json(
+                                new { error = "Only Softio Super Admin can change this setting." },
+                                statusCode: 403);
+
+                        FeatureFlags.QuickSaleEnabled = body.Enabled;
+
+                        return Microsoft.AspNetCore.Http.Results.Ok(new
+                        {
+                            success = true,
+                            scaleEnabled = FeatureFlags.ScaleEnabled,
+                            quickSaleEnabled = FeatureFlags.QuickSaleEnabled
                         });
                     }
                     catch (Exception ex)
