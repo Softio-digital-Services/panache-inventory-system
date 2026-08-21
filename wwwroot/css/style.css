@@ -198,7 +198,7 @@ body.rtl .sidebar { border-right: none; border-left: 1px solid var(--border-colo
 .logo-icon {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--primary-color), #34d399);
+    background: linear-gradient(135deg, var(--primary-color), #E5C158);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -3695,7 +3695,7 @@ body.rtl #inventory .page-search-row .search-box {
 .titlebar {
     height: var(--titlebar-h);
     flex-shrink: 0;
-    background: linear-gradient(90deg, #059669 0%, var(--primary-color) 45%, #34d399 100%);
+    background: linear-gradient(90deg, #C59E3F 0%, var(--primary-color) 45%, #E5C158 100%);
     color: #fff;
     display: flex;
     align-items: center;
